@@ -1,0 +1,10 @@
+*
+
+# .emacs.d
+!.emacs.d
+!.emacs.d/*
+!.emacs.d/*/*
+
+# .bashrc.d
+#!.bashrc.d
+#!.bashrc.d/*

@@ -1,12 +1,3 @@
-; Michael Krasnik's .emacs
-; from Eugene Morozov's .emacs
-;; $Id: .emacs 311 2008-02-25 09:24:40Z miha $
-;; cvs -d:pserver:anonymous@cvs.savannah.gnu.org:/sources/emacs checkout emacs
-
-;; I don't wrap this in `eval-when-compile' because I don't always
-;; byte-compile this file
-;; (setq debug-on-error t)
-
 (require 'cl)
 
 ;;{{{ Variables describing environment Emacs is running in
@@ -101,7 +92,7 @@
 (setq undo-limit 20000000)
 (setq revert-without-query '(".*"))
 (transient-mark-mode 1)                              ;; When the mark is active, the region is highlighted.
-;(setq inhibit-startup-message t)                     ;; Silent boot
+(setq inhibit-startup-message t)                     ;; Silent boot
 (setq initial-scratch-message nil)                   ;; Clear scratch buffer
 (setq initial-major-mode 'text-mode)                 ;; text mode is default
 (set-scroll-bar-mode 'right)                         ;; vertical scroll bars on the right side.
@@ -132,7 +123,6 @@
     (setq tool-bar-originally-present nil))          ;; shrinking the frame because we got rid of the tool-bar. 
 (setq ediff-window-setup-function 'ediff-setup-windows-plain)
 (setq calendar-week-start-day 1)
-;; (setq dired-listing-switches "-alh")
 
 ;; Place Backup Files in Specific Directory
 (setq make-backup-files t)                           ;; Enable backup files.
@@ -141,18 +131,8 @@
 (setq backup-directory-alist                         ;; Save all backup file in this directory.
       (list `(".*" . ,(concat custom-dir "/.emacs.backups"))))
 
-;(if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
-;(if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
-;(if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
-
 (defvar insert-time-format "%T" "*Format for \\[insert-time].")
 (defvar insert-date-format "%e %B %Y" "*Format for \\[insert-date].")
-
-;; set latitude and longitude of Magdeburg
-(setq calendar-latitude 52.1186)
-(setq calendar-longitude 11.6361)
-(setq calendar-location-name "Magdeburg, DE")
-(setq cal-tex-cursor-week-monday t)
 
 (defadvice save-buffers-kill-emacs (around no-query-kill-emacs activate)
   "Prevent annoying \"Active processes exist\" query when you quit Emacs."
@@ -178,6 +158,17 @@
 (define-key dired-sort-map "n" (lambda () "sort by Name" (interactive) (dired-sort-other dired-listing-switches)))
 (define-key dired-sort-map "d" (lambda () "sort by name grouping Dirs" (interactive) (dired-sort-other (concat dired-listing-switches " --group-directories-first"))))
 
+;; humanized output
+(setq dired-listing-switches-styles '("-alh" "-al"))
+(setq dired-listing-switches-idx 0)
+(setq dired-listing-switches (nth dired-listing-switches-idx dired-listing-switches-styles))
+(define-key dired-mode-map "h" (lambda () (interactive) 
+                                 (setq dired-listing-switches-idx (% (1+ dired-listing-switches-idx) (length dired-listing-switches-styles)))
+                                 (setq dired-listing-switches (nth dired-listing-switches-idx dired-listing-switches-styles)) 
+                                 (setq dired-actual-switches dired-listing-switches)
+                                 (revert-buffer)))
+
+;; additional faces
 (defface dired-compressed-file
   '((t (:foreground "violet")))
   "*Face used for compressed files in dired buffers."
@@ -260,12 +251,6 @@
 (setq google-translate-default-target-language "ru"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Auto complete
-;(require 'auto-complete-config)
-;(add-to-list 'ac-dictionary-directories "/home/miha/.emacs.d/ac-dict")
-;(ac-config-default)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Git mode
 (when git-dir
   (require 'git-emacs)
@@ -288,11 +273,6 @@
 (custom-set-variables '(matlab-comment-region-s "% "))
 (setq matlab-fill-code nil)
 (custom-set-faces '(matlab-cellbreak-face ((t (:foreground "Firebrick" :weight bold)))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Mathematica mode
-(autoload 'math "math" "Starts Mathematica" t)
-(autoload 'math-mode "math" "Mode for editing Mathematica.  Loading will result in more info." t)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; m4 mode
@@ -322,12 +302,6 @@
 (setf svn-status-hide-unmodified t)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; SparQL mode
-(autoload 'sparql-mode "sparql-mode.el"
-  "Major mode for editing SPARQL files" t)
-(add-to-list 'auto-mode-alist '("\\.sparql$" . sparql-mode))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; setup spell checker
 (if (executable-find "aspell")
     (progn
@@ -340,16 +314,6 @@
       (add-hook 'org-mode-hook 'flyspell-mode))
   (message "Aspell not found."))
 
-(if (executable-find "diction")
-    (progn
-      (require 'diction))
-  (message "diction not found."))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; PDB mode
-;(load-file (concat custom-dir "/pdb-mode.el"))
-;(autoload 'pdb-mode "PDB")
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C and C++ modes
 (require 'hide-comnt)
@@ -360,8 +324,6 @@
 (require 'gud)
 (require 'gdb-mi)
 (require 'qml-mode)
-;(require 'gtags)
-;;(when (< emacs-major-version 24) (require 'gdb-ui))
 
 (setq gud-tooltip-mode t)
 
@@ -520,15 +482,9 @@
   (setq py-load-pymacs-p t))
 (setq python-indent 2)
 
-;(require 'highlight-indentation)
-;(custom-set-faces '(highlight-indent-face ((t (:inherit fringe :background "LightSteelBlue2")))))
-;(add-hook 'python-mode-hook 'highlight-indentation-mode)
-;(set-face-background 'highlight-indentation-face "LightSteelBlue2")
-
 ;;pdb setup, note the python version
 (setq pdb-path
   (cond
-   ((string= system-name "pc765.mpi-magdeburg.mpg.de") '/data/pspd/local/usr/local/lib/python2.7/pdb.py)
    ((string= system-name "miha-lt") '/usr/lib/python2.7/pdb.py)
    (t '/usr/lib/python2.7/pdb.py)))
 (setq gud-pdb-command-name (symbol-name pdb-path))
@@ -748,13 +704,10 @@
          ("Jamfile.v2" . jam-mode) 
          ("\\.jam$" . jam-mode)
          ("\\.s?html$" . sgml-mode)
-         ("\\.m" . math-mode)
          ("\\.mc" . m4-mode) 
          ("\\.m4" . m4-mode)
-         ("\\.nb$" . math-mode)
          ("\.i$" . c++-mode)
          ("\.cc$" . c++-mode)
-         ("\.pdb$" . pdb-mode)
          ("CMakeLists\\.txt\\'" . cmake-mode)
          ("\\.cmake\\'" . cmake-mode)
          ) auto-mode-alist))
@@ -819,20 +772,6 @@
 
   ;; host specific
   (cond
-    ((and (string= system-name "pc765.mpi-magdeburg.mpg.de") (<= emacs-major-version 22))
-     (setq default-frame-alist '(
-          (top . 0) (left . 120) (width . 180) (height . 65)
-          (font . "-adobe-courier-medium-r-normal--14-100-100-100-m-90-iso8859-1")
-          )))
-    ((or (string= system-name "pc543")
-         (string= system-name "pc543.mpi-magdeburg.mpg.de"))
-     (setq default-frame-alist 
-           '((top . 0) (left . 120) (width . 160) (height . 125)
-             ;; fc-list
-             ;;(font . "-urw-nimbus mono l-medium-r-normal--15-108-100-100-m-90-iso8859-1")
-             ;;(font . "-*-fixed-medium-r-*-*-*-*-*-*-*-*-*-*")
-             (font . "-monotype-Andale Mono-medium-r-*-*-*-*-*-*-*-*-*")
-             )))
     ;;
     ((string= system-name "miha-lt")
      (setq default-frame-alist '(
@@ -840,29 +779,6 @@
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1")
           ;;(font . "-*-Inconsolata-*-*-*-*-18-*-*-*-m-0-iso10646-1")
           )))
-
-    ;;
-    ((string= system-name "mkrasnyk-luxoft")
-     (setq default-frame-alist '(
-          (top . 0) (left . 100) (width . 142) (height . 56)
-          (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
-          )))
-    ;;
-    ((string= system-name "miha-dntu")
-     (setq default-frame-alist '(
-          (top . 0) (left . 120) (width . 142) (height . 64)
-          (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
-          )))
-    ;;
-    ((string= system-name "pc765.mpi-magdeburg.mpg.de")
-     (setq default-frame-alist '(
-          (top . 0) (left . 120) (width . 180) (height . 65)
-          (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1") )))
-    ;;
-    ((string= system-name "otto1.service.mpimd")
-     (setq default-frame-alist '(
-          (top . 0) (left . 120) (width . 140) (height . 75)
-          (font . "-adobe-courier-medium-r-*-*-*-120-*-*-*-*-iso8859-1") )))
     ;;
     (t (message (format "unknown host name %s" system-name)))))
 
@@ -998,12 +914,6 @@
 	      (sort (x-list-fonts "*") 'string-lessp)))
     (print-help-return-message)))
 
-(defun strip-kolxoz-urls () 
-  (interactive)
-  (replace-regexp "^.*href=\"http://lib.homelinux.org/_djvu/" "http://www.eknigu.com/get/" nil (point-min) (point-max))
-  (replace-regexp "\">.*$" "" nil (point-min) (point-max))
-  (delete-matching-lines "^[ \t\n]*$" (point-min) (point-max)))
-
 (defun clean-zotero-bib () 
   (interactive)
   (replace-regexp "^.*url[ \t\n]*=.*$" "" nil (point-min) (point-max))
@@ -1013,65 +923,6 @@
   (delete-matching-lines "^[ \t\n]*$" (point-min) (point-max)))
 
 ;;;}}}
-
-
-;;{{{ Load TAGS !!!
-
-;; find . -regex '.*\(\.c$\|\.cpp$|\.h$|\.hpp$\)' | etags -
-;; find . \( -name '*.[ch]pp' -o -name '*.[chi]' \) -exec etags -a {} \;
-;; rm -rf TAGS ; find boost/spirit boost/iostreams boost/numeric \( -name '*.[ch]pp' -o -name '*.[chi]' \) -exec etags -a {} \;
-;; rm -rf TAGS ; find $BOOST_ROOT/boost/ \( -name '*.[ch]pp' -o -name '*.[chi]' \) -exec etags -a {} \;
-
-;(setf tags-add-tables t)
-
-;; Boost library
-(when (getenv "BOOST_ROOT")
-  (let ((fanme (concat (getenv "BOOST_ROOT") "/TAGS" )))
-    (when (file-readable-p fanme) (visit-tags-table fanme))))
-
-;; PETSc library
-(when (getenv "PETSC_DIR")
-  (let ((fanme (concat (getenv "PETSC_DIR") "/TAGS" )))
-    (when (file-readable-p fanme) (visit-tags-table fanme))))
-  
-;; SLEPc library
-(when (getenv "SLEPC_DIR")
-  (let ((fanme (concat (getenv "SLEPC_DIR") "/TAGS_NO_EXAMPLES" )))
-    (when (file-readable-p fanme) (visit-tags-table fanme))))
-
-;;}}}
-
-
-
-;;{{{ Promot
-
-(cond
- ((and nil running-on-gnu/linux
-       (file-readable-p "/usr/local/lisp/promot/src/emacs/promot.el"))
-  (let* ((emacs-version "21.4"))
-    (setq fi:find-tag-lock nil)
-    (load "/usr/local/lisp/promot/src/emacs/promot")
-    (load "/usr/local/lisp/promot/src/emacs/promot-init")
-
-    (require 'fi-site-init)
-    (setq fi:common-lisp-image-name "/scratch/miha/work/promot/promot/bin/internationalallegroclenterpriseedition-81linuxx86mar420081306--linuxx86glibc23-i686/images/promot-v-0-8-2.dxl")
-    (setq fi:check-unbalanced-parentheses-when-saving nil)
-    (setq fi::rsh-command "ssh")
-
-    (defun promot-image ()
-      "starts ProMoT Server"
-      (interactive)
-      (fi:common-lisp
-       "*promot-image*"
-       (expand-file-name "./")
-       promot-server-script
-       (if promot-version 
-           (append (list "-v" promot-version) fi:common-lisp-image-arguments)
-         fi:common-lisp-image-arguments)))
-    )))
-
-;; }}}
-
 
 ;; {{{ Customization
 
@@ -1110,12 +961,6 @@
 (defun ong-special-chars-menu () "Insert a special character from a menu" (interactive) 
   (let ((value (car (x-popup-menu (list '(10 10) (selected-window)) ongoing-char-choice)))) 
     (cond ((integerp value) (ucs-insert value)) ((stringp value) (insert value)) ('t ))))
-
-(require 'package)
-(add-to-list 'package-archives 
-    '("marmalade" .
-      "http://marmalade-repo.org/packages/"))
-(package-initialize)
 
 (defun insert-random-int-values ()
   (interactive)
