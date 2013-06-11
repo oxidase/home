@@ -217,7 +217,7 @@
   (openwith-mode t)
   (setq openwith-associations
       '(("[^_]?\\.\\(ps\\|pdf\\|djvu\\)\\'" "okular" (file))
-        ("\\.\\(doc\\|ppt\\|rtf\\|xlsx?\\)\\'" "libreoffice" (file))
+        ("\\.\\(docx?\\|ppt\\|rtf\\|xlsx?\\)\\'" "libreoffice" (file))
         ("\\.\\(?:mpe?g\\|avi\\|wmv\\|mp4\\)\\'" "smplayer" (file)))))
 
 ;;; Shell mode
@@ -293,7 +293,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Po files
-(load-library "start-po")
+(autoload 'po-mode "start-po" "PO major mode" t)
 (setq auto-mode-alist (cons '("\\.po[tx]?\\'\\|\\.po\\." . po-mode) auto-mode-alist))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -612,7 +612,8 @@
   (setq load-path (cons (expand-file-name dir) load-path)))
 (require 'org)
 (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
-(load-file (concat custom-dir "org-customize.el"))
+(when (file-exists-p (concat custom-dir "org-customize.el"))
+  (load-file (concat custom-dir "org-customize.el")))
 
 (when (setq dir (get-dir "/gnuplot*"))
   (setq load-path (cons (expand-file-name dir) load-path))
@@ -778,6 +779,12 @@
           (top . 0) (left . 200) (width . 160) (height . 44)
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1")
           ;;(font . "-*-Inconsolata-*-*-*-*-18-*-*-*-m-0-iso10646-1")
+          )))
+    ;;
+    ((string= system-name "mkrasnyk-luxoft")
+     (setq default-frame-alist '(
+          (top . 0) (left . 80) (width . 224) (height . 58)
+          (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
           )))
     ;;
     (t (message (format "unknown host name %s" system-name)))))
