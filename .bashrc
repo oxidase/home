@@ -33,3 +33,6 @@ alias mv="mv -i"
 alias rm="rm -i"
 alias psx="ps -auxw | grep $1" 
 mkcd() { mkdir -p "$1" && cd "$1"; }
+
+### Added by the Heroku Toolbelt
+export PATH="/usr/local/heroku/bin:$PATH"

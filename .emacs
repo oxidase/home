@@ -48,6 +48,14 @@
 
 ;;}}}
 
+;; {{{ Setup ELPA repositories
+
+(require 'package)
+(add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
+(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/") t)
+
+;; }}}
+
 ;;{{{ Customization
 
 ;; Load customization information if it exists
@@ -92,7 +100,7 @@
 (setq undo-limit 20000000)
 (setq revert-without-query '(".*"))
 (transient-mark-mode 1)                              ;; When the mark is active, the region is highlighted.
-(setq inhibit-startup-message t)                     ;; Silent boot
+;(setq inhibit-startup-screen t)                     ;; Silent boot
 (setq initial-scratch-message nil)                   ;; Clear scratch buffer
 (setq initial-major-mode 'text-mode)                 ;; text mode is default
 (set-scroll-bar-mode 'right)                         ;; vertical scroll bars on the right side.
@@ -141,6 +149,11 @@
 ;;}}}
 
 ;;{{{ Load local packages
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Smooth scrolling
+(require 'smooth-scrolling)
+(setq smooth-scroll-margin 2)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Dired mode
@@ -315,6 +328,19 @@
   (message "Aspell not found."))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Javascript mode
+(when (setq dir (get-dir "/elpa/js2-mode*"))
+  (setq load-path (cons (expand-file-name dir) load-path))
+  (load-library "js2-mode"))
+
+(when (setq dir (get-dir "/elpa/skewer-mode*"))
+  (setq load-path (cons (expand-file-name dir) load-path))
+  (load-library "skewer-mode")
+  (add-hook 'js2-mode-hook 'skewer-mode)
+  (add-hook 'css-mode-hook 'skewer-css-mode)
+  (add-hook 'html-mode-hook 'skewer-html-mode))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C and C++ modes
 (require 'hide-comnt)
 (require 'cc-langs)
@@ -401,7 +427,7 @@
        ((eq major-mode 'python-mode)
         (setf run-command (format "python %s" (buffer-file-name))))
        ((eq major-mode 'qml-mode)
-        (setf run-command (format "qmlviewer %s &" (buffer-file-name)))
+        (setf run-command (format "qmlscene %s &" (buffer-file-name)))
         (local-set-key '[S-f5]  (lambda () (interactive) (save-window-excursion (shell-command run-command)))))
        (t (setf run-command (format "./%s" (file-name-sans-extension (buffer-name))))))
       (put 'run-command 'safe-local-variable 'run-command-safe-variable)
@@ -629,6 +655,15 @@
   (require 'scrum))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; MMM mode
+(when (setq dir (get-dir "/mmm-mode"))
+  (setq load-path (cons (expand-file-name dir) load-path))
+  (require 'mmm-auto)
+
+  (setq mmm-global-mode 'maybe)
+  (mmm-add-mode-ext-class 'html-mode "\\.php\\'" 'html-php))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C-[S]-Tab cycle buffer
 (autoload `cyclebuffer-forward "cyclebuffer" "cycle forward" t)
 (autoload `cyclebuffer-backward "cyclebuffer" "cycle backward" t)
@@ -702,6 +737,7 @@
          ("\\.m4\\'" . m4-mode)
          ("\\.mc\\'" . m4-mode)
          ("\\.sql$" . sql-mode)
+         ("\\.js\\'" . js2-mode)
          ("Jamfile.v2" . jam-mode) 
          ("\\.jam$" . jam-mode)
          ("\\.s?html$" . sgml-mode)
