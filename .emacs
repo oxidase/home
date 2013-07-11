@@ -19,14 +19,14 @@
 ;;{{{ load-path setup
 
 (defun get-dir (name)
-  (car (remove-if-not #'file-accessible-directory-p (file-expand-wildcards (concat custom-dir name)))))
+  (car (remove-if-not #'file-accessible-directory-p (append (file-expand-wildcards (concat custom-dir name))
+                                                                              (file-expand-wildcards (concat custom-dir "*/" name))))))
 
 ;; Store customization information in file specific for emacs version
 (setq custom-dir (expand-file-name "~/.emacs.d/"))
 (setq custom-file (concat custom-dir "custom." emacs-flavor ".el"))
 (progn (cd custom-dir) (normal-top-level-add-subdirs-to-load-path))
 (setq recentf-save-file (concat custom-dir "/.recentf"))
-(setq auctex-dir (get-dir "/auctex*"))
 (setq preview-dir (get-dir "/auctex*/preview"))
 (setq cedet-dir (get-dir "/cedet-*"))
 (setq python-dir (get-dir "/python-mode*"))
@@ -38,7 +38,7 @@
 ;; append custom pathes
 (add-to-list 'load-path custom-dir)
 (if python-dir (add-to-list 'load-path python-dir))
-(setq load-path (append (list auctex-dir preview-dir git-dir ects-dir ruby-dir feature-dir) load-path))
+(setq load-path (append (list preview-dir git-dir ects-dir ruby-dir feature-dir) load-path))
 (add-to-list 'load-path "/scratch/miha/local/share/emacs/site-lisp")
 
 
@@ -114,7 +114,7 @@
 (setq ring-bell-function 'ignore)                    ;; Turn the alarm totally off
 (standard-display-8bit 128 255)                      ;; Do not expand unprintable characters to their octal values.
 (setq fortran-comment-region "C MKR")                ;; Fortran comments prefix.
-(setq-default tab-width 2)                           ;; Set Tab-Width.
+(setq-default tab-width 4)                           ;; Set Tab-Width.
 (line-number-mode 1)                                 ;; Show line-number in the mode line.
 (column-number-mode 1)                               ;; Show column-number in the mode line.
 (fset 'yes-or-no-p 'y-or-n-p)                        ;; Will allow you to type just "y" instead of "yes".
@@ -273,6 +273,11 @@
     (interactive)
     (insert (shell-command-to-string "find . -executable -type f"))))
 
+(when (setq dir (get-dir "magit*"))
+  (setq load-path (cons dir load-path))
+  (require 'magit)
+  (require 'magit-blame))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Featrue mode
 (when feature-dir
@@ -329,12 +334,12 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Javascript mode
-(when (setq dir (get-dir "/elpa/js2-mode*"))
-  (setq load-path (cons (expand-file-name dir) load-path))
-  (load-library "js2-mode"))
+(when (setq dir (get-dir "js3-mode*"))
+  (setq load-path (cons dir load-path))
+  (autoload 'js3-mode "js3" nil t))
 
-(when (setq dir (get-dir "/elpa/skewer-mode*"))
-  (setq load-path (cons (expand-file-name dir) load-path))
+(when (setq dir (get-dir "skewer-mode*"))
+  (setq load-path (cons dir load-path))
   (load-library "skewer-mode")
   (add-hook 'js2-mode-hook 'skewer-mode)
   (add-hook 'css-mode-hook 'skewer-css-mode)
@@ -407,6 +412,7 @@
         (add-to-list 'mode-line-format (concat (getenv "WM_COMPILE_OPTION") " ")))
 
       ;; compiler command, depends on the major-mode
+      (local-set-key "\C-c\C-c"  'compile)
       (make-variable-buffer-local 'compile-command)
       (setq compile-command
          (cond
@@ -415,6 +421,7 @@
             ((string-equal ext "nxc") "nbc %f -O=%n.rxe; nxt_push %n.rxe")
             (t "g++ -Wall -std=c++11 -O0 -g %f -o %n")))
           ((eq major-mode 'fortran-mode) "g77 -g %f -o %n")
+          ((eq major-mode 'qt-pro-mode) "qmake && make")
           ((eq major-mode 'makefile-gmake-mode) "make")
           ((eq major-mode 'jam-mode) "bjam -d2")
           (t "make")))
@@ -451,7 +458,8 @@
       (local-set-key "\C-c'" 'fortran-comment-region))
     
     (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode) (eq major-mode 'compilation-mode)
-              (eq major-mode 'jam-mode) (eq major-mode 'makefile-gmake-mode) (eq major-mode 'python-mode))
+              (eq major-mode 'jam-mode) (eq major-mode 'makefile-gmake-mode) (eq major-mode 'python-mode)
+              (eq major-mode 'qt-pro-mode))
       ;; compile keys
       (local-set-key '[f8]   'next-error)
       (local-set-key '[S-f8] 'previous-error)
@@ -489,15 +497,21 @@
   (kill-buffer gud-comint-buffer)
   (loop for b in '(breakpoints threads memory disassembly stack locals registers update current-context)
         do (kill-buffer (funcall (intern (concatenate 'string "gdb-" (symbol-name b) "-buffer-name"))))))
-;; (defadvice gdb (before before-gdb (command-line) activate)
-;;   "Kill gdb buffers before start new gdb"
-;;   ;(gdb-kill-buffers)
-;;   )
 
 ;; Qt stuff
+(require 'qt-pro)
 (c-add-style "qt-gnu" '("gnu" 
-    (c-access-key . "\\(signals\\|public\\|protected\\|private\\|public slots\\|protected slots\\|private slots\\):")
+    (c-access-key . "^\\(public\\|protected\\|private\\|signals\\|public slots\\|protected slots\\|private slots\\):")
     (c-basic-offset . 4)))
+;; make new font for rest of qt keywords
+(make-face 'qt-keywords-face)
+(set-face-foreground 'qt-keywords-face "midnight blue")
+;; qt keywords
+(font-lock-add-keywords 'c++-mode '(("\\<Q_OBJECT\\>" . 'qt-keywords-face)
+                                    ("\\<SIGNAL\\|SLOT\\>" . 'qt-keywords-face) 
+                                    ("\\<Q_[A-Z][_A-Za-z]*" . 'qt-keywords-face)
+                                    ("\\<foreach\\>" . 'qt-keywords-face)))
+(setq c-default-style "qt-gnu")
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -535,12 +549,13 @@
        jam-mode-hook development-mode-hook
        makefile-gmake-mode-hook development-mode-hook
        qml-mode-hook development-mode-hook
+       qt-pro-mode-hook development-mode-hook
        gud-mode-hook development-mode-hook)
 (add-hook 'python-mode-hook development-mode-hook)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AucTeX
-(when (and (> emacs-major-version 22) (or auctex-dir running-on-windows))
+(when (setq dir (get-dir "auctex"))
   (load "preview-latex.el" nil t t)
   (setq preview-default-document-pt 12)
   ;;  TeX-style-path
@@ -635,29 +650,29 @@
 ;; Org mode
 (when (> emacs-major-version 21)
 (when (setq dir (get-dir "/org*/lisp"))
-  (setq load-path (cons (expand-file-name dir) load-path)))
+  (setq load-path (cons dir load-path)))
 (require 'org)
 (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
 (when (file-exists-p (concat custom-dir "org-customize.el"))
   (load-file (concat custom-dir "org-customize.el")))
 
 (when (setq dir (get-dir "/gnuplot*"))
-  (setq load-path (cons (expand-file-name dir) load-path))
+  (setq load-path (cons dir load-path))
   (autoload 'gnuplot-mode "gnuplot" "gnuplot major mode" t)
   (autoload 'gnuplot-make-buffer "gnuplot" "open a buffer in gnuplot-mode" t))
 
 (when (setq dir (get-dir "/ESS/lisp"))
-  (setq load-path (cons (expand-file-name dir) load-path))
+  (setq load-path (cons dir load-path))
   (require 'ess-site)))
 
 (when (setq dir (get-dir "/scrum"))
-  (setq load-path (cons (expand-file-name dir) load-path))
+  (setq load-path (cons dir load-path))
   (require 'scrum))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MMM mode
 (when (setq dir (get-dir "/mmm-mode"))
-  (setq load-path (cons (expand-file-name dir) load-path))
+  (setq load-path (cons dir load-path))
   (require 'mmm-auto)
 
   (setq mmm-global-mode 'maybe)
@@ -710,6 +725,7 @@
          ("\\.C$" . c++-mode)
          ("\\.H$" . c++-mode)
          ("\\.nxc$" . c++-mode)
+         ("\\.pro$" . qt-pro-mode)
          ("\\.dps$" . pascal-mode)
          ("\\.qml$" . qml-mode)
          ("\\.pro$" . text-mode)
@@ -737,7 +753,7 @@
          ("\\.m4\\'" . m4-mode)
          ("\\.mc\\'" . m4-mode)
          ("\\.sql$" . sql-mode)
-         ("\\.js\\'" . js2-mode)
+         ("\\.js\\'" . js3-mode)
          ("Jamfile.v2" . jam-mode) 
          ("\\.jam$" . jam-mode)
          ("\\.s?html$" . sgml-mode)
@@ -966,6 +982,27 @@
   (delete-matching-lines "^[ \t\n]*$" (point-min) (point-max)))
 
 ;;;}}}
+
+
+;; {{{ Calculator
+
+(require 'calc-ext)
+(setq calc-language 'c)
+
+;; usefull mini calculator
+(defun mini-calc (expr &optional arg)
+  "Calculate expression
+
+If ARG is given, then insert the result to current-buffer"
+  (interactive
+   (list (read-from-minibuffer "Enter expression: ")
+	 current-prefix-arg))
+
+  (let ((result (calc-eval expr)))
+    (if arg
+	(insert result)
+      (message (format "Result: [%s] = %s" expr result)))))
+(global-set-key (kbd "C-=") 'mini-calc)
 
 ;; {{{ Customization
 
