@@ -18,29 +18,20 @@
 
 ;;{{{ load-path setup
 
-(defun get-dir (name)
-  (car (remove-if-not #'file-accessible-directory-p (append (file-expand-wildcards (concat custom-dir name))
-                                                                              (file-expand-wildcards (concat custom-dir "*/" name))))))
+(defun package-dir (name)
+  (let* ((dir1 (file-expand-wildcards (concat custom-dir name)))
+         (dir2 (file-expand-wildcards (concat custom-dir "*/" name)))
+         (dirs (remove-if-not #'file-accessible-directory-p (append dir1 dir2)))
+         (dirp (car dirs)))
+    (message "Checking for %s pacakge: %s" name (if dirp dirp "not found"))
+    (when dirp (add-to-list 'load-path dirp))
+    dirp))
 
 ;; Store customization information in file specific for emacs version
 (setq custom-dir (expand-file-name "~/.emacs.d/"))
-(setq custom-file (concat custom-dir "custom." emacs-flavor ".el"))
-(progn (cd custom-dir) (normal-top-level-add-subdirs-to-load-path))
-(setq recentf-save-file (concat custom-dir "/.recentf"))
-(setq preview-dir (get-dir "/auctex*/preview"))
-(setq cedet-dir (get-dir "/cedet-*"))
-(setq python-dir (get-dir "/python-mode*"))
-(setq ruby-dir (get-dir "/ruby-mode*"))
-(setq git-dir (get-dir "/git-*"))
-(setq feature-dir (get-dir "/cucumber.el/feature-*"))
-(setq ects-dir (get-dir "/emacs-color-theme-solarized*"))
-
-;; append custom pathes
 (add-to-list 'load-path custom-dir)
-(if python-dir (add-to-list 'load-path python-dir))
-(setq load-path (append (list preview-dir git-dir ects-dir ruby-dir feature-dir) load-path))
-(add-to-list 'load-path "/scratch/miha/local/share/emacs/site-lisp")
-
+(setq custom-file (concat custom-dir "custom." emacs-flavor ".el"))
+(setq recentf-save-file (concat custom-dir "/.recentf"))
 
 ;; relocate other files so we don't clutter $HOME
 (setq save-place-file (concat custom-dir "/save-places"))
@@ -51,6 +42,7 @@
 ;; {{{ Setup ELPA repositories
 
 (require 'package)
+(add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
 (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
 (add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/") t)
 
@@ -225,7 +217,7 @@
 (define-key dired-mode-map (read-kbd-macro "<f8>") 'dired-do-delete)
 
 ; use openwith minor mode
-(when (>= emacs-major-version 23)
+(when (package-dir "openwith*")
   (require 'openwith)
   (openwith-mode t)
   (setq openwith-associations
@@ -239,50 +231,43 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Translator (google)
-(when (> emacs-major-version 21)
-(require 'google-translate)
-(global-set-key "\C-xt" 
-   (lambda ()
-     (interactive)
-     (let ((bnd (bounds-of-thing-at-point 'word))
-           ;; TODO: add customization (C-u)
-           (src google-translate-default-source-language)
-           (dst google-translate-default-target-language)
-           beg end)
-       (cond 
-        (mark-active (setq beg (region-beginning) end (region-end)))
-        (bnd (setq beg (car bnd) end (cdr bnd))))
-      (when (and beg end)
-        (goto-char end)
-        (setq orig (buffer-substring-no-properties beg end))
-        (setq str orig)
-        ;; remove TeX comamnds
-        (setq str (replace-regexp-in-string "\\\\[a-zA-Z]+\\({[a-zA-Z]+}\\)?" "" str))
-        (setq str (replace-regexp-in-string "[{}]" "" str))
-        (insert (format "\n%s\n" (google-translate-translate-text src dst str)))))))
-(setq google-translate-default-source-language "en")
-(setq google-translate-default-target-language "ru"))
+(when (package-dir "google-translate*")
+  (require 'google-translate)
+  (global-set-key "\C-xt" 
+     (lambda ()
+       (interactive)
+       (let ((bnd (bounds-of-thing-at-point 'word))
+             ;; TODO: add customization (C-u)
+             (src google-translate-default-source-language)
+             (dst google-translate-default-target-language)
+             beg end)
+         (cond 
+          (mark-active (setq beg (region-beginning) end (region-end)))
+          (bnd (setq beg (car bnd) end (cdr bnd))))
+         (when (and beg end)
+           (goto-char end)
+           (setq orig (buffer-substring-no-properties beg end))
+           (setq str orig)
+           ;; remove TeX comamnds
+           (setq str (replace-regexp-in-string "\\\\[a-zA-Z]+\\({[a-zA-Z]+}\\)?" "" str))
+           (setq str (replace-regexp-in-string "[{}]" "" str))
+           (insert (format "\n%s\n" (google-translate-translate-text src dst str)))))))
+  (setq google-translate-default-source-language "en")
+  (setq google-translate-default-target-language "ru"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Git mode
-(when git-dir
-  (require 'git-emacs)
-  (require 'git-status)
-  (global-set-key "\C-xgs" 'git-status)
-  (defun insert-find-executable()
-    (interactive)
-    (insert (shell-command-to-string "find . -executable -type f"))))
+(when (package-dir "git-blame*")
+  (autoload 'git-blame-mode "git-blame"
+    "Minor mode for incremental blame for Git." t))
 
-(when (setq dir (get-dir "magit*"))
-  (setq load-path (cons dir load-path))
+(when (package-dir "git-blame*")
+  (autoload 'git-blame-mode "git-blame"
+    "Minor mode for incremental blame for Git." t))
+
+(when (package-dir "magit*")
   (require 'magit)
   (require 'magit-blame))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Featrue mode
-(when feature-dir
-  (require 'feature-mode)
-  (add-to-list 'auto-mode-alist '("\\.feature$" . feature-mode)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Matlab mode
@@ -303,11 +288,12 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Visible bookmarks in buffer.
-(require 'bm)
-;; M$ Visual Studio key setup.
-(global-set-key (kbd "<C-f2>") 'bm-toggle)
-(global-set-key (kbd "<f2>")   'bm-next)
-(global-set-key (kbd "<S-f2>") 'bm-previous)
+(when (package-dir "bm-*")
+  (require 'bm)
+  ;; M$ Visual Studio key setup.
+  (global-set-key (kbd "<C-f2>") 'bm-toggle)
+  (global-set-key (kbd "<f2>")   'bm-next)
+  (global-set-key (kbd "<S-f2>") 'bm-previous))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Po files
@@ -316,8 +302,9 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Subversion mode
-(require 'psvn)
-(setf svn-status-hide-unmodified t)
+(when (package-dir "psvn-*")
+  (require 'psvn)
+  (setf svn-status-hide-unmodified t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; setup spell checker
@@ -334,12 +321,10 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Javascript mode
-(when (setq dir (get-dir "js3-mode*"))
-  (setq load-path (cons dir load-path))
+(when (package-dir "js3-mode*")
   (autoload 'js3-mode "js3" nil t))
 
-(when (setq dir (get-dir "skewer-mode*"))
-  (setq load-path (cons dir load-path))
+(when (package-dir "skewer-mode*")
   (load-library "skewer-mode")
   (add-hook 'js2-mode-hook 'skewer-mode)
   (add-hook 'css-mode-hook 'skewer-css-mode)
@@ -516,7 +501,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
-(when python-dir
+(when (package-dir "python*")
   (setq py-install-directory python-dir)
   (require 'python-mode)
   (setq py-load-pymacs-p t))
@@ -555,7 +540,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AucTeX
-(when (setq dir (get-dir "auctex"))
+(when (package-dir "auctex*")
   (load "preview-latex.el" nil t t)
   (setq preview-default-document-pt 12)
   ;;  TeX-style-path
@@ -648,33 +633,26 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Org mode
-(when (> emacs-major-version 21)
-(when (setq dir (get-dir "/org*/lisp"))
-  (setq load-path (cons dir load-path)))
+(package-dir "/org*/lisp")
 (require 'org)
 (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
 (when (file-exists-p (concat custom-dir "org-customize.el"))
   (load-file (concat custom-dir "org-customize.el")))
 
-(when (setq dir (get-dir "/gnuplot*"))
-  (setq load-path (cons dir load-path))
+(when (package-dir "/gnuplot*")
   (autoload 'gnuplot-mode "gnuplot" "gnuplot major mode" t)
   (autoload 'gnuplot-make-buffer "gnuplot" "open a buffer in gnuplot-mode" t))
 
-(when (setq dir (get-dir "/ESS/lisp"))
-  (setq load-path (cons dir load-path))
-  (require 'ess-site)))
+(when (package-dir "/ESS/lisp")
+  (require 'ess-site))
 
-(when (setq dir (get-dir "/scrum"))
-  (setq load-path (cons dir load-path))
+(when (package-dir "/scrum")
   (require 'scrum))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MMM mode
-(when (setq dir (get-dir "/mmm-mode"))
-  (setq load-path (cons dir load-path))
+(when (package-dir "/mmm-mode")
   (require 'mmm-auto)
-
   (setq mmm-global-mode 'maybe)
   (mmm-add-mode-ext-class 'html-mode "\\.php\\'" 'html-php))
 
@@ -1051,4 +1029,3 @@ If ARG is given, then insert the result to current-buffer"
   (insert (shell-command-to-string "find . -executable -type f")))
 
 ;; }}}
-

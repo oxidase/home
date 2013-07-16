@@ -346,7 +346,7 @@ The null input is equivalent to \"Detect language\"."
 
 The input is guaranteed to be non-null."
   (let ((completion-ignore-case t))
-    (flet ((read-language ()
+    (cl-flet ((read-language ()
              (google-translate-completing-read
               prompt
               google-translate-supported-languages)))
