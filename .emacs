@@ -42,6 +42,7 @@
 ;; {{{ Setup ELPA repositories
 
 (require 'package)
+(add-to-list 'package-archives '("ELPA" . "http://tromey.com/elpa/") t)
 (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
 (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
 (add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/") t)
@@ -144,8 +145,9 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Smooth scrolling
-(require 'smooth-scrolling)
-(setq smooth-scroll-margin 2)
+(when (package-dir "smooth-scrolling*")
+  (require 'smooth-scrolling)
+  (setq smooth-scroll-margin 2))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Dired mode
@@ -200,22 +202,24 @@
     (mark-filename dired-re-exe dired-exe-file))))
 
 ;; use a single buffer for dired mode
-(require 'dired-single)
-(defun my-dired-init ()
-  "Bunch of stuff to run for dired, either immediately or when it'sloaded."
-  (require 'dired-sort-menu)
-  (setq mouse-1-click-follows-link 200)
-  (defun my-dired-single-buffer ()
-    (interactive)
-    (let ((name (dired-get-filename nil t)))
-      (cond ((file-accessible-directory-p name) (joc-dired-single-buffer name))
-            (t (joc-dired-single-buffer)))))
-  (define-key dired-mode-map [return] 'my-dired-single-buffer)
-  (define-key dired-mode-map [mouse-1] 'my-dired-single-buffer)
-  (define-key dired-mode-map (read-kbd-macro "<backspace>") (function (lambda nil (interactive) (joc-dired-single-buffer "..")))))
-(if (boundp 'dired-mode-map) (my-dired-init) (add-hook 'dired-load-hook 'my-dired-init))
-(define-key dired-mode-map (read-kbd-macro "<f8>") 'dired-do-delete)
-
+(when (package-dir "dired-single*")
+  (require 'dired-single)
+  (defun my-dired-init ()
+    "Bunch of stuff to run for dired, either immediately or when it'sloaded."
+    (require 'dired-sort-menu)
+    (setq mouse-1-click-follows-link 200)
+    ;; TODO: add call stack
+    (defun my-dired-single-buffer ()
+      (interactive)
+      (let ((name (dired-get-filename nil t)))
+        (cond ((file-accessible-directory-p name) (dired-single-buffer name))
+              (t (dired-single-buffer)))))
+    (define-key dired-mode-map [return] 'my-dired-single-buffer)
+    (define-key dired-mode-map [mouse-1] 'my-dired-single-buffer)
+    (define-key dired-mode-map (read-kbd-macro "<backspace>") (function (lambda nil (interactive) (dired-single-buffer "..")))))
+  (if (boundp 'dired-mode-map) (my-dired-init) (add-hook 'dired-load-hook 'my-dired-init))
+  (define-key dired-mode-map (read-kbd-macro "<f8>") 'dired-do-delete))
+  
 ; use openwith minor mode
 (when (package-dir "openwith*")
   (require 'openwith)
@@ -251,16 +255,12 @@
            ;; remove TeX comamnds
            (setq str (replace-regexp-in-string "\\\\[a-zA-Z]+\\({[a-zA-Z]+}\\)?" "" str))
            (setq str (replace-regexp-in-string "[{}]" "" str))
-           (insert (format "\n%s\n" (google-translate-translate-text src dst str)))))))
+           (insert (format "\n%s\n" (google-translate-translate src dst str)))))))
   (setq google-translate-default-source-language "en")
   (setq google-translate-default-target-language "ru"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Git mode
-(when (package-dir "git-blame*")
-  (autoload 'git-blame-mode "git-blame"
-    "Minor mode for incremental blame for Git." t))
-
 (when (package-dir "git-blame*")
   (autoload 'git-blame-mode "git-blame"
     "Minor mode for incremental blame for Git." t))
@@ -330,16 +330,28 @@
   (add-hook 'css-mode-hook 'skewer-css-mode)
   (add-hook 'html-mode-hook 'skewer-html-mode))
 
+(when (package-dir "qml-mode*")
+  (require 'qml-mode)
+  (defvar qml-mode-syntax-table
+    (let ((qml-mode-syntax-table (make-syntax-table)))
+    ; Comment styles are same as C++
+      (modify-syntax-entry ?/ ". 124b" qml-mode-syntax-table)
+      (modify-syntax-entry ?* ". 23" qml-mode-syntax-table)
+      (modify-syntax-entry ?\n "> b" qml-mode-syntax-table)
+      (modify-syntax-entry ?' "\"" qml-mode-syntax-table)
+      qml-mode-syntax-table)
+    "Syntax table for qml-mode")
+  (add-hook 'qml-mode-hook (lambda () (set-syntax-table qml-mode-syntax-table))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C and C++ modes
-(require 'hide-comnt)
 (require 'cc-langs)
 (require 'cc-mode)
 (require 'jam-mode)
 (require 'cmake-mode)
 (require 'gud)
 (require 'gdb-mi)
-(require 'qml-mode)
+
 
 (setq gud-tooltip-mode t)
 
@@ -550,7 +562,6 @@
   (require 'tex-site)
   (require 'latex)
   (require 'font-latex)
-  (require 'okular-search)
   (setq TeX-command-default "XeLaTeX")
   (setq TeX-auto-save t)
   (setq TeX-parse-self t)
@@ -959,8 +970,7 @@
   (replace-regexp "^.*doi[ \t\n]*=.*$" "" nil (point-min) (point-max))
   (delete-matching-lines "^[ \t\n]*$" (point-min) (point-max)))
 
-;;;}}}
-
+;; }}}
 
 ;; {{{ Calculator
 
@@ -973,14 +983,19 @@
 
 If ARG is given, then insert the result to current-buffer"
   (interactive
-   (list (read-from-minibuffer "Enter expression: ")
+   (list (read-from-minibuffer "Enter expression: "
+                               (if (region-active-p)
+                                   (buffer-substring-no-properties (region-beginning) (region-end))
+                                 (thing-at-point 'word)))
 	 current-prefix-arg))
 
   (let ((result (calc-eval expr)))
     (if arg
 	(insert result)
       (message (format "Result: [%s] = %s" expr result)))))
-(global-set-key (kbd "C-=") 'mini-calc)
+(global-set-key [(control return)]  'mini-calc)
+
+;; }}}
 
 ;; {{{ Customization
 
