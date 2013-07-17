@@ -49,8 +49,8 @@
 (package-initialize)
 
 ;; Guarantee all packages are installed on start
-(defvar packages-list '(bm dired-single git-blame google-translate js3-mode
-                           magit openwith qml-mode smooth-scrolling mew w3m)
+(defvar packages-list '(auctex bm dired-single git-blame google-translate js3-mode
+                        magit openwith qml-mode smooth-scrolling mew w3m)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -141,8 +141,13 @@
 (setq grep-command "grep -nHriI -e ")
 (if (not (assq 'user-size initial-frame-alist))      ;; Unless we've specified a number of lines, prevent the startup code from
     (setq tool-bar-originally-present nil))          ;; shrinking the frame because we got rid of the tool-bar. 
+
+;; ediff 
 (setq ediff-window-setup-function 'ediff-setup-windows-plain)
-(setq calendar-week-start-day 1)
+(setq ediff-split-window-function 'split-window-horizontally)
+(defadvice ediff-quit (around advice-ediff-quit activate)
+      (flet ((yes-or-no-p (&rest args) t) (y-or-n-p (&rest args) t))
+        ad-do-it))
 
 ;; Place Backup Files in Specific Directory
 (setq make-backup-files t)                           ;; Enable backup files.
@@ -369,16 +374,7 @@
 
 (when (package-dir "qml-mode*")
   (require 'qml-mode)
-  (defvar qml-mode-syntax-table
-    (let ((qml-mode-syntax-table (make-syntax-table)))
-    ; Comment styles are same as C++
-      (modify-syntax-entry ?/ ". 124b" qml-mode-syntax-table)
-      (modify-syntax-entry ?* ". 23" qml-mode-syntax-table)
-      (modify-syntax-entry ?\n "> b" qml-mode-syntax-table)
-      (modify-syntax-entry ?' "\"" qml-mode-syntax-table)
-      qml-mode-syntax-table)
-    "Syntax table for qml-mode")
-  (add-hook 'qml-mode-hook (lambda () (set-syntax-table qml-mode-syntax-table))))
+  (add-hook 'qml-mode-hook (lambda () (print 'ok) (modify-syntax-entry ?' "|"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C and C++ modes
@@ -388,7 +384,6 @@
 (require 'cmake-mode)
 (require 'gud)
 (require 'gdb-mi)
-
 
 (setq gud-tooltip-mode t)
 
@@ -577,15 +572,9 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; set hooks
-(setq  c-mode-hook development-mode-hook
-       c++-mode-hook development-mode-hook
-       fortran-mode-hook development-mode-hook
-       jam-mode-hook development-mode-hook
-       makefile-gmake-mode-hook development-mode-hook
-       qml-mode-hook development-mode-hook
-       qt-pro-mode-hook development-mode-hook
-       gud-mode-hook development-mode-hook)
-(add-hook 'python-mode-hook development-mode-hook)
+(loop for mode in '(c-mode-hook c++-mode-hook fortran-mode-hook jam-mode-hook 
+                    qt-pro-mode-hook gud-mode-hook qml-mode-hook python-mode-hook)
+      do (add-hook mode development-mode-hook))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AucTeX
