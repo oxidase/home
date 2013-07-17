@@ -47,6 +47,7 @@
 (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
 (add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/") t)
 
+;; TODO:
 ;; ;; Guarantee all packages are installed on start
 ;; (defvar packages-list '(bm dired-single git-blame google-translate js3-mode
 ;;                            magit openwith psvn qml-mode smooth-scrolling)
@@ -321,9 +322,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Subversion mode
-(when (package-dir "psvn-*")
-  (require 'psvn)
-  (setf svn-status-hide-unmodified t))
+(require 'psvn)
+(setf svn-status-hide-unmodified t)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; setup spell checker
