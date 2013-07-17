@@ -46,26 +46,25 @@
 (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
 (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
 (add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/") t)
+(package-initialize)
 
-;; TODO:
-;; ;; Guarantee all packages are installed on start
-;; (defvar packages-list '(bm dired-single git-blame google-translate js3-mode
-;;                            magit openwith psvn qml-mode smooth-scrolling)
-;;   "List of packages needs to be installed at launch")
-
-;; (defun has-package-not-installed ()
-;;   (loop for p in packages-list
-;;         when (not (package-installed-p p)) do (return t)
-;;         finally (return nil)))
-;; (when (has-package-not-installed)
-;;   ;; Check for new packages (package versions)
-;;   (message "%s" "Get latest versions of all packages...")
-;;   (package-refresh-contents)
-;;   (message "%s" " done.")
-;;   ;; Install the missing packages
-;;   (dolist (p packages-list)
-;;     (when (not (package-installed-p p))
-;;       (package-install p))))
+;; Guarantee all packages are installed on start
+(defvar packages-list '(bm dired-single git-blame google-translate js3-mode
+                           magit openwith qml-mode smooth-scrolling mew w3m)
+  "List of packages needs to be installed at launch")
+(defun has-package-not-installed ()
+   (loop for p in packages-list
+         when (not (package-installed-p p)) do (return t)
+         finally (return nil)))
+(when (has-package-not-installed)
+  ;; Check for new packages (package versions)
+  (message "%s" "Get latest versions of all packages...")
+  (package-refresh-contents)
+  (message "%s" " done.")
+  ;; Install the missing packages
+  (dolist (p packages-list)
+    (when (not (package-installed-p p))
+      (package-install p))))
 
 ;; }}}
 
@@ -229,14 +228,34 @@
     (require 'dired-sort-menu)
     (setq mouse-1-click-follows-link 200)
     ;; TODO: add call stack
-    (defun my-dired-single-buffer ()
+    (add-hook 'before-change-major-mode-hook
+              '(lambda () (when (eq major-mode 'dired-mode) 
+                            (print 'aaa)
+                            (print (previous-buffer))
+                            (make-local-variable 'dired-stack)
+                            (setq dired-stack '('hello)))))
+    ;; global stack works, but local stack can not be saved
+    (defvar dired-single-stack '())
+    (defun dired-single-buffer-down ()
       (interactive)
       (let ((name (dired-get-filename nil t)))
-        (cond ((file-accessible-directory-p name) (dired-single-buffer name))
-              (t (dired-single-buffer)))))
-    (define-key dired-mode-map [return] 'my-dired-single-buffer)
-    (define-key dired-mode-map [mouse-1] 'my-dired-single-buffer)
-    (define-key dired-mode-map (read-kbd-macro "<backspace>") (function (lambda nil (interactive) (dired-single-buffer "..")))))
+        (cond 
+         ((file-accessible-directory-p name) 
+          (push (file-name-nondirectory name) dired-single-stack) 
+          (dired-single-buffer name))
+         (t (dired-single-buffer)))))
+    (defun dired-single-buffer-up ()
+      (interactive)
+      (let ((name (pop dired-single-stack)) pos)
+        (dired-single-buffer "..")
+        (when name
+          (setq pos (search-forward-regexp (concat name "$") nil t))
+          (if pos 
+              (goto-char (- pos (length name))) 
+            (setq dired-single-stack '())))))
+    (define-key dired-mode-map [return] 'dired-single-buffer-down)
+    (define-key dired-mode-map [mouse-1] 'dired-single-buffer-down)
+    (define-key dired-mode-map (read-kbd-macro "<backspace>") 'dired-single-buffer-up))
   (if (boundp 'dired-mode-map) (my-dired-init) (add-hook 'dired-load-hook 'my-dired-init))
   (define-key dired-mode-map (read-kbd-macro "<f8>") 'dired-do-delete))
   
@@ -261,7 +280,6 @@
      (lambda ()
        (interactive)
        (let ((bnd (bounds-of-thing-at-point 'word))
-             ;; TODO: add customization (C-u)
              (src google-translate-default-source-language)
              (dst google-translate-default-target-language)
              beg end)
@@ -702,11 +720,14 @@
 (defun custom-help () 
   (interactive) 
   (cond 
+   ;; emacs lisp help
    ((or (eq major-mode 'lisp-mode) (eq major-mode 'emacs-lisp-mode))
     (let ((var (variable-at-point)))
-      (if (eq var 0)
-          (describe-function (function-called-at-point))
-        (describe-variable var))))
+      (if (eq var 0) (describe-function (function-called-at-point)) (describe-variable var))))
+   ;; Qt help on a web page
+   ((and (eq major-mode 'c++-mode) (string= (substring (current-word) 0 1) "Q"))
+    (w3m-goto-url (concat "http://qt-project.org/doc/qt-4.8/" (current-word) ".html")))
+   ;; try to find a man page
    (t (when (> (length (current-word)) 1) (woman (current-word))))))
 (global-set-key [f1] 'custom-help)
 
