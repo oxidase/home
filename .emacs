@@ -50,7 +50,8 @@
 
 ;; Guarantee all packages are installed on start
 (defvar packages-list '(auctex bm dired-single git-blame google-translate js3-mode
-                        magit openwith qml-mode smooth-scrolling mew w3m)
+                        magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
+                        auto-complete yasnippet cedet)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -271,11 +272,40 @@
   (setq openwith-associations
       '(("[^_]?\\.\\(ps\\|pdf\\|djvu\\)\\'" "okular" (file))
         ("\\.\\(docx?\\|ppt\\|rtf\\|xlsx?\\)\\'" "libreoffice" (file))
+        ("\\.\\(ai\\)\\'" "inkscape" (file))
         ("\\.\\(?:mpe?g\\|avi\\|wmv\\|mp4\\)\\'" "smplayer" (file)))))
 
 ;;; Shell mode
 (setq ansi-color-names-vector ["black" "red4" "green4" "yellow4" "blue3" "magenta4" "cyan4" "white"])
 (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Auto Complete Mode 
+(semantic-mode 1)
+(require 'semantic/complete)
+(require 'semantic)
+(require 'semantic/ia)
+(require 'semantic/bovine/c)
+(require 'semantic/bovine/gcc)
+(setq qt-include-directory "/usr/include/qt4")
+(semantic-add-system-include qt-include-directory 'c++-mode)
+(add-to-list 'auto-mode-alist (cons qt-include-directory 'c++-mode))
+(dolist (file (list "QtCore/qconfig.h" "QtCore/qconfig-dist.h" "QtCore/qconfig-large.h"
+                     "QtCore/qconfig-medium.h" "QtCore/qconfig-minimal.h" "QtCore/qconfig-small.h"
+                     "QtCore/qglobal.h"))
+   (add-to-list 'semantic-lex-c-preprocessor-symbol-file (expand-file-name file qt-include-directory)))
+(defun my-cedet-hook ()
+  (local-set-key [(control return)] 'semantic-ia-complete-symbol)
+  (local-set-key "\C-c?" 'semantic-ia-complete-symbol)
+  (local-set-key "\C-c>" 'semantic-complete-analyze-inline)
+  (local-set-key "\C-cp" 'semantic-analyze-proto-impl-toggle))
+(add-hook 'c-mode-common-hook 'my-cedet-hook)
+
+(when (package-dir "auto-complete*")
+  (require 'auto-complete)
+  (require 'auto-complete-config)
+  (ac-config-default))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Translator (google)
@@ -329,6 +359,16 @@
 (require 'tramp) 
 (setq tramp-default-method "ssh")
 
+(global-set-key "\C-c\C-t" (lambda () (interactive) (flet ((yes-or-no-p (&rest args) t) (y-or-n-p (&rest args) t)) (kill-matching-buffers "^\\*tramp"))))
+
+(when (package-dir "magit-tramp*")
+  (require 'magit-tramp))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Gentoo ebuild mode
+(when (package-dir "ebuild-mode*")
+  (require 'ebuild-mode))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Visible bookmarks in buffer.
 (when (package-dir "bm-*")
@@ -364,7 +404,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Javascript mode
 (when (package-dir "js3-mode*")
-  (autoload 'js3-mode "js3" nil t))
+  (autoload 'js3-mode "js3" nil t)
+  (setq js3-continued-expr-mult 4)
+  (setq js3-indent-level 4))
 
 (when (package-dir "skewer-mode*")
   (load-library "skewer-mode")
@@ -374,7 +416,7 @@
 
 (when (package-dir "qml-mode*")
   (require 'qml-mode)
-  (add-hook 'qml-mode-hook (lambda () (print 'ok) (modify-syntax-entry ?' "|"))))
+  (add-hook 'qml-mode-hook (lambda () (modify-syntax-entry ?' "|"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C and C++ modes
@@ -514,6 +556,10 @@
       (local-set-key '[f10]    'gud-next)
       (local-set-key '[f11]    'gud-step)
       (local-set-key '[f12]    'gud-finish))
+
+    ;; auto complete
+    (when (and (boundp 'ac-sources) (listp ac-sources))
+      (add-to-list 'ac-sources 'ac-source-semantic-raw))
     )))
 
 ;; set global GDB properties and keys
@@ -579,7 +625,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AucTeX
 (when (package-dir "auctex*")
-  (load "preview-latex.el" nil t t)
+  ;(load "preview-latex.el" nil t t)
   (setq preview-default-document-pt 12)
   ;;  TeX-style-path
   (setq LaTeX-enable-toolbar nil)
@@ -715,6 +761,8 @@
       (if (eq var 0) (describe-function (function-called-at-point)) (describe-variable var))))
    ;; Qt help on a web page
    ((and (eq major-mode 'c++-mode) (string= (substring (current-word) 0 1) "Q"))
+    (print (current-word))
+    (print (concat "http://qt-project.org/doc/qt-4.8/" (current-word) ".html"))
     (w3m-goto-url (concat "http://qt-project.org/doc/qt-4.8/" (current-word) ".html")))
    ;; try to find a man page
    (t (when (> (length (current-word)) 1) (woman (current-word))))))
@@ -779,6 +827,7 @@
          ("\\.m4" . m4-mode)
          ("\.i$" . c++-mode)
          ("\.cc$" . c++-mode)
+         ("\.ebuild$" . ebuild-mode)
          ("CMakeLists\\.txt\\'" . cmake-mode)
          ("\\.cmake\\'" . cmake-mode)
          ) auto-mode-alist))
