@@ -296,10 +296,8 @@
                      "QtCore/qglobal.h"))
    (add-to-list 'semantic-lex-c-preprocessor-symbol-file (expand-file-name file qt-include-directory)))
 (defun my-cedet-hook ()
-  (local-set-key [(control return)] 'semantic-ia-complete-symbol)
-  (local-set-key "\C-c?" 'semantic-ia-complete-symbol)
-  (local-set-key "\C-c>" 'semantic-complete-analyze-inline)
-  (local-set-key "\C-cp" 'semantic-analyze-proto-impl-toggle))
+  (local-set-key (kbd "C-,") 'semantic-ia-complete-symbol)
+  (local-set-key (kbd "C-.") 'semantic-ia-fast-jump))
 (add-hook 'c-mode-common-hook 'my-cedet-hook)
 
 (when (package-dir "auto-complete*")
