@@ -51,7 +51,9 @@
 ;; Guarantee all packages are installed on start
 (defvar packages-list '(auctex bm dired-single git-blame google-translate js3-mode
                         magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
-                        auto-complete yasnippet cedet)
+                        yasnippet cedet helm 
+                        org org-bullets org-jira org-magit org-pomodoro kanban 
+                        graphviz-dot-mode)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -163,6 +165,14 @@
 (defadvice save-buffers-kill-emacs (around no-query-kill-emacs activate)
   "Prevent annoying \"Active processes exist\" query when you quit Emacs."
   (flet ((process-list ())) ad-do-it))
+
+;; ANSI colorization of a buffer
+(require 'ansi-color)
+(defun ansi-colorize-buffer ()
+  (interactive)
+  (when buffer-read-only (toggle-read-only))
+  (ansi-color-apply-on-region (point-min) (point-max)))
+(add-hook 'compilation-filter-hook 'ansi-colorize-buffer)
 
 ;;}}}
 
@@ -300,11 +310,6 @@
   (local-set-key (kbd "C-.") 'semantic-ia-fast-jump))
 (add-hook 'c-mode-common-hook 'my-cedet-hook)
 
-(when (package-dir "auto-complete*")
-  (require 'auto-complete)
-  (require 'auto-complete-config)
-  (ac-config-default))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Translator (google)
 (when (package-dir "google-translate*")
@@ -365,7 +370,19 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Gentoo ebuild mode
 (when (package-dir "ebuild-mode*")
-  (require 'ebuild-mode))
+  (require 'ebuild-mode)
+  (require 'eselect-mode))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;  Other modes
+(when (package-dir "graphviz-dot-mode*")
+  (require 'graphviz-dot-mode))
+
+
+(setq socks-noproxy '("localhost"))
+(require 'socks)
+(setq erc-server-connect-function 'socks-open-network-stream)
+(setq socks-server (list "My socks server" "localhost" 3128 5))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Visible bookmarks in buffer.
@@ -586,7 +603,6 @@
                                     ("\\<foreach\\>" . 'qt-keywords-face)))
 (setq c-default-style "qt-gnu")
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
 (when (package-dir "python*")
@@ -714,11 +730,19 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Org mode
-(package-dir "/org*/lisp")
-(require 'org)
-(add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
-(when (file-exists-p (concat custom-dir "org-customize.el"))
-  (load-file (concat custom-dir "org-customize.el")))
+(when (package-dir "org-*")
+  (require 'org)
+  (require 'ob-core)
+  (org-babel-do-load-languages 'org-babel-load-languages
+                               '((python . t) (C . t) (R . t) (haskell . t)
+                                 (latex . t) (plantuml . t) (dot . t) (ruby . t)))
+  (add-hook 'org-babel-after-execute-hook (lambda () (condition-case nil (org-display-inline-images) (error nil))))
+  (setq org-babel-results-keyword "results")                           ;; Make babel results blocks lowercase
+  (setq org-confirm-babel-evaluate nil)                                ;; Do not prompt to confirm evaluation
+  (setq org-src-fontify-natively t)
+  (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/plantuml.jar"))
+  (add-to-list 'org-src-lang-modes (quote ("plantuml" . fundamental-mode))) ;; Use fundamental mode when editing plantuml blocks with C-c '
+  (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode)))
 
 (when (package-dir "/gnuplot*")
   (autoload 'gnuplot-mode "gnuplot" "gnuplot major mode" t)
@@ -757,11 +781,12 @@
    ((or (eq major-mode 'lisp-mode) (eq major-mode 'emacs-lisp-mode))
     (let ((var (variable-at-point)))
       (if (eq var 0) (describe-function (function-called-at-point)) (describe-variable var))))
-   ;; Qt help on a web page
+   ;; Qt assistant
    ((and (eq major-mode 'c++-mode) (string= (substring (current-word) 0 1) "Q"))
-    (print (current-word))
-    (print (concat "http://qt-project.org/doc/qt-4.8/" (current-word) ".html"))
-    (w3m-goto-url (concat "http://qt-project.org/doc/qt-4.8/" (current-word) ".html")))
+    (unless (get-process "assistant")
+      (start-process-shell-command "assistant" nil "assistant" "-enableRemoteControl"))
+    (process-send-string "assistant" (concat "setSource qthelp://com.trolltech.qt.484/qdoc/" (downcase (current-word)) ".html\r"))
+    (process-send-string "assistant" "syncContents\r"))
    ;; try to find a man page
    (t (when (> (length (current-word)) 1) (woman (current-word))))))
 (global-set-key [f1] 'custom-help)
@@ -789,7 +814,7 @@
          ("\\.C$" . c++-mode)
          ("\\.H$" . c++-mode)
          ("\\.nxc$" . c++-mode)
-         ("\\.pro$" . qt-pro-mode)
+         ("\\.pr[oif]$" . qt-pro-mode)
          ("\\.dps$" . pascal-mode)
          ("\\.qml$" . qml-mode)
          ("\\.pro$" . text-mode)
@@ -900,7 +925,7 @@
     ;;
     ((string= system-name "mkrasnyk-luxoft")
      (setq default-frame-alist '(
-          (top . 0) (left . 80) (width . 224) (height . 58)
+          (top . 0) (left . 1380) (width . 224) (height . 58)
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
           )))
     ;;
