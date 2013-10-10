@@ -53,7 +53,7 @@
                         magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
                         yasnippet cedet helm 
                         org org-bullets org-jira org-magit org-pomodoro kanban 
-                        graphviz-dot-mode)
+                        graphviz-dot-mode ix)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -343,7 +343,13 @@
 
 (when (package-dir "magit*")
   (require 'magit)
-  (require 'magit-blame))
+  (require 'magit-blame)
+  (custom-set-variables '(git-commit-summary-max-length 70)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ix
+(when (package-dir "ix*")
+  (require 'ix))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Matlab mode
@@ -739,6 +745,7 @@
   (add-hook 'org-babel-after-execute-hook (lambda () (condition-case nil (org-display-inline-images) (error nil))))
   (setq org-babel-results-keyword "results")                           ;; Make babel results blocks lowercase
   (setq org-confirm-babel-evaluate nil)                                ;; Do not prompt to confirm evaluation
+  (plist-put org-format-latex-options :scale 1.5)
   (setq org-src-fontify-natively t)
   (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/plantuml.jar"))
   (add-to-list 'org-src-lang-modes (quote ("plantuml" . fundamental-mode))) ;; Use fundamental mode when editing plantuml blocks with C-c '
