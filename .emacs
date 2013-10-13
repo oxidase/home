@@ -637,6 +637,11 @@
 (setq auto-mode-alist  (cons '(".rhtml$" . html-mode) auto-mode-alist))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Scala mode
+(when (package-dir "scala-mode2*")
+  (require 'scala-mode2))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; set hooks
 (loop for mode in '(c-mode-hook c++-mode-hook fortran-mode-hook jam-mode-hook 
                     qt-pro-mode-hook gud-mode-hook qml-mode-hook python-mode-hook)
