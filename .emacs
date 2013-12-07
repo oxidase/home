@@ -144,7 +144,6 @@
 (setq grep-command "grep -nHriI -e ")
 (if (not (assq 'user-size initial-frame-alist))      ;; Unless we've specified a number of lines, prevent the startup code from
     (setq tool-bar-originally-present nil))          ;; shrinking the frame because we got rid of the tool-bar. 
-
 ;; ediff 
 (setq ediff-window-setup-function 'ediff-setup-windows-plain)
 (setq ediff-split-window-function 'split-window-horizontally)
@@ -281,7 +280,7 @@
   (openwith-mode t)
   (setq openwith-associations
       '(("[^_]?\\.\\(ps\\|pdf\\|djvu\\)\\'" "okular" (file))
-        ("\\.\\(docx?\\|ppt\\|rtf\\|xlsx?\\)\\'" "libreoffice" (file))
+        ("\\.\\(docx?\\|odt\\|ppt\\|rtf\\|xlsx?\\)\\'" "libreoffice" (file))
         ("\\.\\(ai\\)\\'" "inkscape" (file))
         ("\\.\\(?:mpe?g\\|avi\\|wmv\\|mp4\\)\\'" "smplayer" (file)))))
 
@@ -368,7 +367,7 @@
 (require 'tramp) 
 (setq tramp-default-method "ssh")
 
-(global-set-key "\C-c\C-t" (lambda () (interactive) (flet ((yes-or-no-p (&rest args) t) (y-or-n-p (&rest args) t)) (kill-matching-buffers "^\\*tramp"))))
+(global-set-key "\C-c\C-t" 'tramp-cleanup-all-connections)
 
 (when (package-dir "magit-tramp*")
   (require 'magit-tramp))
@@ -645,6 +644,13 @@
 ;; Scala mode
 (when (package-dir "scala-mode2*")
   (require 'scala-mode2))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Lua mode
+(when (package-dir "lua*")
+  (require 'lua-mode)
+  (add-to-list 'auto-mode-alist '("\\.lua\\'" . lua-mode)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; set hooks
@@ -942,8 +948,8 @@
           )))
     ;;
     ((string= system-name "mkrasnyk-luxoft")
-     (setq default-frame-alist '(
-          (top . 0) (left . 1380) (width . 224) (height . 58)
+     (setq default-frame-alist `(
+          (top . 0) (left . ,(if (> (x-display-pixel-width) 1920) 1380 120)) (width . 224) (height . 58)
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
           )))
     ;;
@@ -1059,6 +1065,10 @@
    variable \"insert-time-format\"."
   (interactive "*")
   (progn (insert-date) (insert " ") (insert-time)))
+
+(defun highlight-timestamps ()
+  (interactive "*")
+  (highlight-lines-matching-regexp "[0-9]\{9\}\.[0-9]\{9\}"))
 
 (defun ascii ()
   (interactive)
