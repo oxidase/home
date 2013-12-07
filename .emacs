@@ -29,7 +29,7 @@
 
 ;; Store customization information in file specific for emacs version
 (setq custom-dir (expand-file-name "~/.emacs.d/"))
-(add-to-list 'load-path custom-dir)
+(add-to-list 'load-path (concat custom-dir "/lisp"))
 (setq custom-file (concat custom-dir "custom." emacs-flavor ".el"))
 (setq recentf-save-file (concat custom-dir "/.recentf"))
 
@@ -52,8 +52,8 @@
 (defvar packages-list '(auctex bm dired-single git-blame google-translate js3-mode
                         magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
                         yasnippet cedet helm 
-                        org org-bullets org-jira org-magit org-pomodoro kanban 
-                        graphviz-dot-mode ix)
+                        org org-bullets org-jira org-magit org-pomodoro kanban ob-mongo
+                        graphviz-dot-mode ix tdd-status-mode-line)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -292,23 +292,23 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Auto Complete Mode 
-(semantic-mode 1)
-(require 'semantic/complete)
-(require 'semantic)
-(require 'semantic/ia)
-(require 'semantic/bovine/c)
-(require 'semantic/bovine/gcc)
-(setq qt-include-directory "/usr/include/qt4")
-(semantic-add-system-include qt-include-directory 'c++-mode)
-(add-to-list 'auto-mode-alist (cons qt-include-directory 'c++-mode))
-(dolist (file (list "QtCore/qconfig.h" "QtCore/qconfig-dist.h" "QtCore/qconfig-large.h"
-                     "QtCore/qconfig-medium.h" "QtCore/qconfig-minimal.h" "QtCore/qconfig-small.h"
-                     "QtCore/qglobal.h"))
-   (add-to-list 'semantic-lex-c-preprocessor-symbol-file (expand-file-name file qt-include-directory)))
-(defun my-cedet-hook ()
-  (local-set-key (kbd "C-,") 'semantic-ia-complete-symbol)
-  (local-set-key (kbd "C-.") 'semantic-ia-fast-jump))
-(add-hook 'c-mode-common-hook 'my-cedet-hook)
+;; (semantic-mode 1)
+;; (require 'semantic/complete)
+;; (require 'semantic)
+;; (require 'semantic/ia)
+;; (require 'semantic/bovine/c)
+;; (require 'semantic/bovine/gcc)
+;; (setq qt-include-directory "/usr/include/qt4")
+;; (semantic-add-system-include qt-include-directory 'c++-mode)
+;; (add-to-list 'auto-mode-alist (cons qt-include-directory 'c++-mode))
+;; (dolist (file (list "QtCore/qconfig.h" "QtCore/qconfig-dist.h" "QtCore/qconfig-large.h"
+;;                      "QtCore/qconfig-medium.h" "QtCore/qconfig-minimal.h" "QtCore/qconfig-small.h"
+;;                      "QtCore/qglobal.h"))
+;;    (add-to-list 'semantic-lex-c-preprocessor-symbol-file (expand-file-name file qt-include-directory)))
+;; (defun my-cedet-hook ()
+;;   (local-set-key (kbd "C-,") 'semantic-ia-complete-symbol)
+;;   (local-set-key (kbd "C-.") 'semantic-ia-fast-jump))
+;; (add-hook 'c-mode-common-hook 'my-cedet-hook)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Translator (google)
@@ -453,19 +453,22 @@
 (setq compilation-ask-about-save nil)
 ;; (setq compilation-window-height 10)
 
-(defun get-compile-command () 
-  (when (and buffer-file-name compile-command)
-    (let* ((bufname (file-name-nondirectory (buffer-file-name)))
+(defun get-shell-command (command)
+  (if buffer-file-name
+    (let* ((cmd command)
+           (bufname (file-name-nondirectory (buffer-file-name)))
            (filename (file-name-sans-extension bufname))
            (extension (file-name-extension bufname))
            (dirname (expand-file-name "."))
            (tex (if (and (boundp 'TeX-master) (stringp TeX-master)) TeX-master bufname)))
-      (setf compile-command (replace-regexp-in-string "%%" "%" compile-command))
-      (setf compile-command (replace-regexp-in-string "%f" bufname compile-command))
-      (setf compile-command (replace-regexp-in-string "%d" dirname compile-command))
-      (setf compile-command (replace-regexp-in-string "%n" filename compile-command))
-      (setf compile-command (replace-regexp-in-string "%e" extension compile-command))
-      (setf compile-command (replace-regexp-in-string "%t" tex compile-command)))))
+      (setf cmd (replace-regexp-in-string "%%" "%" cmd))
+      (setf cmd (replace-regexp-in-string "%f" bufname cmd))
+      (setf cmd (replace-regexp-in-string "%d" dirname cmd))
+      (setf cmd (replace-regexp-in-string "%n" filename cmd))
+      (setf cmd (replace-regexp-in-string "%e" extension cmd))
+      (setf cmd (replace-regexp-in-string "%t" tex cmd))
+      cmd)
+    command))
 
 (defun gud-set-clear () (interactive)  
   (message "gud-set-clear") 
@@ -507,6 +510,7 @@
       (local-set-key "\C-c\C-c"  'compile)
       (make-variable-buffer-local 'compile-command)
       (setq compile-command
+       (get-shell-command 
          (cond
           ((eq major-mode 'c++-mode)
            (cond
@@ -516,22 +520,23 @@
           ((eq major-mode 'qt-pro-mode) "qmake && make")
           ((eq major-mode 'makefile-gmake-mode) "make")
           ((eq major-mode 'jam-mode) "bjam -d2")
-          (t "make")))
-      (get-compile-command)
+          (t "make"))))
 
       ;; run command, allow only commands in that starts with "./"
       (make-variable-buffer-local 'run-command)
-      (local-set-key '[S-f5]  (lambda () (interactive) (shell-command run-command)))
-      (cond
-       ((eq major-mode 'python-mode)
-        (setf run-command (format "python %s" (buffer-file-name))))
-       ((eq major-mode 'qml-mode)
-        (setf run-command (format "qmlscene %s &" (buffer-file-name)))
-        (local-set-key '[S-f5]  (lambda () (interactive) (save-window-excursion (shell-command run-command)))))
-       (t (setf run-command (format "./%s" (file-name-sans-extension (buffer-name))))))
+      (local-set-key '[S-f5]  (lambda () (interactive) (shell-command (get-shell-command run-command))))
+      (setq run-command
+       (get-shell-command 
+         (cond
+          ((eq major-mode 'python-mode) "python %f")
+          ((eq major-mode 'qml-mode)
+           (local-set-key '[S-f5]  (lambda () (interactive) (save-window-excursion (shell-command run-command))))
+           "qmlscene %f &")
+          (t "./%n"))))
       (put 'run-command 'safe-local-variable 'run-command-safe-variable)
       (defun run-command-safe-variable (var) (string-match 
-         "^[ \t\n\r]*\./.+\\|qml\\(scene\\|viewer\\)\\|/usr/local/diana/bin/mpi\\(run\\|exec\\)[ \t\n\r]" var))
+;;         "^[ \t\n\r]*\./.+\\|qml\\(scene\\|viewer\\)\\|optirun[ \t\n\r]" var))
+           "^[ \t\n\r]*\\(qml\\(scene\\|viewer\\)\\|optirun\\)[ \t\n\r]*\./.+" var))
       )
     
     ;; settings depending on the mode
@@ -555,7 +560,7 @@
       ;; compile keys
       (local-set-key '[f8]   'next-error)
       (local-set-key '[S-f8] 'previous-error)
-      (local-set-key '[f7]   (lambda () (interactive) (compile (get-compile-command))))
+      (local-set-key '[f7]   (lambda () (interactive) (compile (get-shell-command compile-command))))
       (local-set-key "\C-c\C-c" 'compile))
     
     (when (and (not running-on-windows)
@@ -832,6 +837,7 @@
          ("\\.pro$" . text-mode)
          ("\\.l$" . c-mode)
          ("\\.y$" . c-mode)
+         ("\\.glsl$" . c-mode)
          ("\\.py$" . python-mode)
          ("\\.yaml$" . python-mode)
          ("\\.css$" . css-mode)
