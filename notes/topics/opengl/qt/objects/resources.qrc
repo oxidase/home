@@ -1,0 +1,18 @@
+<RCC>
+    <qresource prefix="/">
+        <file>simple.v.glsl</file>
+        <file>simple.f.glsl</file>
+        <file>earth.v.glsl</file>
+        <file>earth.f.glsl</file>
+        <file>light.v.glsl</file>
+        <file>light.f.glsl</file>
+        <file>light_phong.v.glsl</file>
+        <file>light_phong.f.glsl</file>
+        
+        <file>earth.obj</file>
+        <file>teddy.obj</file>
+
+        <file>earth_day.jpg</file>
+        <file>earth_night.jpg</file>  
+     </qresource>
+</RCC>

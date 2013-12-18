@@ -1,0 +1,37 @@
+* Install
+
+** Qt base
+
+#+begin_src sh
+mkdir -p ~/work/qt && cd ~/work/qt
+git clone ssh://oxidase@codereview.qt-project.org:29418/qt/qtbase.git
+mkdir build && cd build
+../qtbase/configure -release -developer-build -opensource -confirm-license -plugin-sql-sqlite \
+   -system-sqlite -qt-harfbuzz -optimized-qmake -reduce-relocations -force-asserts \
+   -separate-debug-info -opengl desktop -nomake examples -nomake tests -no-compile-examples \
+   -system-proxies -egl
+make -j5
+#+end_src
+
+** Qt modules
+
+#+begin_src sh
+mkdir -p ~/work/qt && cd ~/work/qt
+mkdir modules && cd modules
+M="qtactiveqt qtx11extras qtsvg qtimageformats qtscript qtxmlpatterns qtdeclarative qtgraphicaleffects qtquickcontrols qtmultimedia qtpim qtwayland qt3d"
+for m in $M ; do git clone ssh://oxidase@codereview.qt-project.org:29418/qt/$m.git ; done
+cat > modules/modules.pro <<EOF
+TEMPLATE = subdirs
+CONFIG += ordered
+SUBDIRS += $M
+EOF
+mkdir -p build/modules && cd build/modules
+../bin/qmake ../../modules
+#+end_src sh
+
+** Update
+
+#+begin_src sh
+( cd ~/work/qt && git pull && cd ~/work/qt/build && make -j5 )
+( cd ~/work/qt/modules && for m in `ls` ; do (cd $m && git pull); done && cd ~/work/qt/build/modules && make -j5 )
+#+end_src sh

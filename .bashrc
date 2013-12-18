@@ -17,10 +17,10 @@ for h in $rcfiles ; do
 done
 
 ## locale settings
-#export LANG="en_US.UTF-8"
-#export LC_TIME="en_GB.UTF-8"
-#export LC_PAPER="en_GB.UTF-8"
-#export LC_MEASUREMENT="en_GB.UTF-8"
+export LANG="en_US.UTF-8"
+export LC_TIME="en_GB.UTF-8"
+export LC_PAPER="en_GB.UTF-8"
+export LC_MEASUREMENT="en_GB.UTF-8"
 
 ## common settings
 export PYTHONSTARTUP=~/.pythonrc
@@ -34,5 +34,13 @@ alias rm="rm -i"
 alias psx="ps -auxw | grep $1" 
 mkcd() { mkdir -p "$1" && cd "$1"; }
 
-### Added by the Heroku Toolbelt
-export PATH="/usr/local/heroku/bin:$PATH"
+# enable programmable completion features (you don't need to enable
+# this, if it's already enabled in /etc/bash.bashrc and /etc/profile
+# sources /etc/bash.bashrc).
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi

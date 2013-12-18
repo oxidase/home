@@ -200,7 +200,7 @@
 (define-key dired-sort-map "d" (lambda () "sort by name grouping Dirs" (interactive) (dired-sort-other (concat dired-listing-switches " --group-directories-first"))))
 
 ;; humanized output
-(setq dired-listing-switches-styles '("-alh" "-al"))
+(setq dired-listing-switches-styles '("-alh --group-directories-first" "-al --group-directories-first"))
 (setq dired-listing-switches-idx 0)
 (setq dired-listing-switches (nth dired-listing-switches-idx dired-listing-switches-styles))
 (define-key dired-mode-map "h" (lambda () (interactive) 
@@ -763,6 +763,7 @@
   (setq org-confirm-babel-evaluate nil)                                ;; Do not prompt to confirm evaluation
   (plist-put org-format-latex-options :scale 1.5)
   (setq org-src-fontify-natively t)
+  (setq org-support-shift-select 'always)
   (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/plantuml.jar"))
   (add-to-list 'org-src-lang-modes (quote ("plantuml" . fundamental-mode))) ;; Use fundamental mode when editing plantuml blocks with C-c '
   (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode)))
@@ -947,7 +948,7 @@
           ;;(font . "-*-Inconsolata-*-*-*-*-18-*-*-*-m-0-iso10646-1")
           )))
     ;;
-    ((string= system-name "mkrasnyk-luxoft")
+    ((string= system-name "miha-luxoft")
      (setq default-frame-alist `(
           (top . 0) (left . ,(if (> (x-display-pixel-width) 1920) 1380 120)) (width . 224) (height . 58)
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
