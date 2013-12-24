@@ -1,0 +1,108 @@
+#version 130
+
+in vec3 MCVertex;
+in vec3 MCNormal;
+out vec3 Normal;
+out vec2 TexCoord;
+out float LightIntensity;
+
+uniform float SpecularContribution;
+uniform vec3 LightPosition;
+uniform float ScaleFactor;
+uniform mat4 MVMatrix;
+uniform mat4 MVPMatrix;
+uniform mat3 NormalMatrix;
+
+void main()
+{
+    vec3 ecPosition = vec3(MVMatrix * vec4(MCVertex, 1.));
+    vec3 tnorm = normalize(NormalMatrix * MCNormal);
+    vec3 lightVec = normalize(LightPosition - ecPosition);
+
+    vec3 reflectVec = reflect(-lightVec, tnorm);
+    vec3 viewVec = normalize(-ecPosition);
+
+    float diffuse =max(dot(lightVec, tnorm), 0.0);
+    float spec = 0.0;
+    
+    if(diffuse > 0.0) {
+        spec = max(dot(reflectVec, viewVec), 0.0);
+        spec = pow(spec, 16.0);
+    }
+
+    float diffusecontribution = 1.0 - SpecularContribution;
+    LightIntensity = 0.3 + diffusecontribution * diffuse * 2.0 + SpecularContribution * spec;
+
+    TexCoord = gl_MultiTexCoord0.st * ScaleFactor;
+    Normal = tnorm;
+    gl_Position = MVPMatrix * vec4(MCVertex, 1.);
+}
+
+/* uniform mat4 m, v, p; */
+/* uniform mat3 m_3x3_inv_transp; */
+/* uniform mat4 v_inv; */
+ 
+/* varying vec4 f_color; */
+ 
+/* struct LightSource { */
+/*     vec4 position; */
+/*     vec4 ambient; */
+/*     vec4 diffuse; */
+/*     vec4 specular; */
+/*     float constantAttenuation, linearAttenuation, quadraticAttenuation; */
+/*     float spotCutoff, spotExponent; */
+/*     vec3 spotDirection; */
+/* }; */
+/* LightSource light0 = LightSource( */
+/*     vec4(1.0,  2.0,  1.0, 0.0), */
+/*     vec4(0.3,  0.3,  0.3, 1.0), */
+/*     vec4(1.0,  1.0,  1.0, 1.0), */
+/*     vec4(1.0,  1.0,  1.0, 1.0), */
+/*     0.0, 1.0, 0.0, */
+/*     180.0, 0.0, */
+/*     vec3(0.0, 0.0, 0.0) */
+/* ); */
+
+/* struct Material { */
+/*     vec4 ambient; */
+/*     vec4 diffuse; */
+/*     vec4 specular; */
+/*     float shininess; */
+/* }; */
+/* Material material0 = Material( */
+/*     vec4(0.3,  0.3,  0.3, 1.0), */
+/*     vec4(1.0,  1.0,  1.0, 1.0), */
+/*     vec4(1.0,  1.0,  1.0, 1.0), */
+/*     16. */
+/* ); */
+
+/* void main(void) */
+/* { */
+/*     vec4 v_coord4 = vec4(MCVertex, 1.0); */
+/*     vec3 normalDirection = normalize(NormalMatrix * MCNormal); */
+/*     vec3 viewDirection = normalize(vec3(v_inv * vec4(0.0, 0.0, 0.0, 1.0) - m * v_coord4)); */
+/*     vec3 lightDirection; */
+ 
+/*     if (light0.position.w == 0.0) { */
+/*         lightDirection = normalize(vec3(light0.position)); */
+/*     } else { */
+/*         vec3 vertexToLightSource = vec3(light0.position - m * v_coord4); */
+/*         lightDirection = normalize(vertexToLightSource); */
+/*     } */
+ 
+/*     float levelOfLighting = max(0.0, dot(normalDirection, lightDirection)); */
+
+/*     float attenuation = 1.; */
+    
+/*     vec3 specularReflection = vec3(0.0, 0.0, 0.0); */
+/*     if (levelOfLighting > 0.0) { */
+/*         specularReflection = attenuation * vec3(light0.specular) * vec3(material0.specular) */
+/*             * pow(max(0.0, dot(reflect(-lightDirection, normalDirection), viewDirection)), material0.shininess); */
+/*     } */
+    
+/*     gl_Position = MVPMatrix * v_coord4; */
+
+/*     f_color = light0.ambient + light0.diffuse*levelOfLighting;// + vec4(specularReflection, 1.0); */
+/*     LightIntensity = 0.2 + levelOfLighting; */
+/* } */
+

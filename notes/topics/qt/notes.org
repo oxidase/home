@@ -16,16 +16,15 @@ make -j5
 ** Qt modules
 
 #+begin_src sh
-mkdir -p ~/work/qt && cd ~/work/qt
-mkdir modules && cd modules
+mkdir -p ~/work/qt/modules && cd ~/work/qt/modules
 M="qtactiveqt qtx11extras qtsvg qtimageformats qtscript qtxmlpatterns qtdeclarative qtgraphicaleffects qtquickcontrols qtmultimedia qtpim qtwayland qt3d"
 for m in $M ; do git clone ssh://oxidase@codereview.qt-project.org:29418/qt/$m.git ; done
-cat > modules/modules.pro <<EOF
+cat > modules.pro <<EOF
 TEMPLATE = subdirs
 CONFIG += ordered
 SUBDIRS += $M
 EOF
-mkdir -p build/modules && cd build/modules
+mkdir -p ../build/modules && cd ../build/modules
 ../bin/qmake ../../modules
 #+end_src sh
 
@@ -35,3 +34,9 @@ mkdir -p build/modules && cd build/modules
 ( cd ~/work/qt && git pull && cd ~/work/qt/build && make -j5 )
 ( cd ~/work/qt/modules && for m in `ls` ; do (cd $m && git pull); done && cd ~/work/qt/build/modules && make -j5 )
 #+end_src sh
+
+* Push changes
+git push ssh://oxidase@codereview.qt-project.org:29418/qt/qtbase HEAD:refs/for/stable
+
+git checkout release && git pull && git rebase -i release my_branch
+там pick заменишь на reword и изменишь дескрипшн
