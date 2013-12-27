@@ -844,7 +844,7 @@
          ("\\.pro$" . text-mode)
          ("\\.l$" . c-mode)
          ("\\.y$" . c-mode)
-         ("\\.glsl$" . c-mode)
+         ("\\.glsl$" . c++-mode)
          ("\\.py$" . python-mode)
          ("\\.yaml$" . python-mode)
          ("\\.css$" . css-mode)
@@ -992,7 +992,7 @@
 (defun blink-paren-first-line () ; from blink-matching-open
   (interactive)
   ;; if mode is c++ or lisp and 
-  (when (or (eq major-mode 'c++-mode) (eq major-mode 'lisp-mode))
+  (when (member major-mode '(c++-mode lisp-mode qml-mode))
     ;; create local variable with opening paren pos
     (unless (local-variable-p 'paren-first-line-pos) 
       (make-local-variable 'paren-first-line-pos) 

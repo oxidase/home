@@ -2,14 +2,16 @@
 
 #include <QMouseEvent>
 #include <QBox3D>
+#include <QGLAbstractScene>
 
 #include <math.h>
 #include <locale.h>
+#include <stdlib.h>
 
 MainWidget::MainWidget(QWidget *parent) :
     QGLWidget(parent),
     angularSpeed(0),
-    viewer{QVector3D(0, 0, 10), QVector3D(0, 0, 0), QVector3D(0, 1, 0)},
+    viewer{QVector3D(0, 2, 6), QVector3D(0, -0.3, -1), QVector3D(0, 1, 0)},
     mouseLastX(rect().width()/2), mouseLastY(rect().height()/2)
 {
     setMouseTracking(true);
@@ -17,8 +19,9 @@ MainWidget::MainWidget(QWidget *parent) :
 
 MainWidget::~MainWidget()
 {
-    deleteTexture(texture);
-    glDeleteBuffers(3, vboIds);
+    deleteTexture(glyph_texture);
+    deleteTexture(random_texture);
+    glDeleteBuffers(4, vboIds);
 }
 
 //! [0]
@@ -59,6 +62,7 @@ void MainWidget::keyPressEvent(QKeyEvent *e)
 }
 
 void MainWidget::mouseMoveEvent(QMouseEvent *e) {
+    return;
     float sens = 1e-3;
     if (mouseLastX != -1 || mouseLastY != -1) {
         // float x = 2 * e->localPos().x() / rect().width() - 1.f;
@@ -145,20 +149,20 @@ void MainWidget::initShaders()
     setlocale(LC_NUMERIC, "C");
 
     // Compile vertex shader
-    if (!program.addShaderFromSourceFile(QGLShader::Vertex, QString::fromLatin1("glyphs.vsl")))
-        close();
+    if (!program.addShaderFromSourceFile(QGLShader::Vertex, QString::fromLatin1("glyphs.v.glsl")))
+        exit(1);
 
     // Compile fragment shader
-    if (!program.addShaderFromSourceFile(QGLShader::Fragment, QString::fromLatin1("glyphs.fsl")))
-        qDebug() << "Shader compilation failed " << program.log();
+    if (!program.addShaderFromSourceFile(QGLShader::Fragment, QString::fromLatin1("glyphs.f.glsl")))
+        exit(1);
 
     // Link shader pipeline
     if (!program.link())
-        close();
+        exit(1);
 
     // Bind shader pipeline for use
     if (!program.bind())
-        close();
+        exit(1);
 
     // Restore system locale
     setlocale(LC_ALL, "");
@@ -171,7 +175,10 @@ void MainWidget::initTextures()
     // Load textures
     glEnable(GL_TEXTURE_2D);
     
-    texture = bindTexture(QImage("10fig03.jpg"));
+    glyph_texture = bindTexture(QImage("apple.png"));
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     // Set nearest filtering mode for texture minification
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -179,83 +186,51 @@ void MainWidget::initTextures()
     // Set bilinear filtering mode for texture magnification
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    // Wrap texture coordinates by repeating
-    // f.ex. texture coordinate (1.1, 1.2) is same as (0.1, 0.2)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
+    // Random texture
+    QByteArray random_data(100 * 100 * 4, 0);
+    srand(time(0));
+    srand(42);
+    for (int i=0; i < random_data.size(); ++i)
+        random_data[i] = rand() % (1<<sizeof(random_data[0]));
+    QImage random_image((unsigned char*)random_data.constData(), 100, 100, QImage::Format_ARGB32);
+    random_texture = bindTexture(random_image);
 }
 //! [4]
 
 void MainWidget::initScene()
 {
-    QFile file(QString::fromLatin1("cube.obj"));
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text) | file.atEnd()) {
-        qWarning() << "Object" << (QString::fromLatin1("cube.obj")) << "is not found";
+    // Load the 3d model from the file
+    QGLAbstractScene *scene = QGLAbstractScene::loadScene("cube.obj");
+    QGLSceneNode *cube = qobject_cast<QGLSceneNode*>(scene->object("Cube"));
+    if (!cube)
         return;
-    }
-
-    QBox3D objectExtent;
-    QVector<GLushort> elements;
-    QVector<QVector3D> vertices;
-    while (!file.atEnd()) {
-        QByteArray line = file.readLine();
-        if (line[0] == 'v') {
-            QTextStream stream(&line);
-            char dummy;
-            qreal x, y, z;
-            stream >> dummy >> x >> y >> z;
-            QVector3D vertex(x, y, z);
-            vertices.append(vertex);
-            objectExtent.unite(vertex);
-        } else if (line[0] == 'f') {
-            QTextStream stream(&line);
-            char dummy;
-            GLushort a,b,c;
-            stream >> dummy >> a >> b >> c;
-            a--; b--; c--;
-            elements << a << b << c;
+    
+    if (cube->geometry().isEmpty()) {
+        foreach(QGLSceneNode* o, cube->children()) {
+            if (!o->geometry().isEmpty()) {
+                cube = o;
+                break;
+            }
         }
     }
+    if (cube->geometry().isEmpty())
+        return;
 
-    // set viewer position and orientation
-    QVector3D objectSize = objectExtent.size();
-    viewer[0] = objectExtent.center() + QVector3D(0, 0, objectSize.x() + objectSize.y() + objectSize.z());
-    viewer[1] = (objectExtent.center() - viewer[0]).normalized();
-    viewer[2] = QVector3D(0, 1, 0);
-    qDebug() << "Viewer eye =" << viewer[0] << "center =" << viewer[1] << "up =" << viewer[2];
+    // qDebug() << cube->geometry().vertices() << cube->geometry().normals() << cube->geometry().texCoords() << cube->geometry().indices();
 
-    bool average_normals = false;
-    QVector<QVector3D> normals(vertices.size());
-    for (int i = 0; i < elements.size(); i+=3) {
-        GLushort ia = elements[i];
-        GLushort ib = elements[i+1];
-        GLushort ic = elements[i+2];
-        QVector3D normal = QVector3D::normal(vertices[ia], vertices[ib], vertices[ic]);
-
-        if (average_normals) {
-            normals[ia] += normal;
-            normals[ib] += normal;
-            normals[ic] += normal;
-        } else {
-            normals[ia] = normal;
-            normals[ib] = normal;
-            normals[ic] = normal;
-        }
-    }
-    for (int i = 0; i < normals.size(); ++i)
-        normals[i] = normals[i].normalized();
-
-    glGenBuffers(3, vboIds);
+    glGenBuffers(4, vboIds);
 
     glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]);
-    glBufferData(GL_ARRAY_BUFFER,  vertices.size() * sizeof(QVector3D), vertices.constData(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, cube->geometry().vertices().size() * sizeof(QVector3D), cube->geometry().vertices().constData(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ARRAY_BUFFER, vboIds[1]);
-    glBufferData(GL_ARRAY_BUFFER,  normals.size() * sizeof(QVector3D), normals.constData(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, cube->geometry().normals().size() * sizeof(QVector3D), cube->geometry().normals().constData(), GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIds[2]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER,  elements.size() * sizeof(GLushort), elements.constData(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[2]);
+    glBufferData(GL_ARRAY_BUFFER, cube->geometry().texCoords().size() * sizeof(QVector2D), cube->geometry().texCoords().constData(), GL_STATIC_DRAW);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIds[3]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, cube->geometry().indices().size() * sizeof(GLuint), cube->geometry().indices().constData(), GL_STATIC_DRAW);
 }
 
 
@@ -285,11 +260,9 @@ void MainWidget::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     program.setUniformValue("SpecularContribution", (GLfloat)0.2);
-    program.setUniformValue("LightPosition", QVector3D(4, 14, 4));
-    program.setUniformValue("ScaleFactor", (GLfloat)10.);
+    program.setUniformValue("LightPosition", QVector3D(0, 2, 4));
+    program.setUniformValue("ScaleFactor", (GLfloat)2.);
     program.setUniformValue("ModelColor", QVector4D(1, 1, 1, 1));
-    program.setUniformValue("GlyphTex", 0);
-    program.setUniformValue("RandomTex", 1);
     program.setUniformValue("ColAdjust", (GLfloat)0.75);
     program.setUniformValue("Percentage", (GLfloat)1.);
     program.setUniformValue("SamplesPerCell", (GLfloat)1.);
@@ -297,7 +270,6 @@ void MainWidget::paintGL()
     program.setUniformValue("RandomScale", false);
     program.setUniformValue("RandomRotate", false);
 
-    
     // Set model view projection transformations
     QMatrix4x4 model;
     model.translate(0.0, 0.0, 0.0);
@@ -313,8 +285,12 @@ void MainWidget::paintGL()
 
     // Use textures
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    glBindTexture(GL_TEXTURE_2D, glyph_texture);
     program.setUniformValue("GlyphTex", 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, random_texture);
+    program.setUniformValue("RandomTex", 1);
 
     int attribute_v_coord = program.attributeLocation("MCVertex");
     glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]);
@@ -338,11 +314,23 @@ void MainWidget::paintGL()
                           0                   // offset of first element
                           );
 
+    int attribute_v_texCoord = program.attributeLocation("MCTexCoord");
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[2]);
+    glEnableVertexAttribArray(attribute_v_texCoord);
+    glVertexAttribPointer(attribute_v_texCoord,
+                          2,                  // number of elements per vertex, here (x,y,z)
+                          GL_FLOAT,           // the type of each element
+                          GL_FALSE,           // take our values as-is
+                          0,                  // no extra data between each position
+                          0                   // offset of first element
+                          );
+
     // Draw geometry
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIds[2]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIds[3]);
     int size;  glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
-    glDrawElements(GL_TRIANGLES, size/sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
+    glDrawElements(GL_TRIANGLES, size/sizeof(GLuint), GL_UNSIGNED_INT, 0);
 
     glDisableVertexAttribArray(attribute_v_coord);
     glDisableVertexAttribArray(attribute_v_normal);
+    glDisableVertexAttribArray(attribute_v_texCoord);
 }

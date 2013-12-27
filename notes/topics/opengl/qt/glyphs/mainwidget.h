@@ -39,7 +39,7 @@ private:
     QBasicTimer timer;
     QGLShaderProgram program;
 
-    GLuint texture;
+    GLuint glyph_texture, random_texture;
 
     QMatrix4x4 projection;
 
@@ -50,7 +50,7 @@ private:
 
     QVector3D viewer[3];
 
-    GLuint vboIds[3];
+    GLuint vboIds[4];
     int mouseLastX, mouseLastY;
 };
 
