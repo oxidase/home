@@ -175,10 +175,10 @@ void MainWidget::initTextures()
     // Load textures
     glEnable(GL_TEXTURE_2D);
     
-    glyph_texture = bindTexture(QImage("apple.png"));
+    glyph_texture = bindTexture(QImage("10fig03.jpg"));
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
     // Set nearest filtering mode for texture minification
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -261,14 +261,14 @@ void MainWidget::paintGL()
 
     program.setUniformValue("SpecularContribution", (GLfloat)0.2);
     program.setUniformValue("LightPosition", QVector3D(0, 2, 4));
-    program.setUniformValue("ScaleFactor", (GLfloat)2.);
+    program.setUniformValue("ScaleFactor", (GLfloat)10.);
     program.setUniformValue("ModelColor", QVector4D(1, 1, 1, 1));
-    program.setUniformValue("ColAdjust", (GLfloat)0.75);
-    program.setUniformValue("Percentage", (GLfloat)1.);
+    program.setUniformValue("ColAdjust", (GLfloat)0.42);
+    program.setUniformValue("Percentage", (GLfloat).75);
     program.setUniformValue("SamplesPerCell", (GLfloat)1.);
-    program.setUniformValue("R01", (GLfloat)0.29);
-    program.setUniformValue("RandomScale", false);
-    program.setUniformValue("RandomRotate", false);
+    program.setUniformValue("RO1", (GLfloat)0.29);
+    program.setUniformValue("RandomScale", true);
+    program.setUniformValue("RandomRotate", true);
 
     // Set model view projection transformations
     QMatrix4x4 model;
