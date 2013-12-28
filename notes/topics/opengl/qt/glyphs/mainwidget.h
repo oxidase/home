@@ -9,6 +9,11 @@
 #include <QBasicTimer>
 #include <QGLShaderProgram>
 
+struct viewer_t {
+    QVector3D pos, dir, up;
+    QVector3D lookAt() const { return pos + dir; }
+    QVector3D side() const { return QVector3D::crossProduct(dir, up).normalized(); }
+};
 
 class GeometryEngine;
 
@@ -36,6 +41,7 @@ protected:
     void initScene();
 
 private:
+    bool repaintGL;
     QBasicTimer timer;
     QGLShaderProgram program;
 
@@ -48,10 +54,10 @@ private:
     qreal angularSpeed;
     QQuaternion rotation;
 
-    QVector3D viewer[3];
+    viewer_t viewer;
 
     GLuint vboIds[4];
-    int mouseLastX, mouseLastY;
+    QPoint mouseLastPosition;
 };
 
 #endif // MAINWIDGET_H
