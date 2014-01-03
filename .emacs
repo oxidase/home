@@ -53,7 +53,7 @@
                         magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
                         yasnippet cedet helm 
                         org org-bullets org-jira org-magit org-pomodoro kanban ob-mongo
-                        graphviz-dot-mode ix tdd-status-mode-line)
+                        graphviz-dot-mode ix tdd-status-mode-line web-mode)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -786,6 +786,10 @@
   (setq mmm-global-mode 'maybe)
   (mmm-add-mode-ext-class 'html-mode "\\.php\\'" 'html-php))
 
+(when (package-dir "/web-mode")
+  (require 'web-mode)
+  )
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C-[S]-Tab cycle buffer
 (autoload `cyclebuffer-forward "cyclebuffer" "cycle forward" t)
@@ -871,7 +875,13 @@
          ("\\.js\\'" . js3-mode)
          ("Jamfile.v2" . jam-mode) 
          ("\\.jam$" . jam-mode)
-         ("\\.s?html$" . sgml-mode)
+         ("\\.(p|s)?html$" . web-mode)
+         ("\\.tpl\\.php\\'" . web-mode)
+         ("\\.jsp\\'" . web-mode)
+         ("\\.as[cp]x\\'" . web-mode)
+         ("\\.erb\\'" . web-mode)
+         ("\\.mustache\\'" . web-mode)
+         ("\\.djhtml\\'" . web-mode)
          ("\\.mc" . m4-mode) 
          ("\\.m4" . m4-mode)
          ("\.i$" . c++-mode)

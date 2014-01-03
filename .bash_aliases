@@ -32,3 +32,15 @@ alias ports='netstat -tulanp'
 
 # get web server headers #
 alias header='curl -I'
+
+if [ $TERM = "xterm" ]
+then
+    ## colorizer for Qt test output
+    nrm=$(tput sgr0)
+    red=$(tput bold;tput setaf 1)
+    green=$(tput setaf 2)
+    blue=$(tput bold;tput setaf 4)
+    alias colorize_qtest="sed -e 's/^\(FAIL\|QWARN\).*/$red\\0$nrm/' -e 's/^\(PASS\|XFAIL\|SKIP\).*/$green\\0$nrm/' -e 's/^QDEBUG.*/$blue\\0$nrm/'"
+    unset nrm red green blue
+fi
+
