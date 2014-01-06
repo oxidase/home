@@ -1,5 +1,6 @@
 #include "mainwidget.h"
 
+#include <QApplication>
 #include <QMouseEvent>
 #include <QBox3D>
 #include <QGLAbstractScene>
@@ -10,9 +11,9 @@
 
 MainWidget::MainWidget(QWidget *parent) :
     QGLWidget(parent),
+    repaintGL(false),
     angularSpeed(0),
-    viewer{QVector3D(0, 2, 6), QVector3D(0, -0.3, -1), QVector3D(0, 1, 0)},
-    mouseLastX(rect().width()/2), mouseLastY(rect().height()/2)
+    viewer{QVector3D(0, 2, 6), QVector3D(0, -0.3, -1), QVector3D(0, 1, 0)}
 {
     setMouseTracking(true);
 }
@@ -45,61 +46,74 @@ void MainWidget::keyPressEvent(QKeyEvent *e)
         rotationAxis = (rotationAxis * angularSpeed + QVector3D(+1.0, 0.0, 0.0) * acc).normalized();
         angularSpeed += acc;
     } else if (e->key() == Qt::Key_W) {
-        viewer[0] += step*viewer[1];
-        updateGL();
+        viewer.pos += step*viewer.dir;
+        repaintGL = true;
     } else if (e->key() == Qt::Key_S) {
-        viewer[0] -= step*viewer[1];
-        updateGL();
+        viewer.pos -= step*viewer.dir;
+        repaintGL = true;
     } else if (e->key() == Qt::Key_A) {
-        QVector3D dir = QVector3D::crossProduct(viewer[1], viewer[2]).normalized();
-        viewer[0] -= step*dir;
-        updateGL();
+        viewer.pos -= step*viewer.side();
+        repaintGL = true;
     } else if (e->key() == Qt::Key_D) {
-        QVector3D dir = QVector3D::crossProduct(viewer[1], viewer[2]).normalized();
-        viewer[0] += step*dir;
-        updateGL();
+        viewer.pos += step*viewer.side();
+        repaintGL = true;
     }
 }
 
 void MainWidget::mouseMoveEvent(QMouseEvent *e) {
-    return;
-    float sens = 1e-3;
-    if (mouseLastX != -1 || mouseLastY != -1) {
-        // float x = 2 * e->localPos().x() / rect().width() - 1.f;
-        // float y = 1.f - 2 * e->localPos().y() / rect().height();
-        QVector3D dirx = QVector3D::crossProduct(viewer[1], viewer[2]).normalized();
+    if (e->buttons() & Qt::LeftButton) {
+        QPoint center(width()/2, height()/2);
+        float dx = float(e->x() - center.x()) / width();
+        float dy = float(e->y() - center.y()) / height();
 
-        viewer[1] = viewer[1] + sens*(e->localPos().x()-mouseLastX)*dirx - sens*(e->localPos().y()-mouseLastY)*viewer[2];
-        viewer[1] = viewer[1].normalized();
-        updateGL();
+        if (dx != 0.f && dy != 0.f) {
+            float sens = 20;
+            QMatrix4x4 rot;
+            rot.rotate(-sens*dy, viewer.side());
+            rot.rotate(-sens*dx, viewer.up);
+
+            viewer.dir = rot*viewer.dir;
+            viewer.up = rot*viewer.up;
+            QCursor::setPos(mapToGlobal(center));
+            repaintGL = true;
+        }
     }
-    mouseLastX = e->localPos().x();
-    mouseLastY = e->localPos().y();
 }
 
 void MainWidget::mousePressEvent(QMouseEvent *e)
 {
-    // Save mouse press position
-    mousePressPosition = QVector2D(e->localPos());
+    if (e->button() == Qt::LeftButton) {
+        mouseLastPosition = e->globalPos();
+        QApplication::setOverrideCursor(QCursor(Qt::BlankCursor));
+        QCursor::setPos(mapToGlobal(QPoint(rect().width()/2, rect().height()/2)));
+    } else if (e->button() == Qt::RightButton) {
+        // Save mouse press position
+        mousePressPosition = QVector2D(e->localPos());
+    }
 }
 
 void MainWidget::mouseReleaseEvent(QMouseEvent *e)
 {
-    // Mouse release position - mouse press position
-    QVector2D diff = QVector2D(e->localPos()) - mousePressPosition;
+    if (e->button() == Qt::LeftButton) {
+        QCursor::setPos(mouseLastPosition);
+        QApplication::restoreOverrideCursor();    
+    }else if (e->button() == Qt::RightButton) {
+        // Mouse release position - mouse press position
+        QVector2D diff = QVector2D(e->localPos()) - mousePressPosition;
 
-    // Rotation axis is perpendicular to the mouse position difference
-    // vector
-    QVector3D n = QVector3D(diff.y(), diff.x(), 0.0).normalized();
+        // Rotation axis is perpendicular to the mouse position difference
+        // vector
+        QVector3D n = QVector3D(diff.y(), diff.x(), 0.0).normalized();
 
-    // Accelerate angular speed relative to the length of the mouse sweep
-    qreal acc = diff.length() / 100.0;
+        // Accelerate angular speed relative to the length of the mouse sweep
+        qreal acc = diff.length() / 100.0;
 
-    // Calculate new rotation axis as weighted sum
-    rotationAxis = (rotationAxis * angularSpeed + n * acc).normalized();
+        // Calculate new rotation axis as weighted sum
+        rotationAxis = (rotationAxis * angularSpeed + n * acc).normalized();
 
-    // Increase angular speed
-    angularSpeed += acc;
+        // Increase angular speed
+        angularSpeed += acc;
+    }
 }
 //! [0]
 
@@ -115,7 +129,10 @@ void MainWidget::timerEvent(QTimerEvent *)
     } else {
         // Update rotation
         rotation = QQuaternion::fromAxisAndAngle(rotationAxis, angularSpeed) * rotation;
+        repaintGL = true;
+    }
 
+    if (repaintGL) {
         // Update scene
         updateGL();
     }
@@ -216,8 +233,6 @@ void MainWidget::initScene()
     if (cube->geometry().isEmpty())
         return;
 
-    // qDebug() << cube->geometry().vertices() << cube->geometry().normals() << cube->geometry().texCoords() << cube->geometry().indices();
-
     glGenBuffers(4, vboIds);
 
     glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]);
@@ -277,7 +292,7 @@ void MainWidget::paintGL()
     program.setUniformValue("MVMatrix", model);
 
     QMatrix4x4 view;
-    view.lookAt(viewer[0], viewer[0] + viewer[1], viewer[2]);
+    view.lookAt(viewer.pos, viewer.lookAt(), viewer.up);
 
     program.setUniformValue("MVPMatrix", projection*view*model);
     program.setUniformValue("v_inv", view.inverted());
@@ -333,4 +348,6 @@ void MainWidget::paintGL()
     glDisableVertexAttribArray(attribute_v_coord);
     glDisableVertexAttribArray(attribute_v_normal);
     glDisableVertexAttribArray(attribute_v_texCoord);
+
+    repaintGL = false;
 }
