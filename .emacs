@@ -125,6 +125,7 @@
 (toggle-save-place-globally)                         ;; Save Emacs state for next session.
 (setq default-major-mode 'text-mode)                 ;; Make text mode default major mode.
 (setq shell-prompt-pattern "^[^#$%>\n]*[#$%>\)] *")  ;; My shell prompt ends on ")".
+(setq shell-command-switch "-ic")                    ;; Shell is interactive
 (setq visible-bell t)                                ;; Turn off beep.
 (setq ring-bell-function 'ignore)                    ;; Turn the alarm totally off
 (standard-display-8bit 128 255)                      ;; Do not expand unprintable characters to their octal values.

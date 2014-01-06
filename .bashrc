@@ -27,12 +27,9 @@ export PYTHONSTARTUP=~/.pythonrc
 export PS1='[\u@\h] $(x="\w";echo "${x#${x%/*/*}/}") \$ '
 export HISTCONTROL=ignoredups
 
-alias ll="env LANG=POSIX ls -al --color " # --group-directories-first
-alias cp="cp -i"
-alias mv="mv -i"
-alias rm="rm -i"
-alias psx="ps -auxw | grep $1" 
-mkcd() { mkdir -p "$1" && cd "$1"; }
+if [ -f ~/.bash_aliases ]; then
+  . ~/.bash_aliases
+fi
 
 # enable programmable completion features (you don't need to enable
 # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
