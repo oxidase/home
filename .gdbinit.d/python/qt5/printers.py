@@ -19,6 +19,15 @@
 import gdb
 import itertools
 import re
+import struct
+
+class QtPrivateRefCountPrinter:
+
+    def __init__(self, typename, val):
+        self.val = val
+
+    def to_string(self):
+        return '%d' % int(self.val['atomic']['_q_value'])
 
 class QStringPrinter:
 
@@ -54,39 +63,21 @@ class QStringPrinter:
 
 class QByteArrayPrinter:
 
-    def __init__(self, val):
+    def __init__(self, typename, val):
         self.val = val
 
-    class _iterator(Iterator):
-        def __init__(self, data, size):
-            self.data = data
-            self.size = size
-            self.count = 0
-
-        def __iter__(self):
-            return self
-
-        def __next__(self):
-            if self.count >= self.size:
-                raise StopIteration
-            count = self.count
-            self.count = self.count + 1
-            return ('[%d]' % count, self.data[count])
-
-    def children(self):
-        return self._iterator(self.val['d']['data'], self.val['d']['size'])
-
     def to_string(self):
-        #todo: handle charset correctly
-        return self.val['d']['data'].string()
+        pointer = self.val['d'].cast(gdb.lookup_type("char").pointer())+self.val['d']['offset']
+        ret = map(lambda i: hex(int(pointer[i]) % 0x100), range(min(4096, int(self.val['d']['size']))))
+        return 'QByteArray of length %d' % (int(self.val['d']['size'])) + ' = {' + ', '.join(ret) + '}'
 
     def display_hint (self):
-        return 'string'
+        return 'array'
 
 class QListPrinter:
     "Print a QList"
 
-    class _iterator(Iterator):
+    class _iterator:
         def __init__(self, nodetype, d):
             self.nodetype = nodetype
             self.d = d
@@ -128,53 +119,57 @@ class QListPrinter:
             self.count = self.count + 1
             return ('[%d]' % count, node['v'].cast(self.nodetype))
 
-    def __init__(self, val, container, itype):
+    def __init__(self, typename, val):
         self.val = val
-        self.container = container
-        if itype == None:
+        self.typename = typename
+        try:
             self.itype = self.val.type.template_argument(0)
-        else:
-            self.itype = gdb.lookup_type(itype)
+        except RuntimeError:
+            self.itype = None
 
     def children(self):
-        return self._iterator(self.itype, self.val['d'])
+        if self.itype is not None:
+            itype = self.itype
+        elif self.typename == 'QStringList':
+            itype = gdb.lookup_type('QString')
+        else:
+            itype = None
+        return self._iterator(itype, self.val['d'])
 
     def to_string(self):
-        if self.val['d']['end'] == self.val['d']['begin']:
-            empty = "empty "
-        else:
-            empty = ""
-
-        return "%s%s<%s>" % ( empty, self.container, self.itype )
+        empty = 'empty ' if self.val['d']['end'] == self.val['d']['begin'] else ''
+        type = self.typename if self.itype is None else '%s<%s>' % (self.typename, self.itype)
+        return empty + type
 
 class QVectorPrinter:
     "Print a QVector"
 
-    class _iterator(Iterator):
-        def __init__(self, nodetype, d, p):
+    class _iterator:
+        def __init__(self, nodetype, d, size):
             self.nodetype = nodetype
             self.d = d
-            self.p = p
+            self.size = size
             self.count = 0
 
         def __iter__(self):
             return self
 
         def __next__(self):
-            if self.count >= self.p['size']:
+            if self.count >= self.size:
                 raise StopIteration
             count = self.count
-
             self.count = self.count + 1
-            return ('[%d]' % count, self.p['array'][count])
+            return ('[%d]' % count, self.d[count])
 
-    def __init__(self, val, container):
+    def __init__(self, typename, val):
         self.val = val
-        self.container = container
+        self.typename = typename
         self.itype = self.val.type.template_argument(0)
 
     def children(self):
-        return self._iterator(self.itype, self.val['d'], self.val['p'])
+        pointer = self.val['d'].cast(gdb.lookup_type("char").pointer())+self.val['d']['offset']
+        size = int(self.val['d']['size'])
+        return self._iterator(self.itype, pointer.cast(self.itype.pointer()), size)
 
     def to_string(self):
         if self.val['d']['size'] == 0:
@@ -182,12 +177,12 @@ class QVectorPrinter:
         else:
             empty = ""
 
-        return "%s%s<%s>" % ( empty, self.container, self.itype )
+        return "%s%s<%s>" % ( empty, self.typename, self.itype )
 
 class QLinkedListPrinter:
     "Print a QLinkedList"
 
-    class _iterator(Iterator):
+    class _iterator:
         def __init__(self, nodetype, begin, size):
             self.nodetype = nodetype
             self.it = begin
@@ -225,7 +220,7 @@ class QLinkedListPrinter:
 class QMapPrinter:
     "Print a QMap"
 
-    class _iterator(Iterator):
+    class _iterator:
         def __init__(self, val):
             self.val = val
             self.ktype = self.val.type.template_argument(0)
@@ -302,7 +297,7 @@ class QMapPrinter:
 class QHashPrinter:
     "Print a QHash"
 
-    class _iterator(Iterator):
+    class _iterator:
         def __init__(self, val):
             self.val = val
             self.d = self.val['d']
@@ -411,7 +406,7 @@ class QHashPrinter:
 
 class QDatePrinter:
 
-    def __init__(self, val):
+    def __init__(self, typename, val):
         self.val = val
 
     def to_string(self):
@@ -450,7 +445,7 @@ class QDatePrinter:
 
 class QTimePrinter:
 
-    def __init__(self, val):
+    def __init__(self, typename, val):
         self.val = val
 
     def to_string(self):
@@ -471,20 +466,16 @@ class QTimePrinter:
 
 class QDateTimePrinter:
 
-    def __init__(self, val):
+    def __init__(self, typename, val):
         self.val = val
 
     def to_string(self):
-        #val['d'] is a QDateTimePrivate, but for some reason casting to that doesn't work
-        #so work around by manually adjusting the pointer
-        date = self.val['d'].cast(gdb.lookup_type('char').pointer());
-        date += gdb.lookup_type('int').sizeof #increment for QAtomicInt ref;
-        date = date.cast(gdb.lookup_type('QDate').pointer()).dereference();
-
-        time = self.val['d'].cast(gdb.lookup_type('char').pointer());
-        time += gdb.lookup_type('int').sizeof + gdb.lookup_type('QDate').sizeof #increment for QAtomicInt ref; and QDate date;
-        time = time.cast(gdb.lookup_type('QTime').pointer()).dereference();
-        return "%s %s" % (date, time)
+        from datetime import datetime as dt
+        from pytz import reference, utc
+        localtime = reference.LocalTimezone()
+        ms = int(self.val['d']['d']['m_msecs'])
+        ts = dt.fromtimestamp(ms // 1000, tz=utc)
+        return ts.strftime('%Y %h %d %H:%M:%S') + ('.%d %s (%d)'%(ms % 1000, localtime.tzname(ts), ms))
 
 class QUrlPrinter:
 
@@ -513,7 +504,7 @@ class QSetPrinter:
     def __init__(self, val):
         self.val = val
 
-    class _iterator(Iterator):
+    class _iterator:
         def __init__(self, hashIterator):
             self.hashIterator = hashIterator
             self.count = 0
@@ -661,24 +652,26 @@ def build_dictionary ():
 
     qt5_printer = Printer("Qt5")
 
+    qt5_printer.add('QtPrivate::RefCount', QtPrivateRefCountPrinter)
     qt5_printer.add('QString', QStringPrinter)
+    qt5_printer.add('QByteArray', QByteArrayPrinter)
+    qt5_printer.add('QStringList', QListPrinter)
+    qt5_printer.add('QList', QListPrinter)
+    qt5_printer.add('QVector', QVectorPrinter)
 
+    qt5_printer.add('QDate', QDatePrinter)
+    qt5_printer.add('QTime', QTimePrinter)
+    qt5_printer.add('QDateTime', QDateTimePrinter)
+    
     # TODO: remove
-    # pretty_printers_dict[re.compile('^QString$')] = lambda val: QStringPrinter(val)
-    # pretty_printers_dict[re.compile('^QByteArray$')] = lambda val: QByteArrayPrinter(val)
-    # pretty_printers_dict[re.compile('^QList<.*>$')] = lambda val: QListPrinter(val, 'QList', None)
-    # pretty_printers_dict[re.compile('^QStringList$')] = lambda val: QListPrinter(val, 'QStringList', 'QString')
+
     # pretty_printers_dict[re.compile('^QQueue')] = lambda val: QListPrinter(val, 'QQueue', None)
-    # pretty_printers_dict[re.compile('^QVector<.*>$')] = lambda val: QVectorPrinter(val, 'QVector')
     # pretty_printers_dict[re.compile('^QStack<.*>$')] = lambda val: QVectorPrinter(val, 'QStack')
     # pretty_printers_dict[re.compile('^QLinkedList<.*>$')] = lambda val: QLinkedListPrinter(val)
     # pretty_printers_dict[re.compile('^QMap<.*>$')] = lambda val: QMapPrinter(val, 'QMap')
     # pretty_printers_dict[re.compile('^QMultiMap<.*>$')] = lambda val: QMapPrinter(val, 'QMultiMap')
     # pretty_printers_dict[re.compile('^QHash<.*>$')] = lambda val: QHashPrinter(val, 'QHash')
     # pretty_printers_dict[re.compile('^QMultiHash<.*>$')] = lambda val: QHashPrinter(val, 'QMultiHash')
-    # pretty_printers_dict[re.compile('^QDate$')] = lambda val: QDatePrinter(val)
-    # pretty_printers_dict[re.compile('^QTime$')] = lambda val: QTimePrinter(val)
-    # pretty_printers_dict[re.compile('^QDateTime$')] = lambda val: QDateTimePrinter(val)
     # pretty_printers_dict[re.compile('^QUrl$')] = lambda val: QUrlPrinter(val)
     # pretty_printers_dict[re.compile('^QSet<.*>$')] = lambda val: QSetPrinter(val)
     # pretty_printers_dict[re.compile('^QChar$')] = lambda val: QCharPrinter(val)

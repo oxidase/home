@@ -19,6 +19,11 @@ set history save
 define go
   b main
   run
-  next 2
+  b simple.cpp:30
+  cont
   p s
+  p ba
+  p l
+  p sl
+  p vv
 end
