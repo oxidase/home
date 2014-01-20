@@ -40,7 +40,7 @@ then
     red=$(tput bold;tput setaf 1)
     green=$(tput setaf 2)
     blue=$(tput bold;tput setaf 4)
-    alias colorize_qtest="sed -e 's/^\(FAIL\|QWARN\).*/$red\\0$nrm/' -e 's/^\(PASS\|XFAIL\|SKIP\).*/$green\\0$nrm/' -e 's/^QDEBUG.*/$blue\\0$nrm/'"
+    alias colorize_qtest="sed -e 's/^\(FAIL\|QWARN\|WARNING\).*/$red\\0$nrm/' -e 's/^\(PASS\|XPASS\|XFAIL\|SKIP\).*/$green\\0$nrm/' -e 's/^QDEBUG.*/$blue\\0$nrm/'"
     unset nrm red green blue
 fi
 

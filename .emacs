@@ -53,7 +53,7 @@
                         magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
                         yasnippet cedet helm 
                         org org-bullets org-jira org-magit org-pomodoro kanban ob-mongo
-                        graphviz-dot-mode ix tdd-status-mode-line web-mode)
+                        graphviz-dot-mode tdd-status-mode-line web-mode)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -345,11 +345,6 @@
   (require 'magit)
   (require 'magit-blame)
   (custom-set-variables '(git-commit-summary-max-length 70)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; ix
-(when (package-dir "ix*")
-  (require 'ix))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Matlab mode
@@ -845,7 +840,7 @@
          ("\\.nxc$" . c++-mode)
          ("\\.pr[oif]$" . qt-pro-mode)
          ("\\.dps$" . pascal-mode)
-         ("\\.qml$" . qml-mode)
+         ("\\.qml\\(types\\)?$" . qml-mode)
          ("\\.pro$" . text-mode)
          ("\\.l$" . c-mode)
          ("\\.y$" . c-mode)
