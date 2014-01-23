@@ -1,4 +1,5 @@
 ## specific host settings
+
 case $HOSTNAME in
 pc*)
     rcfiles="pcmpi $HOSTNAME" ;;
@@ -9,8 +10,6 @@ node*.*.mpimd|otto*)
 *)
     rcfiles=$HOSTNAME ;;
 esac
-
-
 
 for h in $rcfiles ; do 
     [ -f "$HOME/.bashrc.d/$h" ] && source "$HOME/.bashrc.d/$h"

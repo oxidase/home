@@ -1,6 +1,6 @@
 # -*- mode: sh -*-
 
-
+shopt -s expand_aliases
 
 ## Colorize the ls output ##
 alias ls='env LANG=POSIX ls --color=auto'
@@ -43,4 +43,3 @@ then
     alias colorize_qtest="sed -e 's/^\(FAIL\|QWARN\|WARNING\).*/$red\\0$nrm/' -e 's/^\(PASS\|XPASS\|XFAIL\|SKIP\).*/$green\\0$nrm/' -e 's/^QDEBUG.*/$blue\\0$nrm/'"
     unset nrm red green blue
 fi
-
