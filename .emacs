@@ -380,10 +380,10 @@
   (require 'graphviz-dot-mode))
 
 
-(setq socks-noproxy '("localhost"))
-(require 'socks)
-(setq erc-server-connect-function 'socks-open-network-stream)
-(setq socks-server (list "My socks server" "localhost" 3128 5))
+; (setq socks-noproxy '("localhost"))
+; (require 'socks)
+; (setq erc-server-connect-function 'socks-open-network-stream)
+; (setq socks-server (list "My socks server" "localhost" 3128 5))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Visible bookmarks in buffer.
@@ -523,16 +523,15 @@
       (setq run-command
        (get-shell-command 
          (cond
-          ((eq major-mode 'python-mode) "python %f")
+          ((eq major-mode 'python-mode) "python3 %f")
           ((eq major-mode 'qml-mode)
            (local-set-key '[S-f5]  (lambda () (interactive) (save-window-excursion (shell-command run-command))))
            "qmlscene %f &")
           (t "./%n"))))
       (put 'run-command 'safe-local-variable 'run-command-safe-variable)
-      (defun run-command-safe-variable (var) (string-match 
-;;         "^[ \t\n\r]*\./.+\\|qml\\(scene\\|viewer\\)\\|optirun[ \t\n\r]" var))
-           "^[ \t\n\r]*\\(qml\\(scene\\|viewer\\)\\|optirun\\)[ \t\n\r]*\./.+" var))
-      )
+      (defun run-command-safe-variable (var) (or
+             (string-match "^[ \t\n\r]*\\(qml\\(scene\\|viewer\\)\\|optirun\\)[ \t\n\r]*\./.+" var)
+             (string-match "/usr/bin/curl.+" var))))
     
     ;; settings depending on the mode
     (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
