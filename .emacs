@@ -53,7 +53,7 @@
                         magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
                         yasnippet cedet helm 
                         org org-bullets org-jira org-magit org-pomodoro kanban ob-mongo
-                        graphviz-dot-mode ix tdd-status-mode-line web-mode)
+                        graphviz-dot-mode tdd-status-mode-line web-mode)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -125,7 +125,7 @@
 (toggle-save-place-globally)                         ;; Save Emacs state for next session.
 (setq default-major-mode 'text-mode)                 ;; Make text mode default major mode.
 (setq shell-prompt-pattern "^[^#$%>\n]*[#$%>\)] *")  ;; My shell prompt ends on ")".
-(setq shell-command-switch "-ic")                    ;; Shell is interactive
+(setq shell-command-switch "-lc")                    ;; Shell is interactive
 (setq visible-bell t)                                ;; Turn off beep.
 (setq ring-bell-function 'ignore)                    ;; Turn the alarm totally off
 (standard-display-8bit 128 255)                      ;; Do not expand unprintable characters to their octal values.
@@ -345,11 +345,6 @@
   (require 'magit)
   (require 'magit-blame)
   (custom-set-variables '(git-commit-summary-max-length 70)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; ix
-(when (package-dir "ix*")
-  (require 'ix))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Matlab mode
@@ -845,7 +840,7 @@
          ("\\.nxc$" . c++-mode)
          ("\\.pr[oif]$" . qt-pro-mode)
          ("\\.dps$" . pascal-mode)
-         ("\\.qml$" . qml-mode)
+         ("\\.qml\\(types\\)?$" . qml-mode)
          ("\\.pro$" . text-mode)
          ("\\.l$" . c-mode)
          ("\\.y$" . c-mode)
