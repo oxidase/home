@@ -39,8 +39,8 @@
 **
 ****************************************************************************/
 
-#ifndef QGEOTILEFETCHEROSM_H
-#define QGEOTILEFETCHEROSM_H
+#ifndef QGEOTILEFETCHERGOOGLE_H
+#define QGEOTILEFETCHERGOOGLE_H
 
 #include <QtLocation/private/qgeotilefetcher_p.h>
 
@@ -67,4 +67,4 @@ private:
 
 QT_END_NAMESPACE
 
-#endif // QGEOTILEFETCHEROSM_H
+#endif // QGEOTILEFETCHERGOOGLE_H

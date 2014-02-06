@@ -145,7 +145,7 @@ static QSet<QGeoCodeTypeGoogle> json2QGeoCodeTypeGoogle(const QJsonArray &types)
 
 
 
-QGeoCodeReplyOsm::QGeoCodeReplyOsm(QNetworkReply *reply, QObject *parent)
+QGeoCodeReplyGoogle::QGeoCodeReplyGoogle(QNetworkReply *reply, QObject *parent)
 :   QGeoCodeReply(parent), m_reply(reply)
 {
     connect(m_reply, SIGNAL(finished()), this, SLOT(networkReplyFinished()));
@@ -156,13 +156,13 @@ QGeoCodeReplyOsm::QGeoCodeReplyOsm(QNetworkReply *reply, QObject *parent)
     setOffset(0);
 }
 
-QGeoCodeReplyOsm::~QGeoCodeReplyOsm()
+QGeoCodeReplyGoogle::~QGeoCodeReplyGoogle()
 {
     if (m_reply)
         m_reply->deleteLater();
 }
 
-void QGeoCodeReplyOsm::abort()
+void QGeoCodeReplyGoogle::abort()
 {
     if (!m_reply)
         return;
@@ -173,7 +173,7 @@ void QGeoCodeReplyOsm::abort()
     m_reply = 0;
 }
 
-void QGeoCodeReplyOsm::networkReplyFinished()
+void QGeoCodeReplyGoogle::networkReplyFinished()
 {
     if (!m_reply)
         return;
@@ -200,11 +200,9 @@ void QGeoCodeReplyOsm::networkReplyFinished()
             continue;
 
         QJsonObject geocode = results[i].toObject();
-        // qDebug() << "----------------------------------------------------------------------------------------------------\n" << geocode << "\n" << geocode.keys() << geocode.contains(QStringLiteral("formatted_address"));
         
         QGeoAddress address;
         if (geocode.contains(QStringLiteral("formatted_address"))) {
-            // qDebug() << geocode.value(QStringLiteral("formatted_address")).toString();
             address.setText(geocode.value(QStringLiteral("formatted_address")).toString());
         }
         
@@ -267,7 +265,6 @@ void QGeoCodeReplyOsm::networkReplyFinished()
         QGeoLocation location;
         location.setAddress(address);
         location.setCoordinate(coordinate);
-        // qDebug() << boundingBox;
         location.setBoundingBox(boundingBox);
 
         locations << location;
@@ -280,7 +277,7 @@ void QGeoCodeReplyOsm::networkReplyFinished()
     m_reply = 0;
 }
 
-void QGeoCodeReplyOsm::networkReplyError(QNetworkReply::NetworkError error)
+void QGeoCodeReplyGoogle::networkReplyError(QNetworkReply::NetworkError error)
 {
     Q_UNUSED(error)
 

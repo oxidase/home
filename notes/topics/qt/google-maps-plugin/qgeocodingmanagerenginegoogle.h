@@ -1,3 +1,4 @@
+// -*- compile-command: "make" -*-
 /****************************************************************************
 **
 ** Copyright (C) 2013 Aaron McCarthy <mccarthy.aaron@gmail.com>
@@ -39,8 +40,8 @@
 **
 ****************************************************************************/
 
-#ifndef QGEOCODINGMANAGERENGINEOSM_H
-#define QGEOCODINGMANAGERENGINEOSM_H
+#ifndef QGEOCODINGMANAGERENGINEGOOGLE_H
+#define QGEOCODINGMANAGERENGINEGOOGLE_H
 
 #include <QtLocation/QGeoServiceProvider>
 #include <QtLocation/QGeoCodingManagerEngine>
@@ -50,14 +51,14 @@ QT_BEGIN_NAMESPACE
 
 class QNetworkAccessManager;
 
-class QGeoCodingManagerEngineOsm : public QGeoCodingManagerEngine
+class QGeoCodingManagerEngineGoogle : public QGeoCodingManagerEngine
 {
     Q_OBJECT
 
 public:
-    QGeoCodingManagerEngineOsm(const QVariantMap &parameters, QGeoServiceProvider::Error *error,
+    QGeoCodingManagerEngineGoogle(const QVariantMap &parameters, QGeoServiceProvider::Error *error,
                                QString *errorString);
-    ~QGeoCodingManagerEngineOsm();
+    ~QGeoCodingManagerEngineGoogle();
 
     QGeoCodeReply *geocode(const QGeoAddress &address, const QGeoShape &bounds) Q_DECL_OVERRIDE;
     QGeoCodeReply *geocode(const QString &address, int limit, int offset,
@@ -76,4 +77,4 @@ private:
 
 QT_END_NAMESPACE
 
-#endif // QGEOCODINGMANAGERENGINEOSM_H
+#endif // QGEOCODINGMANAGERENGINEGOOGLE_H

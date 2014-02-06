@@ -40,24 +40,23 @@
 **
 ****************************************************************************/
 
-#ifndef QGEOROUTEREPLYOSM_H
-#define QGEOROUTEREPLYOSM_H
+#ifndef QPLACESEARCHREPLYGOOGLE_H
+#define QPLACESEARCHREPLYGOOGLE_H
 
 #include <QtNetwork/QNetworkReply>
-#include <QtLocation/QGeoRouteReply>
+#include <QtLocation/QPlaceSearchReply>
 
 QT_BEGIN_NAMESPACE
 
-class QGeoRouteReplyOsm : public QGeoRouteReply
+class QPlaceSearchReplyGoogle : public QPlaceSearchReply
 {
     Q_OBJECT
 
 public:
-    explicit QGeoRouteReplyOsm(QObject *parent = 0);
-    QGeoRouteReplyOsm(QNetworkReply *reply, const QGeoRouteRequest &request, QObject *parent = 0);
-    ~QGeoRouteReplyOsm();
+    explicit QPlaceSearchReplyGoogle(QNetworkReply *reply, QObject *parent = 0);
+    ~QPlaceSearchReplyGoogle();
 
-    void abort() Q_DECL_OVERRIDE;
+    void abort();
 
 private Q_SLOTS:
     void networkReplyFinished();
@@ -69,5 +68,4 @@ private:
 
 QT_END_NAMESPACE
 
-#endif // QGEOROUTEREPLYOSM_H
-
+#endif // QPLACESEARCHREPLYGOOGLE_H

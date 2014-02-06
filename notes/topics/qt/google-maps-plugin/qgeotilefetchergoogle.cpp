@@ -98,6 +98,7 @@ QGeoTiledMapReply *QGeoTileFetcherGoogle::getTileImage(const QGeoTileSpec &spec)
     qDebug() << url;
     
     QNetworkReply *reply = m_networkManager->get(request);
+    reply->setParent(0);
 
     return new QGeoMapReplyGoogle(reply, spec);
 }

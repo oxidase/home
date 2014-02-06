@@ -40,31 +40,31 @@
 **
 ****************************************************************************/
 
-#ifndef QGEOROUTINGMANAGERENGINEOSM_H
-#define QGEOROUTINGMANAGERENGINEOSM_H
+#ifndef QPLACEMANAGERENGINEGOOGLE_H
+#define QPLACEMANAGERENGINEGOOGLE_H
 
 #include <QtLocation/QGeoServiceProvider>
-#include <QtLocation/QGeoRoutingManagerEngine>
+#include <QtLocation/QPlaceManagerEngine>
+#include <QtLocation/QPlaceReply>
 
 QT_BEGIN_NAMESPACE
 
 class QNetworkAccessManager;
 
-class QGeoRoutingManagerEngineOsm : public QGeoRoutingManagerEngine
+class QPlaceManagerEngineGoogle : public QPlaceManagerEngine
 {
     Q_OBJECT
 
 public:
-    QGeoRoutingManagerEngineOsm(const QVariantMap &parameters,
-                                QGeoServiceProvider::Error *error,
-                                QString *errorString);
-    ~QGeoRoutingManagerEngineOsm();
+    QPlaceManagerEngineGoogle(const QVariantMap &parameters, QGeoServiceProvider::Error *error,
+                               QString *errorString);
+    ~QPlaceManagerEngineGoogle();
 
-    QGeoRouteReply *calculateRoute(const QGeoRouteRequest &request);
+    QPlaceSearchReply *search(const QPlaceSearchRequest &request);
 
 private Q_SLOTS:
     void replyFinished();
-    void replyError(QGeoRouteReply::Error errorCode, const QString &errorString);
+    void replyError(QPlaceReply::Error errorCode, const QString &errorString);
 
 private:
     QNetworkAccessManager *m_networkManager;
@@ -73,5 +73,4 @@ private:
 
 QT_END_NAMESPACE
 
-#endif // QGEOROUTINGMANAGERENGINEOSM_H
-
+#endif // QPLACEMANAGERENGINEGOOGLE_H

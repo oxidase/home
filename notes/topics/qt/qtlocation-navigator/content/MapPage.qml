@@ -3,7 +3,6 @@ import QtLocation 5.0
 import QtPositioning 5.2
 import Qt.labs.settings 1.0
 
-//! [top]
 Map {
     id: map
     plugin: locationPlugin
@@ -14,6 +13,8 @@ Map {
     // gesture.onPanFinished: console.log('panFinished')
     // gesture.onFlickStarted: console.log('flickStarted')
     // gesture.onFlickFinished: console.log('onFlickFinished')
+    tilt: 30
+    bearing: 180
 
     function clear() {
         clearMapItems()
@@ -30,7 +31,27 @@ Map {
         }
         routeModel.update();
     }
-    
+
+    function fitToBoundingBox(box) {
+        if (typeof box === undefined)
+            return;
+        // position camera to the center of bounding box
+        center = box.center
+        // adjust zoom
+        QtPositioning.coordinate(50.3844,30.4799, 0)
+        var boxWidth = box.center.distanceTo(QtPositioning.coordinate())
+        var boxHeight = box.height*111000;
+        var mapWidth = widthInMeters(0), mapHeight = heightInMeters(0);
+        var boxWidthRatio = boxWidth / (boxWidth + boxHeight);
+        var mapWidthRatio = mapWidth / (mapWidth + mapHeight);
+        var zoomRatio = boxWidthRatio > mapWidthRatio ?
+                        mapWidth / boxWidth :
+                        mapHeight / boxHeight;
+        var newZoom = Math.log(zoomRatio) / Math.log(2);
+        zoomLevel = Math.min(maximumZoomLevel, Math.max(minimumZoomLevel, Math.floor(zoomLevel + newZoom)));
+        bearing = 270
+    }
+
     function widthInMeters(y) {
         var coord1 = map.toCoordinate(Qt.point(0, y));
         var coord2 = map.toCoordinate(Qt.point(width, y));
@@ -52,6 +73,7 @@ Map {
 
     RouteQuery {
         id: routeQuery
+        numberAlternativeRoutes: 2
     }
 
     RouteModel {
@@ -61,29 +83,40 @@ Map {
         onStatusChanged: {
             if (status == RouteModel.Ready) {
                 if (count > 0) {
-                    routeInfoModel.update(routeModel.get(0))
+                    routeInfoModel.update(routeModel.get(0));
+                    fitToBoundingBox(routeModel.get(0).bounds);
+                    routeInfoPage.currentIndex = 0;
+                    routeInfoPage.visible = true;
                 }
             } else if (status == RouteModel.Error) {
-                console.log('RouteModel error =', routeModel.errorString)
+                console.log('RouteModel error =', routeModel.errorString);
             }
         }
     }
 
     MapItemView {
         model: routeModel
-        // autoFitViewport: true
+        autoFitViewport: true
         delegate: MapRoute {
             route: routeData
 
             line.color: routeMouseArea.containsMouse ? "lime" : "red"
             line.width: 5
             smooth: true
+            visible: index === routeInfoPage.currentIndex
             MapMouseArea {
                 id: routeMouseArea
                 anchors.fill: parent
                 hoverEnabled: false
             }
         }
+    }
+
+    RouteInfoPage {
+        id: routeInfoPage
+        visible: false
+        z: map.z + 2
+        model: routeModel
     }
 
     ListModel {
@@ -119,6 +152,8 @@ Map {
             }
         }
     }
+
+    onCenterChanged: map.center = center
 
     Component.onCompleted: {
         var start = Qt.createQmlObject ('Marker {}', map)

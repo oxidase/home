@@ -39,15 +39,15 @@
 **
 ****************************************************************************/
 
-#ifndef QGEOSERVICEPROVIDER_OSM_H
-#define QGEOSERVICEPROVIDER_OSM_H
+#ifndef QGEOSERVICEPROVIDER_GOOGLE_H
+#define QGEOSERVICEPROVIDER_GOOGLE_H
 
 #include <QtCore/QObject>
 #include <QtLocation/QGeoServiceProviderFactory>
 
 QT_BEGIN_NAMESPACE
 
-class QGeoServiceProviderFactoryOsm: public QObject, public QGeoServiceProviderFactory
+class QGeoServiceProviderFactoryGoogle: public QObject, public QGeoServiceProviderFactory
 {
     Q_OBJECT
     Q_INTERFACES(QGeoServiceProviderFactory)
@@ -71,4 +71,4 @@ public:
 
 QT_END_NAMESPACE
 
-#endif
+#endif // QGEOSERVICEPROVIDER_GOOGLE_H

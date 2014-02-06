@@ -1,3 +1,4 @@
+// -*- compile-command: "make" -*-
 /****************************************************************************
 **
 ** Copyright (C) 2013 Aaron McCarthy <mccarthy.aaron@gmail.com>
@@ -39,21 +40,21 @@
 **
 ****************************************************************************/
 
-#ifndef QGEOCODEREPLYOSM_H
-#define QGEOCODEREPLYOSM_H
+#ifndef QGEOCODEREPLYGOOGLE_H
+#define QGEOCODEREPLYGOOGLE_H
 
 #include <QtNetwork/QNetworkReply>
 #include <QtLocation/QGeoCodeReply>
 
 QT_BEGIN_NAMESPACE
 
-class QGeoCodeReplyOsm : public QGeoCodeReply
+class QGeoCodeReplyGoogle : public QGeoCodeReply
 {
     Q_OBJECT
 
 public:
-    explicit QGeoCodeReplyOsm(QNetworkReply *reply, QObject *parent = 0);
-    ~QGeoCodeReplyOsm();
+    explicit QGeoCodeReplyGoogle(QNetworkReply *reply, QObject *parent = 0);
+    ~QGeoCodeReplyGoogle();
 
     void abort();
 
@@ -67,4 +68,4 @@ private:
 
 QT_END_NAMESPACE
 
-#endif // QGEOCODEREPLYOSM_H
+#endif // QGEOCODEREPLYGOOGLE_H

@@ -11,8 +11,11 @@ HEADERS += \
     qgeomapreplygoogle.h \
     qgeocodingmanagerenginegoogle.h \
     qgeocodereplygoogle.h \
-    qgeoroutingmanagerengineosm.h \
-    qgeoroutereplyosm.h
+    qgeoroutingmanagerenginegoogle.h \
+    qgeoroutereplygoogle.h \
+    qplacemanagerenginegoogle.h \
+    qplacesearchreplygoogle.h \
+    googlehelpers.h
 
 
 SOURCES += \
@@ -22,8 +25,11 @@ SOURCES += \
     qgeomapreplygoogle.cpp \
     qgeocodingmanagerenginegoogle.cpp \
     qgeocodereplygoogle.cpp \
-    qgeoroutingmanagerengineosm.cpp \
-    qgeoroutereplyosm.cpp
+    qgeoroutingmanagerenginegoogle.cpp \
+    qgeoroutereplygoogle.cpp \
+    qplacemanagerenginegoogle.cpp \
+    qplacesearchreplygoogle.cpp \
+    googlehelpers.cpp
 
 OTHER_FILES += \
     google_maps_plugin.json

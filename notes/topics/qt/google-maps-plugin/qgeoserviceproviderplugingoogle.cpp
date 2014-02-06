@@ -44,42 +44,35 @@
 #include "qgeoserviceproviderplugingoogle.h"
 #include "qgeotiledmappingmanagerenginegoogle.h"
 #include "qgeocodingmanagerenginegoogle.h"
-#include "qgeoroutingmanagerengineosm.h"
+#include "qgeoroutingmanagerenginegoogle.h"
+#include "qplacemanagerenginegoogle.h"
 
 #include <QtLocation/private/qgeotiledmappingmanagerengine_p.h>
 
 QT_BEGIN_NAMESPACE
 
-QGeoCodingManagerEngine *QGeoServiceProviderFactoryOsm::createGeocodingManagerEngine(
+QGeoCodingManagerEngine *QGeoServiceProviderFactoryGoogle::createGeocodingManagerEngine(
     const QVariantMap &parameters, QGeoServiceProvider::Error *error, QString *errorString) const
 {
-    qDebug() << Q_FUNC_INFO;
-    return new QGeoCodingManagerEngineOsm(parameters, error, errorString);
+    return new QGeoCodingManagerEngineGoogle(parameters, error, errorString);
 }
 
-QGeoMappingManagerEngine *QGeoServiceProviderFactoryOsm::createMappingManagerEngine(
+QGeoMappingManagerEngine *QGeoServiceProviderFactoryGoogle::createMappingManagerEngine(
     const QVariantMap &parameters, QGeoServiceProvider::Error *error, QString *errorString) const
 {
-    qDebug() << Q_FUNC_INFO;
     return new QGeoTiledMappingManagerEngineGoogle(parameters, error, errorString);
 }
 
-QGeoRoutingManagerEngine *QGeoServiceProviderFactoryOsm::createRoutingManagerEngine(
+QGeoRoutingManagerEngine *QGeoServiceProviderFactoryGoogle::createRoutingManagerEngine(
     const QVariantMap &parameters, QGeoServiceProvider::Error *error, QString *errorString) const
 {
-    qDebug() << Q_FUNC_INFO;
-    return new QGeoRoutingManagerEngineOsm(parameters, error, errorString);
+    return new QGeoRoutingManagerEngineGoogle(parameters, error, errorString);
 }
 
-QPlaceManagerEngine *QGeoServiceProviderFactoryOsm::createPlaceManagerEngine(
+QPlaceManagerEngine *QGeoServiceProviderFactoryGoogle::createPlaceManagerEngine(
     const QVariantMap &parameters, QGeoServiceProvider::Error *error, QString *errorString) const
 {
-    qDebug() << Q_FUNC_INFO;
-    Q_UNUSED(parameters)
-    Q_UNUSED(error)
-    Q_UNUSED(errorString)
-
-    return 0;
+    return new QPlaceManagerEngineGoogle(parameters, error, errorString);
 }
 
 QT_END_NAMESPACE

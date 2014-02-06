@@ -40,8 +40,8 @@
 **
 ****************************************************************************/
 
-#ifndef QGEOMAPREPLYOSM_H
-#define QGEOMAPREPLYOSM_H
+#ifndef QGEOMAPREPLYGOOGLE_H
+#define QGEOMAPREPLYGOOGLE_H
 
 #include <QtNetwork/QNetworkReply>
 #include <QtLocation/private/qgeotiledmapreply_p.h>
@@ -71,4 +71,4 @@ private:
 
 QT_END_NAMESPACE
 
-#endif // QGEOMAPREPLYOSM_H
+#endif // QGEOMAPREPLYGOOGLE_H
