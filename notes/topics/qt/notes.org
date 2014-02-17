@@ -40,3 +40,8 @@ git push ssh://oxidase@codereview.qt-project.org:29418/qt/qtbase HEAD:refs/for/s
 
 git checkout release && git pull && git rebase -i release my_branch
 там pick заменишь на reword и изменишь дескрипшн
+
+
+* WebKit
+make -C Source/WebKit/qt/declarative -f Makefile.declarative.public install
+sudo cp bin/QtWebProcess /usr/local/bin

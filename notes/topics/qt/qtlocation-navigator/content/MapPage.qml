@@ -13,8 +13,8 @@ Map {
     // gesture.onPanFinished: console.log('panFinished')
     // gesture.onFlickStarted: console.log('flickStarted')
     // gesture.onFlickFinished: console.log('onFlickFinished')
-    tilt: 30
-    bearing: 180
+    // tilt: 30
+    // bearing: 180
 
     function clear() {
         clearMapItems()
@@ -38,7 +38,6 @@ Map {
         // position camera to the center of bounding box
         center = box.center
         // adjust zoom
-        QtPositioning.coordinate(50.3844,30.4799, 0)
         var boxWidth = box.center.distanceTo(QtPositioning.coordinate())
         var boxHeight = box.height*111000;
         var mapWidth = widthInMeters(0), mapHeight = heightInMeters(0);
@@ -49,7 +48,6 @@ Map {
                         mapHeight / boxHeight;
         var newZoom = Math.log(zoomRatio) / Math.log(2);
         zoomLevel = Math.min(maximumZoomLevel, Math.max(minimumZoomLevel, Math.floor(zoomLevel + newZoom)));
-        bearing = 270
     }
 
     function widthInMeters(y) {
@@ -104,7 +102,7 @@ Map {
             line.width: 5
             smooth: true
             visible: index === routeInfoPage.currentIndex
-            MapMouseArea {
+            MouseArea {
                 id: routeMouseArea
                 anchors.fill: parent
                 hoverEnabled: false
@@ -139,7 +137,7 @@ Map {
         }
     }
 
-    MapMouseArea {
+    MouseArea {
         property bool positionHeld: false
         anchors.fill: parent
         onPressed: positionHeld = true
@@ -147,7 +145,7 @@ Map {
         onPressAndHold: {
             if (positionHeld) {
                 var marker = Qt.createQmlObject ('Marker {}', map)
-                marker.coordinate = mouseToCoordinate(mouse)
+                marker.coordinate = mouseToCoordinate(Qt.point(mouse.x, mouse.y))
                 map.addMapItem(marker)
             }
         }

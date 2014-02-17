@@ -45,7 +45,7 @@ MapQuickItem {
         }
     }
 
-    MapMouseArea {
+    MouseArea {
         property double bound: 0.1
 
         z: parent.z
