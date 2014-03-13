@@ -174,6 +174,8 @@
   (ansi-color-apply-on-region (point-min) (point-max)))
 (add-hook 'compilation-filter-hook 'ansi-colorize-buffer)
 
+(server-start)
+
 ;;}}}
 
 ;;{{{ Load local packages
@@ -201,6 +203,9 @@
 (define-key dired-sort-map "d" (lambda () "sort by name grouping Dirs" (interactive) (dired-sort-other (concat dired-listing-switches " --group-directories-first"))))
 
 ;; humanized output
+(setq dired-listing-switches-styles
+      (if (string-match ".tm.ro." system-name) '("-alh" "-al")
+        '("-alh --group-directories-first" "-al --group-directories-first")))
 (setq dired-listing-switches-styles '("-alh --group-directories-first" "-al --group-directories-first"))
 (setq dired-listing-switches-idx 0)
 (setq dired-listing-switches (nth dired-listing-switches-idx dired-listing-switches-styles))
@@ -956,6 +961,12 @@
     ((string= system-name "miha-luxoft")
      (setq default-frame-alist `(
           (top . 0) (left . ,(if (> (x-display-pixel-width) 1920) 1380 120)) (width . 224) (height . 58)
+          (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
+          )))
+
+    ((string-match ".tm.ro." system-name)
+     (setq default-frame-alist `(
+          (top . 0) (left . ,(if (> (x-display-pixel-width) 1920) 1380 120)) (width . 224) (height . 60)
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
           )))
     ;;

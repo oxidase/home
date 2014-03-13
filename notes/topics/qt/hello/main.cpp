@@ -6,6 +6,8 @@
 
 int main(int argc, char *argv[])
 {
+    qmlRegisterType<Model>("",1,0,"Model");
+
     QGuiApplication app(argc, argv);
     
     QQuickView *view = new QQuickView;

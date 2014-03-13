@@ -1,4 +1,4 @@
-QT += quick 
+QT += quick qml
 SOURCES = main.cpp model.cpp adaptor.cpp
 HEADERS = model.h adaptor.h
 
