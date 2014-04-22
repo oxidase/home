@@ -51,7 +51,7 @@
 ;; Guarantee all packages are installed on start
 (defvar packages-list '(auctex bm dired-single git-blame google-translate js3-mode
                         magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
-                        yasnippet cedet helm 
+                        yasnippet cedet helm
                         org org-bullets org-jira org-magit org-pomodoro kanban ob-mongo
                         graphviz-dot-mode tdd-status-mode-line web-mode)
   "List of packages needs to be installed at launch")
@@ -77,7 +77,7 @@
 (if (file-exists-p custom-file)
     (load custom-file))
 
-(when (< emacs-major-version 24) 
+(when (< emacs-major-version 24)
   (pc-bindings-mode)
   (if (< emacs-major-version 22) (pc-selection-mode) (pc-selection-mode t)))
 
@@ -139,13 +139,15 @@
 (put 'downcase-region 'disabled nil)                 ;; Convert the region to lower case.
 (blink-cursor-mode -1)                               ;; Switch off blinking cursor mode.
 (setq large-file-warning-threshold nil)              ;; Maximum size of file above which a confirmation is requested
+(setq-default show-trailing-whitespace t)
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
 (setq printer-name "pscs301")
 (tool-bar-mode -1)
 (setq vc-follow-symlinks t)
 (setq grep-command "grep -nHriI -e ")
 (if (not (assq 'user-size initial-frame-alist))      ;; Unless we've specified a number of lines, prevent the startup code from
-    (setq tool-bar-originally-present nil))          ;; shrinking the frame because we got rid of the tool-bar. 
-;; ediff 
+    (setq tool-bar-originally-present nil))          ;; shrinking the frame because we got rid of the tool-bar.
+;; ediff
 (setq ediff-window-setup-function 'ediff-setup-windows-plain)
 (setq ediff-split-window-function 'split-window-horizontally)
 (defadvice ediff-quit (around advice-ediff-quit activate)
@@ -206,12 +208,11 @@
 (setq dired-listing-switches-styles
       (if (string-match ".tm.ro." system-name) '("-alh" "-al")
         '("-alh --group-directories-first" "-al --group-directories-first")))
-(setq dired-listing-switches-styles '("-alh --group-directories-first" "-al --group-directories-first"))
 (setq dired-listing-switches-idx 0)
 (setq dired-listing-switches (nth dired-listing-switches-idx dired-listing-switches-styles))
-(define-key dired-mode-map "h" (lambda () (interactive) 
+(define-key dired-mode-map "h" (lambda () (interactive)
                                  (setq dired-listing-switches-idx (% (1+ dired-listing-switches-idx) (length dired-listing-switches-styles)))
-                                 (setq dired-listing-switches (nth dired-listing-switches-idx dired-listing-switches-styles)) 
+                                 (setq dired-listing-switches (nth dired-listing-switches-idx dired-listing-switches-styles))
                                  (setq dired-actual-switches dired-listing-switches)
                                  (revert-buffer)))
 
@@ -250,7 +251,7 @@
     (setq mouse-1-click-follows-link 200)
     ;; TODO: add call stack
     (add-hook 'before-change-major-mode-hook
-              '(lambda () (when (eq major-mode 'dired-mode) 
+              '(lambda () (when (eq major-mode 'dired-mode)
                             (print 'aaa)
                             (print (previous-buffer))
                             (make-local-variable 'dired-stack)
@@ -260,9 +261,9 @@
     (defun dired-single-buffer-down ()
       (interactive)
       (let ((name (dired-get-filename nil t)))
-        (cond 
-         ((file-accessible-directory-p name) 
-          (push (file-name-nondirectory name) dired-single-stack) 
+        (cond
+         ((file-accessible-directory-p name)
+          (push (file-name-nondirectory name) dired-single-stack)
           (dired-single-buffer name))
          (t (dired-single-buffer)))))
     (defun dired-single-buffer-up ()
@@ -271,15 +272,15 @@
         (dired-single-buffer "..")
         (when name
           (setq pos (search-forward-regexp (concat name "$") nil t))
-          (if pos 
-              (goto-char (- pos (length name))) 
+          (if pos
+              (goto-char (- pos (length name)))
             (setq dired-single-stack '())))))
     (define-key dired-mode-map [return] 'dired-single-buffer-down)
     (define-key dired-mode-map [mouse-1] 'dired-single-buffer-down)
     (define-key dired-mode-map (read-kbd-macro "<backspace>") 'dired-single-buffer-up))
   (if (boundp 'dired-mode-map) (my-dired-init) (add-hook 'dired-load-hook 'my-dired-init))
   (define-key dired-mode-map (read-kbd-macro "<f8>") 'dired-do-delete))
-  
+
 ; use openwith minor mode
 (when (package-dir "openwith*")
   (require 'openwith)
@@ -296,7 +297,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Auto Complete Mode 
+;; Auto Complete Mode
 ;; (semantic-mode 1)
 ;; (require 'semantic/complete)
 ;; (require 'semantic)
@@ -319,14 +320,14 @@
 ;; Translator (google)
 (when (package-dir "google-translate*")
   (require 'google-translate)
-  (global-set-key "\C-xt" 
+  (global-set-key "\C-xt"
      (lambda ()
        (interactive)
        (let ((bnd (bounds-of-thing-at-point 'word))
              (src google-translate-default-source-language)
              (dst google-translate-default-target-language)
              beg end)
-         (cond 
+         (cond
           (mark-active (setq beg (region-beginning) end (region-end)))
           (bnd (setq beg (car bnd) end (cdr bnd))))
          (when (and beg end)
@@ -365,7 +366,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Remote file editing via ssh
-(require 'tramp) 
+(require 'tramp)
 (setq tramp-default-method "ssh")
 
 (global-set-key "\C-c\C-t" 'tramp-cleanup-all-connections)
@@ -470,8 +471,8 @@
       cmd)
     command))
 
-(defun gud-set-clear () (interactive)  
-  (message "gud-set-clear") 
+(defun gud-set-clear () (interactive)
+  (message "gud-set-clear")
   (let ((buf (current-buffer))
         (pnt (point))
         (set-break (not (eq (car (fringe-bitmaps-at-pos (point))) 'breakpoint)))
@@ -480,7 +481,7 @@
     (when (eq major-mode 'python-mode)
       (if set-break (gdb-put-breakpoint-icon t 0) (gdb-remove-breakpoint-icons (- pos 1) (+ pos 1)))
       (sleep-for .2)
-      (switch-to-buffer buf) (goto-char pnt) 
+      (switch-to-buffer buf) (goto-char pnt)
       (delete-other-windows)
       (gud-split-window)
       )))
@@ -500,6 +501,7 @@
            (fname (file-name-sans-extension bname))
            (ext (file-name-extension bname)))
 
+      (c-toggle-auto-newline -1)                           ;; Turn off auto-newline feature
       ;(gtags-mode 1)
 
       ;; add OpenFOAMcompile option
@@ -510,7 +512,7 @@
       (local-set-key "\C-c\C-c"  'compile)
       (make-variable-buffer-local 'compile-command)
       (setq compile-command
-       (get-shell-command 
+       (get-shell-command
          (cond
           ((eq major-mode 'c++-mode)
            (cond
@@ -526,7 +528,7 @@
       (make-variable-buffer-local 'run-command)
       (local-set-key '[S-f5]  (lambda () (interactive) (shell-command (get-shell-command run-command))))
       (setq run-command
-       (get-shell-command 
+       (get-shell-command
          (cond
           ((eq major-mode 'python-mode) "python3 %f")
           ((eq major-mode 'qml-mode)
@@ -537,7 +539,7 @@
       (defun run-command-safe-variable (var) (or
              (string-match "^[ \t\n\r]*\\(qml\\(scene\\|viewer\\)\\|optirun\\)[ \t\n\r]*\./.+" var)
              (string-match "/usr/bin/curl.+" var))))
-    
+
     ;; settings depending on the mode
     (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
               (eq major-mode 'jam-mode))
@@ -549,10 +551,10 @@
       (local-set-key '[C-S-f3] 'pop-tag-mark)
       ;; other settings
       (setq indent-tabs-mode nil))
-    
+
     (when (eq major-mode 'fortran-mode)
       (local-set-key "\C-c'" 'fortran-comment-region))
-    
+
     (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode) (eq major-mode 'compilation-mode)
               (eq major-mode 'jam-mode) (eq major-mode 'makefile-gmake-mode) (eq major-mode 'python-mode)
               (eq major-mode 'qt-pro-mode))
@@ -561,17 +563,17 @@
       (local-set-key '[S-f8] 'previous-error)
       (local-set-key '[f7]   (lambda () (interactive) (compile (get-shell-command compile-command))))
       (local-set-key "\C-c\C-c" 'compile))
-    
+
     (when (and (not running-on-windows)
                (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
                    (eq major-mode 'gud-mode) (eq major-mode 'python-mode)))
       ;; (string-match "\\*gud-\\(.+\\)\\*" (buffer-name gud-comint-buffer))
       ;; debug functions
       (gud-def gud-frame "frame" "\C-g" "Select and print a stack frame.")
-      
+
       ;; debug keys
-;      (local-set-key '[f5]     (lambda () (interactive) 
-;                                 (if (get-buffer-process gud-comint-buffer) 
+;      (local-set-key '[f5]     (lambda () (interactive)
+;                                 (if (get-buffer-process gud-comint-buffer)
 ;                                     (if gdb-active-process (gud-call "cont") (gud-call "run"))
 ;                                   (gud-refresh))))
       (local-set-key '[C-f5]   'gud-until)
@@ -600,7 +602,7 @@
 
 ;; Qt stuff
 (require 'qt-pro)
-(c-add-style "qt-gnu" '("gnu" 
+(c-add-style "qt-gnu" '("gnu"
     (c-access-key . "^\\(public\\|protected\\|private\\|signals\\|public slots\\|protected slots\\|private slots\\):")
     (c-basic-offset . 4)))
 ;; make new font for rest of qt keywords
@@ -608,7 +610,7 @@
 (set-face-foreground 'qt-keywords-face "midnight blue")
 ;; qt keywords
 (font-lock-add-keywords 'c++-mode '(("\\<Q_OBJECT\\>" . 'qt-keywords-face)
-                                    ("\\<SIGNAL\\|SLOT\\>" . 'qt-keywords-face) 
+                                    ("\\<SIGNAL\\|SLOT\\>" . 'qt-keywords-face)
                                     ("\\<Q_[A-Z][_A-Za-z]*" . 'qt-keywords-face)
                                     ("\\<foreach\\>" . 'qt-keywords-face)))
 (setq c-default-style "qt-gnu")
@@ -654,7 +656,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; set hooks
-(loop for mode in '(c-mode-hook c++-mode-hook fortran-mode-hook jam-mode-hook 
+(loop for mode in '(c-mode-hook c++-mode-hook fortran-mode-hook jam-mode-hook
                     qt-pro-mode-hook gud-mode-hook qml-mode-hook python-mode-hook)
       do (add-hook mode development-mode-hook))
 
@@ -665,7 +667,7 @@
   (setq preview-default-document-pt 12)
   ;;  TeX-style-path
   (setq LaTeX-enable-toolbar nil)
-  (setq font-latex-title-fontify 'color) 
+  (setq font-latex-title-fontify 'color)
   (require 'tex)
   (require 'tex-site)
   (require 'latex)
@@ -687,7 +689,7 @@
     (TeX-fold-mode 1)
     (setq fill-column 100)
 
-    (add-to-list 'TeX-expand-list 
+    (add-to-list 'TeX-expand-list
        '("%u" (lambda () (concat "file://" (expand-file-name (funcall file (TeX-output-extension) t) (file-name-directory (TeX-master-file)))
                                  "#src:" (TeX-current-line) (TeX-current-file-name-master-relative)))))
     (setq TeX-view-program-list
@@ -719,7 +721,7 @@
        ("ViewGGV" "ggv %f" TeX-run-discard t t  :help "View PS")
        ("PDF" "%l %(mode) \"\\input\" %t && dvips -Ppdf -o %s.ps %s.dvi && ps2pdf %s.ps" TeX-run-TeX nil (latex-mode doctex-mode))
        ("KPDF" "kpdf %s.pdf" TeX-run-discard t t)
-       ("PSPhD" "%l %(mode) -jobname=%s \"\\documentclass{scrbook}\\usepackage{thesis-phd}\\begin{document}\\input{%t}\\end{document}\" 
+       ("PSPhD" "%l %(mode) -jobname=%s \"\\documentclass{scrbook}\\usepackage{thesis-phd}\\begin{document}\\input{%t}\\end{document}\"
                  && dvips -o %s.ps %s.dvi" TeX-run-TeX nil (latex-mode doctex-mode)))))
     ;; add a single item
     (add-to-list 'TeX-command-list
@@ -730,13 +732,13 @@
     (make-variable-buffer-local 'compile-command)
     (let* ((ext (file-name-extension (buffer-file-name))))
       (setq compile-command
-         (cond 
+         (cond
           ((string-equal ext "tikz" ) "pdflatex -interaction=nonstopmode -jobname=%s \"\\documentclass{article}\\usepackage[pdftex]{graphics}\\usepackage[T1]{fontenc}\\usepackage[active,tightpage]{preview}\\usepackage{tikz}\\usepackage{pgfplots,calligra}\\usetikzlibrary{calc,shapes,arrows}\\begin{document}\\begin{preview}\\input{%f.tikz}\\end{preview}\\end{document}\"; convert -density 1000  %f.tikz.pdf %f.jpg")
           (t  "pdflatex  -interaction=nonstopmode \"\\input\" %t"))))
     (local-set-key '[f7]   (lambda () (interactive) (compile (get-compile-command)))))
 
 
-  
+
   (put `TeX-insert-backslash `delete-selection nil)
 
   (add-hook 'tex-mode-hook    'my-tex-init)
@@ -802,9 +804,9 @@
 ;; help command
 (autoload 'woman "woman"
   "Decode and browse a UN*X man page." t)
-(defun custom-help () 
-  (interactive) 
-  (cond 
+(defun custom-help ()
+  (interactive)
+  (cond
    ;; emacs lisp help
    ((or (eq major-mode 'lisp-mode) (eq major-mode 'emacs-lisp-mode))
     (let ((var (variable-at-point)))
@@ -872,7 +874,7 @@
          ("\\.mc\\'" . m4-mode)
          ("\\.sql$" . sql-mode)
          ("\\.js\\'" . js3-mode)
-         ("Jamfile.v2" . jam-mode) 
+         ("Jamfile.v2" . jam-mode)
          ("\\.jam$" . jam-mode)
          ("\\.(p|s)?html$" . web-mode)
          ("\\.tpl\\.php\\'" . web-mode)
@@ -881,7 +883,7 @@
          ("\\.erb\\'" . web-mode)
          ("\\.mustache\\'" . web-mode)
          ("\\.djhtml\\'" . web-mode)
-         ("\\.mc" . m4-mode) 
+         ("\\.mc" . m4-mode)
          ("\\.m4" . m4-mode)
          ("\.i$" . c++-mode)
          ("\.cc$" . c++-mode)
@@ -895,7 +897,7 @@
 
 ;;{{{ OS specific
 
-(cond 
+(cond
  (running-on-windows
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; NT Emacs specific settings
@@ -929,7 +931,7 @@
   ;; Unix specific settings
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (setq default-frame-alist 
+  (setq default-frame-alist
         '(
          ;;    (background-color     . "LightCyan1")
          ;;    (cursor-color         . "purple")
@@ -976,7 +978,7 @@
 
 ;;}}}
 
-;;{{{ Some own functions 
+;;{{{ Some own functions
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Load ido mode first
@@ -1007,11 +1009,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun blink-paren-first-line () ; from blink-matching-open
   (interactive)
-  ;; if mode is c++ or lisp and 
+  ;; if mode is c++ or lisp and
   (when (member major-mode '(c++-mode lisp-mode qml-mode))
     ;; create local variable with opening paren pos
-    (unless (local-variable-p 'paren-first-line-pos) 
-      (make-local-variable 'paren-first-line-pos) 
+    (unless (local-variable-p 'paren-first-line-pos)
+      (make-local-variable 'paren-first-line-pos)
       (setf paren-first-line-pos -1))
     ;; if the last caharacter is closing parenthesis
     (if (eq (syntax-class (syntax-after (1- (point)))) 5)
@@ -1022,12 +1024,12 @@
        (condition-case () (setq blinkpos (scan-sexps (point) -1)) (error (setq blinkpos nil paren-first-line-pos -1)))
        ;; if found -> print the first line
        (when blinkpos
-         (save-excursion 
+         (save-excursion
            ;; get the line
            (goto-char blinkpos)
            (setq beginpos (line-beginning-position))
            (setq open-paren-line-string (buffer-substring beginpos (line-end-position))))
-         ;; get the parenthesis position in the line 
+         ;; get the parenthesis position in the line
          (setq parenpos (- blinkpos beginpos))
          ;; highlight the parenthesis
          (put-text-property parenpos (1+ parenpos) 'face '(background-color . "turquoise" ) open-paren-line-string)
@@ -1108,7 +1110,7 @@
 	      (sort (x-list-fonts "*") 'string-lessp)))
     (print-help-return-message)))
 
-(defun clean-zotero-bib () 
+(defun clean-zotero-bib ()
   (interactive)
   (replace-regexp "^.*url[ \t\n]*=.*$" "" nil (point-min) (point-max))
   (replace-regexp "^.*abstract[ \t\n]*=.*$" "" nil (point-min) (point-max))
@@ -1157,28 +1159,28 @@ If ARG is given, then insert the result to current-buffer"
 
 ;; {{{ TODO
 
-(setq ongoing-char-choice '("Special characters" 
-                              ("" 
-                               ("ccedil" #xe7) 
-                               ("copyright" #xa9) 
-                               ("degree" #xb0) 
-                               ("dot" #xb7) 
-                               ("eacute" #xe9) 
-                               ("half" "&#xbd;") 
-                               ("omacr" "&#x14d;") 
-                               ("oouml" #xe4) 
-                               ("uuml" #xfc) 
-                               ("euro" #x20ac) 
-                               ("cents" #xa2) 
-                               ("egrave" #xe8) 
-                               ("lsquo" #x2018) 
-                               ("rsquo" #x2019) 
-                               ("ldquo" #x201c) 
-                               ("rdquo" #x201d) 
+(setq ongoing-char-choice '("Special characters"
+                              (""
+                               ("ccedil" #xe7)
+                               ("copyright" #xa9)
+                               ("degree" #xb0)
+                               ("dot" #xb7)
+                               ("eacute" #xe9)
+                               ("half" "&#xbd;")
+                               ("omacr" "&#x14d;")
+                               ("oouml" #xe4)
+                               ("uuml" #xfc)
+                               ("euro" #x20ac)
+                               ("cents" #xa2)
+                               ("egrave" #xe8)
+                               ("lsquo" #x2018)
+                               ("rsquo" #x2019)
+                               ("ldquo" #x201c)
+                               ("rdquo" #x201d)
                                ("mdash" #x2014))))
 
-(defun ong-special-chars-menu () "Insert a special character from a menu" (interactive) 
-  (let ((value (car (x-popup-menu (list '(10 10) (selected-window)) ongoing-char-choice)))) 
+(defun ong-special-chars-menu () "Insert a special character from a menu" (interactive)
+  (let ((value (car (x-popup-menu (list '(10 10) (selected-window)) ongoing-char-choice))))
     (cond ((integerp value) (ucs-insert value)) ((stringp value) (insert value)) ('t ))))
 
 (defun insert-random-int-values ()
