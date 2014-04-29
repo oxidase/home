@@ -1,0 +1,158 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+	<interface name="org.bluez.Adapter">
+		<method name="GetProperties">
+		  <arg name="properties" type="a{sv}" direction="out"/>
+          <annotation name="org.qtproject.QtDBus.QtTypeName.Out0" value="QVariantMap"/>
+		</method>
+		<method name="SetProperty">
+			<arg name="name" type="s" direction="in"/>
+			<arg name="value" type="v" direction="in"/>
+		</method>
+		<method name="RequestSession"/>
+		<method name="ReleaseSession"/>
+		<method name="StartDiscovery"/>
+		<method name="StopDiscovery"/>
+		<method name="ListDevices">
+			<arg name="devices" type="ao" direction="out"/>
+			<!-- <annotation name="org.freedesktop.DBus.Deprecated" value="true"/> -->
+		</method>
+		<method name="CreateDevice">
+			<arg name="address" type="s" direction="in"/>
+			<arg name="device" type="o" direction="out"/>
+		</method>
+		<method name="CreatePairedDevice">
+			<arg name="address" type="s" direction="in"/>
+			<arg name="agent" type="o" direction="in"/>
+			<arg name="capability" type="s" direction="in"/>
+			<arg name="device" type="o" direction="out"/>
+		</method>
+		<method name="CancelDeviceCreation">
+			<arg name="address" type="s" direction="in"/>
+		</method>
+		<method name="RemoveDevice">
+			<arg name="device" type="o" direction="in"/>
+		</method>
+		<method name="FindDevice">
+			<arg name="address" type="s" direction="in"/>
+			<arg name="device" type="o" direction="out"/>
+		</method>
+		<method name="RegisterAgent">
+			<arg name="agent" type="o" direction="in"/>
+			<arg name="capability" type="s" direction="in"/>
+		</method>
+		<method name="UnregisterAgent">
+			<arg name="agent" type="o" direction="in"/>
+		</method>
+		<signal name="PropertyChanged">
+			<arg name="name" type="s"/>
+			<arg name="value" type="v"/>
+		</signal>
+		<signal name="DeviceCreated">
+			<arg name="device" type="o"/>
+		</signal>
+		<signal name="DeviceRemoved">
+			<arg name="device" type="o"/>
+		</signal>
+		<signal name="DeviceFound">
+			<arg name="address" type="s"/>
+			<arg name="values" type="a{sv}"/>
+            <annotation name="org.qtproject.QtDBus.QtTypeName.In1" value="QVariantMap"/>
+		</signal>
+		<signal name="DeviceDisappeared">
+			<arg name="address" type="s"/>
+		</signal>
+	</interface>
+	<interface name="org.bluez.Service">
+		<method name="AddRecord">
+			<arg name="record" type="s" direction="in"/>
+			<arg name="handle" type="u" direction="out"/>
+		</method>
+		<method name="UpdateRecord">
+			<arg name="handle" type="u" direction="in"/>
+			<arg name="record" type="s" direction="in"/>
+		</method>
+		<method name="RemoveRecord">
+			<arg name="handle" type="u" direction="in"/>
+		</method>
+		<method name="RequestAuthorization">
+			<arg name="address" type="s" direction="in"/>
+			<arg name="handle" type="u" direction="in"/>
+		</method>
+		<method name="CancelAuthorization"/>
+	</interface>
+	<interface name="org.bluez.OutOfBand">
+		<method name="AddRemoteData">
+			<arg name="address" type="s" direction="in"/>
+			<arg name="hash" type="ay" direction="in"/>
+			<arg name="randomizer" type="ay" direction="in"/>
+		</method>
+		<method name="RemoveRemoteData">
+			<arg name="address" type="s" direction="in"/>
+		</method>
+		<method name="ReadLocalData">
+			<arg name="hash" type="ay" direction="out"/>
+			<arg name="randomizer" type="ay" direction="out"/>
+		</method>
+	</interface>
+	<interface name="org.bluez.NetworkServer">
+		<method name="Register">
+			<arg name="uuid" type="s" direction="in"/>
+			<arg name="bridge" type="s" direction="in"/>
+		</method>
+		<method name="Unregister">
+			<arg name="uuid" type="s" direction="in"/>
+		</method>
+	</interface>
+	<interface name="org.bluez.SerialProxyManager">
+		<method name="CreateProxy">
+			<arg name="pattern" type="s" direction="in"/>
+			<arg name="address" type="s" direction="in"/>
+			<arg name="path" type="s" direction="out"/>
+		</method>
+		<method name="ListProxies">
+			<arg name="paths" type="as" direction="out"/>
+		</method>
+		<method name="RemoveProxy">
+			<arg name="path" type="s" direction="in"/>
+		</method>
+		<signal name="ProxyCreated">
+			<arg name="path" type="s"/>
+		</signal>
+		<signal name="ProxyRemoved">
+			<arg name="path" type="s"/>
+		</signal>
+	</interface>
+	<interface name="org.bluez.SimAccess">
+		<method name="GetProperties">
+		  <arg name="properties" type="a{sv}" direction="out"/>
+          <annotation name="org.qtproject.QtDBus.QtTypeName.Out0" value="QVariantMap"/>
+		</method>
+		<method name="Disconnect"/>
+		<signal name="PropertyChanged">
+			<arg name="name" type="s"/>
+			<arg name="value" type="v"/>
+		</signal>
+	</interface>
+	<interface name="org.bluez.Media">
+		<method name="RegisterEndpoint">
+			<arg name="endpoint" type="o" direction="in"/>
+			<arg name="properties" type="a{sv}" direction="in"/>
+            <annotation name="org.qtproject.QtDBus.QtTypeName.In1" value="QVariantMap"/>
+		</method>
+		<method name="UnregisterEndpoint">
+			<arg name="endpoint" type="o" direction="in"/>
+		</method>
+		<method name="RegisterPlayer">
+			<arg name="player" type="o" direction="in"/>
+			<arg name="properties" type="a{sv}" direction="in"/>
+			<arg name="metadata" type="a{sv}" direction="in"/>
+            <annotation name="org.qtproject.QtDBus.QtTypeName.In1" value="QVariantMap"/>
+            <annotation name="org.qtproject.QtDBus.QtTypeName.In2" value="QVariantMap"/>
+		</method>
+		<method name="UnregisterPlayer">
+			<arg name="player" type="o" direction="in"/>
+		</method>
+	</interface>
+</node>

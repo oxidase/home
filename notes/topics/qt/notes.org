@@ -17,7 +17,7 @@ make -j5
 
 #+begin_src sh
 mkdir -p ~/work/qt/modules && cd ~/work/qt/modules
-M="qtactiveqt qtx11extras qtsvg qtimageformats qtscript qtxmlpatterns qtdeclarative qtgraphicaleffects qtquickcontrols qtmultimedia qtpim qtwayland qt3d"
+M="qtactiveqt qtx11extras qtsvg qtimageformats qtscript qtxmlpatterns qtdeclarative qtsystems qtgraphicaleffects qtquickcontrols qtmultimedia qtpim qtwayland qt3d"
 for m in $M ; do git clone ssh://oxidase@codereview.qt-project.org:29418/qt/$m.git ; done
 cat > modules.pro <<EOF
 TEMPLATE = subdirs
