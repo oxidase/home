@@ -33,6 +33,7 @@
 #include "bluezagent.h"
 #include "contactsmodel.h"
 #include "callmanager.h"
+#include "callsmodel.h"
 
 QTVERSITORGANIZER_USE_NAMESPACE
 
@@ -41,6 +42,8 @@ int main(int argc, char *argv[])
     qRegisterMetaType< QVersitDocumentList >("QVersitDocumentList");
     qDBusRegisterMetaType< QPair<QString, QString> >();
     qDBusRegisterMetaType< QList<QPair<QString, QString> > >();
+
+    qmlRegisterType<CallsModel>("",1,0,"CallsModel");
 
     QGuiApplication app(argc, argv);
 

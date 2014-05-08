@@ -9,6 +9,8 @@
 
 #include <QtVersit/qversitdocument.h>
 
+QString normalizePhoneNumber(const QString& phone);
+
 typedef QList<QtVersit::QVersitDocument> QVersitDocumentList;
 
 class AvatarProvider : public QQuickImageProvider
@@ -84,7 +86,7 @@ public:
 
 public slots:
     void processAllVCards(const QVersitDocumentList& vcards);
-    
+
 private:
     QList<ContactsItem> m_data;
     QMap<QString, int> m_vcard2index;

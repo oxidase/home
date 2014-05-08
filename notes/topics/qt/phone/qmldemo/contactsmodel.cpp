@@ -12,6 +12,16 @@
 
 #include "contactsmodel.h"
 
+QString normalizePhoneNumber(const QString& phone)
+{
+    QString normalized;
+    for (int i = 0; i < phone.size(); ++i) {
+        if (phone[i].isDigit() || phone[i]=='+' || phone[i]=='*' || phone[i]=='#')
+            normalized += phone[i];
+    }
+    return normalized;
+}
+
 QTVERSIT_USE_NAMESPACE
 
 AvatarProvider::AvatarProvider() :
@@ -38,7 +48,7 @@ QImage AvatarProvider::requestImage(const QString &id, QSize *size, const QSize&
 
     if (requestedSize.isValid())
         img = img.scaled(requestedSize, Qt::IgnoreAspectRatio);
-    
+
     if (size)
         *size = img.size();
 
@@ -92,7 +102,7 @@ void ContactsModelFetcher::run()
             return;
         }
     }
-    
+
     QStringList filter;
     filter << QStringLiteral("N") << QStringLiteral("FN") << QStringLiteral("LABEL")
            << QStringLiteral("TEL") << QStringLiteral("EMAIL") << QStringLiteral("PHOTO")
@@ -112,7 +122,7 @@ void ContactsModelFetcher::run()
         writer.startWriting(reader.results());
         writer.waitForFinished();
     }
-        
+
     emit fetchedAllVCards(reader.results());
 
     qDebug() << __PRETTY_FUNCTION__ << QThread::currentThreadId() << "exit";
@@ -173,7 +183,7 @@ static inline QString getPhotoSource(const QByteArray& data)
 {
     return QStringLiteral("image://avatar/%1").arg(qHash(data));
 }
-    
+
 
 QVariant ContactsModel::data(const QModelIndex &index, int role) const
 {
@@ -193,7 +203,7 @@ QVariant ContactsModel::data(const QModelIndex &index, int role) const
     foreach (const QVersitProperty& p, document.properties()) {
         if (property == p.name()) {
             QVariant value = p.variantValue();
-            if (!value.isNull() && !(value.type() == QVariant::String && value.toString().isEmpty())) 
+            if (!value.isNull() && !(value.type() == QVariant::String && value.toString().isEmpty()))
                 data << p.variantValue();
         }
     }
@@ -243,7 +253,7 @@ QVariantMap ContactsModel::getCallInfo(const QString& call)
     QString phoneNumber = ovc.lineIdentification();
     foreach (const ContactsItem& item, m_data) {
         foreach (const QVersitProperty& p, item.document.properties()) {
-            if (p.name() == QStringLiteral("TEL") && p.value() == phoneNumber) {
+            if (p.name() == QStringLiteral("TEL") && normalizePhoneNumber(p.value()) == normalizePhoneNumber(phoneNumber)) {
                 QVariantMap info;
                 foreach (const QVersitProperty& pp, item.document.properties())
                     if (pp.name() == QStringLiteral("PHOTO"))

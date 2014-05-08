@@ -3,7 +3,7 @@ import QtQuick 2.0
 Item {
     anchors.fill: parent
     property alias view: contactsView
-    
+
     AnimatedImage {
         anchors.centerIn: parent
         source: "../assets/ajax-loader.gif"
@@ -12,7 +12,7 @@ Item {
 
     ListView {
         id: contactsView
-        anchors.fill: parent
+        anchors { top: parent.top; bottom: dialLine.top; left: parent.left; right: parent.right}
         model: contactsModel
         flickDeceleration: 5000
         highlightMoveVelocity: 10000
@@ -24,7 +24,7 @@ Item {
                                         tel && tel.length > 0 ? 'image://avatar/user' :
                                         email && email.length > 0 ? 'image://avatar/email' :
                                         'image://avatar/undefined'
-            
+
             width: ListView.view.width
             height: childrenRect.height
             color: isCurrentItem ? "white" : "white"
@@ -172,5 +172,33 @@ Item {
         zoom: contactsView.visibleArea.heightRatio
         shown: contactsView.moving
         onDragPosition: contactsView.contentY = position * (contactsView.contentHeight - contactsView.height)
+    }
+
+    Rectangle {
+        id: dialLine
+        height: 32
+        width: parent.width
+        anchors.bottom: parent.bottom
+        color: 'white'
+        TextInput {
+            id: callNumber
+            height: parent.height
+            anchors.left: parent.left
+            anchors.right: callButton.left
+            color: "green"
+            text: ''
+            font.pointSize: 20
+        }
+        Image{
+            id: callButton
+            height: parent.height
+            width: height
+            anchors.right: parent.right
+            source: '../assets/phone_selected.png'
+            MouseArea {
+                anchors.fill: parent
+                onPressed: callManager.dial(callNumber.text)
+            }
+        }
     }
 }

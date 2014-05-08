@@ -5,8 +5,8 @@ PKGCONFIG += ofono-qt
 
 SUBDIRS += imports
 
-SOURCES = main.cpp contactsmodel.cpp bluezagent.cpp callmanager.cpp
-HEADERS = contactsmodel.h bluezagent.h callmanager.h
+SOURCES = main.cpp contactsmodel.cpp bluezagent.cpp callmanager.cpp callsmodel.cpp
+HEADERS = contactsmodel.h bluezagent.h callmanager.h callsmodel.h
 
 DBUS_INTERFACES = interfaces/org.bluez.Manager.xml \
                   interfaces/org.bluez.Adapter.xml \

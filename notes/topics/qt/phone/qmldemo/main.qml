@@ -9,12 +9,12 @@ Flipable {
     height: 1000
     state: 'contacts'
 
-    Connections {
-        target: callManager
-        onCallAdded: state = 'call'
-        onCallRemoved: state = 'contacts'
-        onHangupAllComplete: state = 'contacts'
-    }
+    // Connections {
+    //     target: callManager
+    //     onCallAdded: state = 'call'
+    //     onCallRemoved: state = 'contacts'
+    //     onHangupAllComplete: state = 'contacts'
+    // }
 
     front: ContactsView {
         id: contactView
@@ -39,11 +39,14 @@ Flipable {
     states: [
         State {
             name: "call"
+            when: callView.count > 0
             PropertyChanges { target: rotator; angle: 180 }
+            PropertyChanges { target: callView; z: 1 }
         },
         State {
             name: "contacts"
             PropertyChanges { target: rotator; angle: 0 }
+            PropertyChanges { target: contactView; z: 1 }
         }
     ]
 
