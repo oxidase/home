@@ -26,7 +26,8 @@ void VoiceCall::onDataChanged() {
 }
 
 CallsModel::CallsModel(OfonoVoiceCallManager* parent)
-    : QAbstractListModel(parent)
+    : QAbstractListModel(parent),
+      m_ovcm(parent)
 {
     m_roleNames = QAbstractListModel::roleNames();
     m_roleNames.insert(PathRole, QByteArray("path"));
@@ -45,14 +46,24 @@ CallsModel::CallsModel(OfonoVoiceCallManager* parent)
     connect(parent, SIGNAL(callAdded(QString,QVariantMap)), this, SLOT(onCallAdded(QString,QVariantMap)));
     connect(parent, SIGNAL(callRemoved(QString)), this, SLOT(onCallRemoved(QString)));
 
-    foreach (const QString& call, parent->getCalls()) {
+    initCalls();
+}
+
+CallsModel::~CallsModel()
+{
+}
+
+void CallsModel::initCalls() {
+    foreach (const QString& call, m_ovcm->getCalls()) {
         m_data.push_back(new VoiceCall(call, this));
         connect(m_data.back(), SIGNAL(callDataChanged(QString)), this, SLOT(onCallDataChanged(QString)));
     }
 }
 
-CallsModel::~CallsModel()
-{
+void CallsModel::removeCalls() {
+    for (int i = 0; i < m_data.size(); ++i)
+        m_data[i]->deleteLater();
+    m_data.clear();
 }
 
 QHash<int,QByteArray> CallsModel::roleNames() const
@@ -112,8 +123,9 @@ int CallsModel::callIndex(const QString &call)
     return -1;
 }
 
-void CallsModel::onCallAdded(const QString &call, const QVariantMap &)
+void CallsModel::onCallAdded(const QString &call, const QVariantMap &values)
 {
+    qDebug() << Q_FUNC_INFO << call << values;
     beginInsertRows(QModelIndex(), m_data.size(), m_data.size());
     m_data.push_back(new VoiceCall(call, this));
     connect(m_data.back(), SIGNAL(callDataChanged(QString)), this, SLOT(onCallDataChanged(QString)));
@@ -122,9 +134,11 @@ void CallsModel::onCallAdded(const QString &call, const QVariantMap &)
 
 void CallsModel::onCallRemoved(const QString &call)
 {
+    qDebug() << Q_FUNC_INFO << call;
     int idx = callIndex(call);
     if (idx == -1)
         return;
+    qDebug() << "     " << idx;
     beginRemoveRows(QModelIndex(), idx, idx);
     OfonoVoiceCall* c = m_data[idx];
     m_data.removeAt(idx);
@@ -134,9 +148,11 @@ void CallsModel::onCallRemoved(const QString &call)
 
 void CallsModel::onCallDataChanged(const QString &call)
 {
+    qDebug() << Q_FUNC_INFO << call;
     int idx = callIndex(call);
     if (idx == -1)
         return;
+    qDebug() << "     " << idx << m_data[idx]->path() << m_data[idx]->lineIdentification() << m_data[idx]->state();
     emit dataChanged(createIndex(idx, 0), createIndex(idx, 0));
 }
 

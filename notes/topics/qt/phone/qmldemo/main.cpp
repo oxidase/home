@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
     BluezAgent bluezAgent;
     AgentAdaptor bluezAgentAdaptor(&bluezAgent);
     QDBusConnection::systemBus().registerObject(agentPath, &bluezAgentAdaptor);
-    oba.RegisterAgent(QDBusObjectPath(agentPath), agentCapability);
+    // oba.RegisterAgent(QDBusObjectPath(agentPath), agentCapability);
 
     OfonoModemManager omm(0);
     QString modemPath = omm.modems().length() > 0 ? omm.modems().at(0) : "";

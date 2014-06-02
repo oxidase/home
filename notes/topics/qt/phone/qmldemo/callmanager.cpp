@@ -11,7 +11,8 @@ CallManager::CallManager(const QString& path, QObject* parent) :
 
 void CallManager::dial(const QString& number)
 {
-    qDebug() << "dial" << number;
+    qDebug() << "dial" << number << normalizePhoneNumber(number);
     bool success = false;
     OfonoVoiceCallManager::dial(normalizePhoneNumber(number), QString(), success);
+    qDebug() << "     success = " << success;
 }

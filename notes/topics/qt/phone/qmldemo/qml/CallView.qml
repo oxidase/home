@@ -78,15 +78,35 @@ GridView {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottomMargin: 0.05 * parent.height
             height: Math.min(64, 0.1 * parent.height)
-            spacing: 0.05*parent.width
+            spacing: 0.1*parent.width
             Item {
+                id: releaseAndAnswerButton
+                height: parent.height
+                width: phoneReleaseAndAnswer.width
+                visible: model.state === 'waiting'
+                Image {
+                    id: phoneReleaseAndAnswer
+                    height: parent.height
+                    fillMode: Image.PreserveAspectFit
+                    source: '../assets/phone_releaseAndAnswer.png'
+                }
+                MouseArea {
+                    id: phoneReleaseAndAnswerArea
+                    anchors.fill: phoneReleaseAndAnswer
+                    hoverEnabled: true
+                    onPressed: callManager.releaseAndAnswer()
+                }
+            }
+            Item {
+                id: answerButton
                 height: parent.height
                 width: phoneAnswer.width
+                visible: model.state === 'incoming' || model.state === 'waiting'
                 Image {
                     id: phoneAnswer
                     height: parent.height
                     fillMode: Image.PreserveAspectFit
-                    source: '../assets/phone_selected.png'
+                    source: model.state === 'incoming' ? '../assets/phone_selected.png' : '../assets/phone_holdAndAnswer.png'
                 }
                 DropShadow {
                     anchors.fill: phoneAnswer
@@ -103,10 +123,11 @@ GridView {
                     id: phoneAnswerArea
                     anchors.fill: phoneAnswer
                     hoverEnabled: true
-                    onPressed: callView.count == 1 ? callManager.calls.answer(path) : callManager.holdAndAnswer()
+                    onPressed: model.state === 'incoming' ? callManager.calls.answer(path) : callManager.holdAndAnswer()
                 }
             }
             Item {
+                id: hangupButton
                 height: parent.height
                 width: phoneHangup.width
                 Image {

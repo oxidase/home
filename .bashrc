@@ -40,3 +40,8 @@ if ! shopt -oq posix; then
     . /etc/bash_completion
   fi
 fi
+# Enable programmable sdb completion features.
+if [ -f ~/.sdb/.sdb-completion.bash ]; then
+ source ~/.sdb/.sdb-completion.bash
+fi
+source /home/miha/work/tizen/tizen-sdk/tools/ide/bin/tizen-autocomplete

@@ -71,10 +71,13 @@ protected Q_SLOTS:
     void onCallDataChanged(const QString &call);
 
 private:
+    OfonoVoiceCallManager* m_ovcm;
     QList<VoiceCall*> m_data;
     QHash<int,QByteArray> m_roleNames;
 
     int callIndex(const QString &call);
+    void initCalls();
+    void removeCalls();
 };
 
 QML_DECLARE_TYPE(VoiceCall)
