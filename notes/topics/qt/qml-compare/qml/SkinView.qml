@@ -10,10 +10,11 @@ Item {
     Row {
         anchors.fill: parent
         ListView {
+            id: changesView
             height: parent.height
             width: parent.width - 800
-            model: 5
-            delegate: Text{ text: modelData}
+            model: null
+            delegate: Text{ text: index }
         }
 
         Column {
@@ -30,6 +31,12 @@ Item {
                 clip: true
                 objectName: "skinA"
                 source: pathSkinA
+                onLoaded: {
+                    changesView.model = helper.getChanges(skinA.item, skinB.item)
+                    console.log(typeof skinA.item.anchors, typeof skinB.item.anchors, typeof skinA.item)
+                    // console.log(skinA.item.anchors, skinB.item.anchors, skinA.item.anchors == skinB.item.anchors)
+                    // console.log(skinA.item.anchors.top, skinB.item.anchors.top)
+                }
             }
             Text {
                 text: pathSkinB

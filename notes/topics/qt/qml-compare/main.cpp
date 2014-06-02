@@ -4,7 +4,6 @@
 #include <QtQuick/QQuickItem>
 #include <private/qquickloader_p.h>
 #include <private/qquickanchors_p.h>
-#include <private/qquickanchors_p_p.h>
 #include <QQmlContext>
 #include <QtQml>
 
@@ -37,7 +36,7 @@ QString properties(QQuickItem *item, bool linebreak)
         out.append(i.value().typeName());
         out.append(") : ");
         if (qvariant_cast<QQuickAnchors*>(i.value())) qDebug() << "BINGO!!!!";
-        qDebug() << "BINGO!!!! QQuickAnchorLine" <<qvariant_cast<QQuickAnchorLine>(i.value()).anchorLine;
+        //qDebug() << "BINGO!!!! QQuickAnchorLine" <<qvariant_cast<QQuickAnchorLine>(i.value()).anchorLine;
 
         out.append(i.value().toString());
     }

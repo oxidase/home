@@ -6,7 +6,7 @@ Rectangle {
     width: 1200
     height: 1000
 
-    state: 'directory'
+    state: 'skin'
 
     DiffHelper{
         id: helper

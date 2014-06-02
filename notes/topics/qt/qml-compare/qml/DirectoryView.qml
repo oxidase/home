@@ -16,7 +16,7 @@ Item {
             var filePath = model.get(k, 'filePath');
             var fileMD5 = helper.md5(filePath);
             var fileIsDir = model.get(k, 'fileIsDir');
-            console.log(k, fileName, filePath, fileMD5, fileIsDir)
+            // console.log(k, fileName, filePath, fileMD5, fileIsDir)
             content[fileName] = {'fileName':fileName, 'filePath':filePath, 'fileMD5':fileMD5, 'fileIsDir':fileIsDir };
         }
         return content

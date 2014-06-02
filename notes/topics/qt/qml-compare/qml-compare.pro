@@ -1,4 +1,4 @@
 # -*- compile-command: "/usr/bin/qmake && make" -*-
-QT += core-private qml quick quick-private
+QT += qml quick core-private quick-private qml-private
 SOURCES = main.cpp diffhelper.cpp
 HEADERS = diffhelper.h
