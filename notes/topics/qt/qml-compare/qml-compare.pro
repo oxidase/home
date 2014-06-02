@@ -1,3 +1,4 @@
+# -*- compile-command: "/usr/bin/qmake && make" -*-
 QT += core-private qml quick quick-private
-SOURCES = main.cpp #model.cpp adaptor.cpp
-HEADERS = #model.h adaptor.h
+SOURCES = main.cpp diffhelper.cpp
+HEADERS = diffhelper.h

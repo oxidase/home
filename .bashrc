@@ -11,7 +11,7 @@ node*.*.mpimd|otto*)
     rcfiles=$HOSTNAME ;;
 esac
 
-for h in $rcfiles ; do 
+for h in $rcfiles ; do
     [ -f "$HOME/.bashrc.d/$h" ] && source "$HOME/.bashrc.d/$h"
 done
 
@@ -44,4 +44,3 @@ fi
 if [ -f ~/.sdb/.sdb-completion.bash ]; then
  source ~/.sdb/.sdb-completion.bash
 fi
-source /home/miha/work/tizen/tizen-sdk/tools/ide/bin/tizen-autocomplete

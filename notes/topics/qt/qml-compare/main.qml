@@ -1,25 +1,37 @@
 import QtQuick 2.0
+import "qml"
+import Helpers 1.0
 
 Rectangle {
     width: 1200
     height: 1000
-    Text {
-        text: qsTr("Hello World")
-        anchors.centerIn: parent
+
+    state: 'directory'
+
+    DiffHelper{
+        id: helper
     }
 
-    Item {
-        width: 800
-        height: 480
-        clip: true
-        Loader {
-            id: skinA
-            objectName: "skinA"
-            source: "test/skin1.qml"
-        }
+    DirectoryView {
+        id: directoryView
+        visible: parent.state == 'directory'
     }
 
-    property int index: 0
+    SkinView {
+        id: skinView
+        visible: parent.state === 'skin'
+    }
+
+    states: [
+    State {
+        name: 'directory'
+    },
+    State {
+        name: 'skin'
+    }
+    ]
+
+    onStateChanged: console.log(state)
 
     MouseArea {
         anchors.fill: parent

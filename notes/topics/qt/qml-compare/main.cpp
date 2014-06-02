@@ -8,6 +8,8 @@
 #include <QQmlContext>
 #include <QtQml>
 
+#include "diffhelper.h"
+
 QString properties(QQuickItem *item, bool linebreak)
 {
     const QMetaObject *meta = item->metaObject();
@@ -44,7 +46,7 @@ QString properties(QQuickItem *item, bool linebreak)
 
 int main(int argc, char *argv[])
 {
-    // qmlRegisterType<Model>("",1,0,"Model");
+    qmlRegisterType<DiffHelper>("Helpers", 1, 0, "DiffHelper");
 
     QGuiApplication app(argc, argv);
 
@@ -60,18 +62,23 @@ int main(int argc, char *argv[])
     view->show();
 
     // qDebug() << view->rootContext() << view->rootContext()->findChild<QObject*>("a");
-    QQuickItem *root = view->rootObject();
-    qDebug() << root << root->findChild<QObject*>("skinA");
-    QQuickLoader* loaderA = root->findChild<QQuickLoader*>("skinA");
-    QQuickItem* skinA = qobject_cast<QQuickItem*>(loaderA->item());
-    qDebug() << loaderA << skinA;
+    // QQuickItem *root = view->rootObject();
+    // qDebug() << root << root->findChild<QObject*>("skinA");
+    // QQuickLoader* loaderA = root->findChild<QQuickLoader*>("skinA");
+    // QQuickItem* skinA = qobject_cast<QQuickItem*>(loaderA->item());
+    // qDebug() << loaderA << loaderA->item();
 
-    foreach (const QObject* c, skinA->children()) {
-        qDebug() << c << c->metaObject();
-    }
+    // foreach (const QObject* c, skinA->children()) {
+    //     qDebug() << c << c->metaObject();
+    // }
 
-    qDebug() << skinA->childItems();
-    qDebug() << properties(skinA, true);
+    // qDebug() << skinA->childItems();
+    // qDebug() << properties(skinA, true);
+
+    // QFile file("main.qml");
+    // if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    //     qDebug() << QString(QCryptographicHash::hash(file.readAll(), QCryptographicHash::Md5).toHex());
+    // }
 
     return app.exec();
 }
