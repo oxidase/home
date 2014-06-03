@@ -2,8 +2,8 @@ import QtQuick 2.0
 
 
 Item {
-    property string pathSkinA: '../test1/skin.qml'
-    property string pathSkinB: '../test2/skin.qml'
+    property string pathSkinA: '../test1/transitions.qml'
+    property string pathSkinB: '../test2/transitions.qml'
 
     anchors.fill: parent
 
@@ -28,14 +28,12 @@ Item {
                 id: skinA
                 width: 800
                 height: 480
+                z: 100
                 clip: true
                 objectName: "skinA"
                 source: pathSkinA
                 onLoaded: {
                     changesView.model = helper.getChanges(skinA.item, skinB.item)
-                    console.log(typeof skinA.item.anchors, typeof skinB.item.anchors, typeof skinA.item)
-                    // console.log(skinA.item.anchors, skinB.item.anchors, skinA.item.anchors == skinB.item.anchors)
-                    // console.log(skinA.item.anchors.top, skinB.item.anchors.top)
                 }
             }
             Text {
@@ -46,6 +44,7 @@ Item {
                 id: skinB
                 width: 800
                 height: 480
+                z: 100
                 clip: true
                 objectName: "skinB"
                 source: pathSkinB

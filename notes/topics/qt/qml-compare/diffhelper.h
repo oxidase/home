@@ -9,6 +9,13 @@
 #include <private/qquickstate_p_p.h>
 #include <private/qquicktransition_p.h>
 
+struct ItemChange {
+    QObject* oldItem;
+    QObject* newItem;
+    QVariant oldValue, newValue;
+    QString name;
+};
+
 class DiffHelper : public QObject {
     Q_OBJECT
 
@@ -30,6 +37,8 @@ private:
 
     template <typename T>
     void getChanges(QQmlListProperty<T> oldItem, QQmlListProperty<T> newItem, const QString& indent) const;
+
+    mutable QSet<QObject*> visitedItems;
 };
 
 QML_DECLARE_TYPE(DiffHelper)

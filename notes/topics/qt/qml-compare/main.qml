@@ -12,6 +12,13 @@ Rectangle {
         id: helper
     }
 
+    MouseArea {
+        anchors.fill: parent
+        onClicked: {
+            // Qt.quit();
+        }
+    }
+
     DirectoryView {
         id: directoryView
         visible: parent.state == 'directory'
@@ -30,13 +37,4 @@ Rectangle {
         name: 'skin'
     }
     ]
-
-    onStateChanged: console.log(state)
-
-    MouseArea {
-        anchors.fill: parent
-        onClicked: {
-            Qt.quit();
-        }
-    }
 }
