@@ -4,7 +4,7 @@ import Helpers 1.0
 
 Rectangle {
     width: 1200
-    height: 1000
+    height: 1020
 
     state: 'skin'
 

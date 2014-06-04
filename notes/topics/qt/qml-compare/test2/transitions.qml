@@ -6,6 +6,7 @@ Rectangle {
     color: "red"
 
     property int zzz: 111
+    property int yyy: 333
 
     MouseArea { id: mouseArea; anchors.fill: parent }
 

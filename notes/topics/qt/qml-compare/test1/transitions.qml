@@ -5,6 +5,8 @@ Rectangle {
     width: 100; height: 100
     color: "red"
     property int xxx: 222
+    property int yyy: 222
+    objectName: "test1"
 
     MouseArea { id: mouseArea; anchors.fill: parent; onClicked: console.log('clicked') }
 

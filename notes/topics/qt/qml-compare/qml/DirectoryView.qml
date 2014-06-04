@@ -57,7 +57,7 @@ Item {
                     Text {
                         text: fileName
                         color: fileIsDir ? 'black' : (contentB && fileName in contentB) ? (contentB[fileName].fileMD5 === helper.md5(filePath) ? 'gray' : 'black' ) : 'red'
-                        font.strikeout: !(fileName in contentB)
+                        font.strikeout: typeof contentB !== 'undefined'  && !(fileName in contentB)
                     }
                 }
             }

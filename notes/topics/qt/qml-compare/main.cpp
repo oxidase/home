@@ -8,6 +8,7 @@
 #include <QtQml>
 
 #include "diffhelper.h"
+#include "changesmodel.h"
 
 QString properties(QQuickItem *item, bool linebreak)
 {
@@ -46,6 +47,7 @@ QString properties(QQuickItem *item, bool linebreak)
 int main(int argc, char *argv[])
 {
     qmlRegisterType<DiffHelper>("Helpers", 1, 0, "DiffHelper");
+    qmlRegisterType<ChangesModel>("Helpers",1,0,"ChangesModel");
 
     QGuiApplication app(argc, argv);
 
