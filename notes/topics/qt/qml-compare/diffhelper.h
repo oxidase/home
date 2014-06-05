@@ -25,6 +25,8 @@ public:
 
     Q_INVOKABLE QString md5(const QString& fileName) const;
 
+    Q_INVOKABLE QString absolutePath(const QString& path) const;
+
     Q_INVOKABLE void getChanges(QObject* oldItem, QObject* newItem);
 
 protected:

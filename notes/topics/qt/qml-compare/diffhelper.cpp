@@ -27,6 +27,12 @@ QString DiffHelper::md5(const QString& fileName) const
     return QString("invalid");
 }
 
+QString DiffHelper::absolutePath(const QString& path) const
+{
+    QDir dir(path);
+    return dir.absolutePath();
+}
+
 class ExcludedProperties : public QSet<QString>
 {
 public:
@@ -185,8 +191,12 @@ void DiffHelper::getChanges(QObject* oldItem, QObject* newItem)
     deletionsModel.clear();
     modificationsModel.clear();
 
+    qDebug() << "DiffHelper::getChanges start";
+
     getChanges(oldItem, newItem, 0, 0, QString());
     emit changesModelUpdated();
+
+    qDebug() << "DiffHelper::getChanges end";
 
     Q_ASSERT(visitedItems.isEmpty());
 }

@@ -1,10 +1,20 @@
 import QtQuick 2.0
-import "qml"
+import Qt.labs.settings 1.0
 import Helpers 1.0
+import "qml"
+
 
 Rectangle {
-    width: 1200
+    id: main
+    width: 1400
     height: 1020
+
+    Settings {
+        property alias state: main.state
+        property alias directoryA: directoryView.directoryA
+        property alias directoryB: directoryView.directoryB
+        property alias selectedFileName: directoryView.selectedFileName
+    }
 
     state: 'skin'
 
