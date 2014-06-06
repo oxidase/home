@@ -64,7 +64,7 @@ void DiffHelper::getChanges(QList<T> oldItem, QList<T> newItem, QQuickItem* oldP
 {
     int oldCount = oldItem.count(), newCount = newItem.count();
     for (int i = 0; i < oldCount; ++i) {
-        getChanges(oldItem.at(i), newItem.at(i), oldParentItem, newParentItem, parentPath + QStringLiteral("[") + i + QStringLiteral("]"));
+        getChanges(oldItem.at(i), newItem.at(i), oldParentItem, newParentItem, parentPath + QStringLiteral("[") + QString::number(i) + QStringLiteral("]"));
     }
 }
 
@@ -73,7 +73,7 @@ void DiffHelper::getChanges(QQmlListProperty<T> oldItem, QQmlListProperty<T> new
 {
     int oldCount = oldItem.count(&oldItem), newCount = newItem.count(&newItem);
     for (int i = 0; i < oldCount; ++i) {
-        getChanges(oldItem.at(&oldItem, i), newItem.at(&newItem, i), oldParentItem, newParentItem, parentPath + QStringLiteral("[") + i + QStringLiteral("]"));
+        getChanges(oldItem.at(&oldItem, i), newItem.at(&newItem, i), oldParentItem, newParentItem, parentPath + QStringLiteral("[") + QString::number(i) + QStringLiteral("]"));
     }
 }
 
@@ -143,7 +143,9 @@ void DiffHelper::getChanges(QObject* oldItem, QObject* newItem, QQuickItem* oldP
         QVariant oldValue = oldItem->property(name);
         QVariant newValue = newItem->property(name);
 
-        if (oldValue.canConvert<QQuickAnchorLine>() && newValue.canConvert<QQuickAnchorLine>()) {
+        if (oldValue.userType() != newValue.userType()) {
+            modificationsModel.append(ChangeItem(propertyPath, QStringLiteral("property type changed"), QMetaType::typeName(oldValue.userType()), QMetaType::typeName(newValue.userType()), oldVisibleItem, newVisibleItem));
+        } else if (oldValue.canConvert<QQuickAnchorLine>() && newValue.canConvert<QQuickAnchorLine>()) {
             QQuickAnchorLine::AnchorLine oldAnchorLine = qvariant_cast<QQuickAnchorLine>(oldValue).anchorLine;
             QQuickAnchorLine::AnchorLine newAnchorLine = qvariant_cast<QQuickAnchorLine>(newValue).anchorLine;
             if (oldAnchorLine != newAnchorLine)
@@ -151,7 +153,8 @@ void DiffHelper::getChanges(QObject* oldItem, QObject* newItem, QQuickItem* oldP
         } else if (oldValue.canConvert<QQmlBinding*>() && newValue.canConvert<QQmlBinding*>()) {
             QQmlBinding* oldBinding = qvariant_cast<QQmlBinding*>(oldValue);
             QQmlBinding* newBinding = qvariant_cast<QQmlBinding*>(newValue);
-            // qDebug() << oldBinding->property();
+            qDebug() << "------------------" << QQmlBinding::expressionIdentifier(oldBinding) << QQmlBinding::expressionIdentifier(newBinding) << oldBinding->evaluate();
+            qDebug() << oldBinding->expression();
         } else if (oldValue.canConvert<QQmlListProperty<QQuickState> >() && newValue.canConvert<QQmlListProperty<QQuickState> >()) {
             getChanges(qvariant_cast<QQmlListProperty<QQuickState> >(oldValue), qvariant_cast<QQmlListProperty<QQuickState> >(newValue), oldVisibleItem, newVisibleItem, path);
         } else if (oldValue.canConvert<QQmlListProperty<QQuickStateOperation> >() && newValue.canConvert<QQmlListProperty<QQuickStateOperation> >()) {

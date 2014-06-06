@@ -7,6 +7,7 @@ Rectangle {
     color: "#008000"
     opacity: 0.5
     property bool check: true
+    property int zzz: 123
 
     Text {
         id: text1
@@ -16,11 +17,21 @@ Rectangle {
 
     states: [
         State {
-            name: 'init2'
+            name: 'done'
             when: check
-            changes: [
-            PropertyChanges { target: text1; text: 'init skin2' }
-            ]
+            PropertyChanges { target: text1; text: 'init skin1AA' }
+        },
+        State {
+            name: 'init'
+            when: !check
+            PropertyChanges { target: text1; text: 'init skin1AAA' }
         }
+        // State {
+        //     name: 'init2'
+        //     when: check
+        //     changes: [
+        //     PropertyChanges { target: text1; text: 'init skin2' }
+        //     ]
+        // }
     ]
 }

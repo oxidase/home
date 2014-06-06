@@ -7,6 +7,7 @@ Rectangle {
     color: "#000080"
     opacity: 0.4
     property bool check: false
+    property string zzz: 'hello'
     Text {
         id: text1
         text: qsTr("Skin 1")
@@ -17,6 +18,11 @@ Rectangle {
         State {
             name: 'init'
             when: !check
+            PropertyChanges { target: text1; text: 'init skin1AA' }
+        },
+        State {
+            name: 'done'
+            when: check
             PropertyChanges { target: text1; text: 'init skin1AA' }
         }
     ]
