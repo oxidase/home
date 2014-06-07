@@ -9,8 +9,8 @@ plt.rcParams['keymap.fullscreen'] = ''
 class SpaceShip:
     def __init__(self):
 
-        self.mass = 1
-        self.Ibody = np.matrix([[7./4, 0, 0], [0, 3./4, 0], [0, 0, 2.]])
+        self.mass = 2
+        self.Ibody = np.matrix([[7./4, 0, 0], [0, 3./4, 0], [0, 0, 2.]]) * self.mass
         self.IbodyInv = np.linalg.inv(self.Ibody)
 
         self.x = np.matrix([[0], [0], [0]])
@@ -30,10 +30,14 @@ class SpaceShip:
                       [ 0.,  3., 0],
                       [-1., -1., 0]]
 
-        self.engines = [[0., (  0.5, -1, 0), (0, 1, 0)],
-                        [0., ( -0.5, -1, 0), (0, 1, 0)],
+        self.engines = [[0., (  0, -1, 0), (0, 1, 0)],
                         [0., ( 0.33,  2, 0), (-0.7071, -0.7071, 0)],
                         [0., (-0.33,  2, 0), ( 0.7071, -0.7071, 0)]]
+
+        # self.engines = [[0., (  0.5, -1, 0), (0, 1, 0)],
+        #                 [0., ( -0.5, -1, 0), (0, 1, 0)],
+        #                 [0., ( 0.33,  2, 0), (-0.7071, -0.7071, 0)],
+        #                 [0., (-0.33,  2, 0), ( 0.7071, -0.7071, 0)]]
 
     def to_center(self):
         self.x = np.matrix([[0], [0], [0]])
@@ -89,7 +93,7 @@ class SpaceShip:
         r = []
         for f, p, d in self.engines:
             q = self.x + self.R * np.matrix(p).T
-            r.append( ((q.item(0), q.item(1)), f) )
+            r.append( ((q.item(0), q.item(1)), f / 2.) )
         return r
 
 
@@ -115,11 +119,15 @@ def onclick(event):
 
 def onkey(event):
     df = 0.05
-    incr = {'q':1, 'w':3, 'e':2, 'r':0}
-    decr = {'a':1, 's':3, 'd':2, 'f':0}
+    # incr = {'q':1, 'w':3, 'e':2, 'r':0}
+    # decr = {'a':1, 's':3, 'd':2, 'f':0}
+    # maxf = {0:1, 1:1, 2:0.4, 3:0.4}
+    incr = {'q':2, 'w':0, 'e':1}
+    decr = {'a':2, 's':0, 'd':1}
+    maxf = {0:1, 1:0.4, 2:0.4}
     if event.key in incr:
         e = incr[event.key]
-        ship.engines[e][0] = min(ship.engines[e][0] + df, 0.4)
+        ship.engines[e][0] = min(ship.engines[e][0] + df, maxf[e])
     elif event.key in decr:
         e = decr[event.key]
         ship.engines[e][0] = max(ship.engines[e][0] - df, 0.0)
