@@ -32,7 +32,7 @@ public:
 protected:
     ChangesModel* getInsertionsModel() const { return const_cast<ChangesModel*>(&insertionsModel); }
     ChangesModel* getDeletionsModel() const { return const_cast<ChangesModel*>(&deletionsModel); }
-    ChangesModel* getModificationsModel() const { qDebug() << "getModificationsModel" ; return const_cast<ChangesModel*>(&modificationsModel); }
+    ChangesModel* getModificationsModel() const { return const_cast<ChangesModel*>(&modificationsModel); }
 
 signals:
     void changesModelUpdated();

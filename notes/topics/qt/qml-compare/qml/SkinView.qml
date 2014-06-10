@@ -7,6 +7,11 @@ Item {
     property bool skinsLoaded: loaderSkinA.status === Loader.Ready && loaderSkinB.status === Loader.Ready
     onSkinsLoadedChanged: if (skinsLoaded) helper.getChanges(loaderSkinA.item, loaderSkinB.item)
 
+    function touchCurrentIndex() {
+        // quick workaround to update rectangles
+        changesView.currentIndexChanged()
+    }
+
     Row {
         id: tabButtons
         height: 40
@@ -49,21 +54,39 @@ Item {
         anchors.right: tabButtons.right
         model: helper.modifications
         currentIndex: 0
+        clip: true
+        highlightMoveVelocity: -1
+        flickDeceleration: 1000
+        boundsBehavior: Flickable.StopAtBounds
         delegate: Rectangle {
+            property string  state: ListView.view.state
             property variant modelData: model
             width: ListView.view.width
             height: childrenRect.height
             color: ListView.isCurrentItem ? 'lightgray' : 'white'
             Text { id: whatText; text: what; font.bold: true }
             Text { id: pathText; text: path; anchors.top: whatText.bottom }
-            Text { id: valuesText; text:  (oldValue.toString() ? oldValue : "''") + ' → ' + (newValue.toString() ? newValue : "''"); anchors.top: pathText.bottom }
+            Text { id: valuesTextM; anchors.top: pathText.bottom; text: changesView.model === helper.deletions ? oldValue
+                                                                      : changesView.model === helper.insertions ? newValue
+                                                                      : (oldValue.toString() ? oldValue : "''") + ' → ' + (newValue.toString() ? newValue : "''") }
             MouseArea {
                 anchors.fill: parent
                 onPressed: changesView.currentIndex = index
             }
-
-            Component.onCompleted: console.log(newItem.mapToItem(null, 0, 0).x, newItem.mapToItem(null, 0, 0).y, newItem.width, newItem.height)
         }
+    }
+
+    ScrollIndicator {
+        id: scroller
+        visible: changesView.visible
+        anchors.right: changesView.right
+        anchors.top: changesView.top
+        anchors.bottom: changesView.bottom
+        position: changesView.visibleArea.yPosition
+        zoom: changesView.visibleArea.heightRatio
+        shown: changesView.moving
+        knob_height: Math.max(50, changesView.height * Math.min(1.0, changesView.height / changesView.contentHeight))
+        onDragPosition: changesView.contentY = position * (changesView.contentHeight - changesView.height)
     }
 
     Column {
@@ -75,6 +98,7 @@ Item {
             id: textSkinA
             text: directoryView.directoryA + '/' + directoryView.selectedFileName
             font.pixelSize: 20
+            onTextChanged: console.log("!!!!!", text)
         }
         Loader {
             id: loaderSkinA
@@ -82,8 +106,19 @@ Item {
             height: 480
             clip: true
             objectName: 'skinA'
-            source: textSkinA.text
+            // source: textSkinA.text
+            sourceComponent: Qt.createComponent(textSkinA.text)
             asynchronous: true
+            Text {
+                width: parent.width
+                anchors.verticalCenter: parent.verticalCenter
+                visible: parent.status === Loader.Error
+                text: 'Error while loading component A:\n' + parent.sourceComponent.errorString()
+                font.pixelSize: 20
+                wrapMode: Text.WordWrap
+            }
+            onSourceComponentChanged: console.log('A sourceComponent', sourceComponent)
+            onStatusChanged: console.log('A status', status)
         }
         Text {
             id: textSkinB
@@ -96,8 +131,19 @@ Item {
             height: 480
             clip: true
             objectName: 'skinB'
-            source: textSkinB.text
+            // source: textSkinB.text
+            sourceComponent: Qt.createComponent(textSkinB.text)
             asynchronous: true
+            Text {
+                width: parent.width
+                anchors.verticalCenter: parent.verticalCenter
+                visible: parent.status === Loader.Error
+                text: 'Error while loading component B:\n' + parent.sourceComponent.errorString()
+                font.pixelSize: 20
+                wrapMode: Text.WordWrap
+            }
+            onSourceComponentChanged: console.log('B sourceComponent', sourceComponent)
+            onStatusChanged: console.log('B status', status)
         }
     }
 
@@ -130,7 +176,6 @@ Item {
     }
 
     Keys.onPressed: {
-        console.log("move left", changesView.currentIndex);
         if (event.key == Qt.Key_Left) {
             directoryView.nextModifiedFile(-1)
             changesView.currentIndex = 0

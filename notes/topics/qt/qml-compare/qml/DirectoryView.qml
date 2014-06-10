@@ -19,14 +19,15 @@ Item {
     onContentBChanged: modifiedFiles = getModifiedFiles()
     function getModifiedFiles() {
         var result = []
-        console.log(contentA)
+        if (typeof contentA === 'undefined' || typeof contentB === 'undefined')
+            return result
         for (var fileName in contentA) {
             if (fileName in contentB && contentA[fileName].fileMD5 !== contentB[fileName].fileMD5) {
                 result.push(fileName);
             }
         }
         if (result.length > 0 && result.indexOf(selectedFileName) === -1) {
-            selectedFileName = result[0];
+            // selectedFileName = result[0];
         }
         return result
     }

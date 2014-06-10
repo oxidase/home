@@ -7,7 +7,6 @@ Rectangle {
     color: "#008000"
     opacity: 0.5
     property bool check: true
-    property int zzz: 123
 
     Text {
         id: text1
@@ -19,7 +18,7 @@ Rectangle {
         State {
             name: 'done'
             when: check
-            PropertyChanges { target: text1; text: 'init skin1AA' }
+            PropertyChanges { target: text1; text: 'init skin2' }
         },
         State {
             name: 'init'
@@ -33,5 +32,19 @@ Rectangle {
         //     PropertyChanges { target: text1; text: 'init skin2' }
         //     ]
         // }
-    ]
+        ]
+
+    transitions: Transition {
+        SequentialAnimation {
+            PropertyAnimation { property: "x"; duration: 2000 }
+            ColorAnimation { duration: 1000 }
+        }
+    }
+
+    property int zzz: 333
+    property int yyy: 222
+    property int xxxx: 333
+    property int yyyy: 333
+    property variant o: 42
+    property int yyyyy: 333
 }
