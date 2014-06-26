@@ -53,7 +53,7 @@
                         magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
                         yasnippet cedet helm
                         org org-bullets org-jira org-magit org-pomodoro kanban ob-mongo
-                        graphviz-dot-mode tdd-status-mode-line web-mode markdown-mode markdown-mode+)
+                        graphviz-dot-mode tdd-status-mode-line web-mode htmlize markdown-mode markdown-mode+)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -670,7 +670,7 @@
   (setq font-latex-title-fontify 'color)
   ;(require 'tex)
   ;(require 'tex-site)
-  ;(require 'latex)
+  (require 'latex)
   ;(require 'font-latex)
   (setq TeX-command-default "XeLaTeX")
   (setq TeX-auto-save t)
@@ -744,6 +744,7 @@
   (add-hook 'tex-mode-hook    'my-tex-init)
   (add-hook 'TeX-mode-hook    'my-tex-init)
   (add-hook 'LaTeX-mode-hook  'my-tex-init)
+  (add-hook 'latex-mode-hook  'my-tex-init)
   ;(add-hook 'LaTeX-mode-hook  'TeX-PDF-mode)
   (add-hook 'LaTeX-mode-hook  'TeX-source-correlate-mode)
 )
