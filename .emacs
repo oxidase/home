@@ -53,7 +53,7 @@
                         magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
                         yasnippet cedet helm
                         org org-bullets org-jira org-magit org-pomodoro kanban ob-mongo
-                        graphviz-dot-mode tdd-status-mode-line web-mode)
+                        graphviz-dot-mode tdd-status-mode-line web-mode markdown-mode markdown-mode+)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -139,7 +139,6 @@
 (put 'downcase-region 'disabled nil)                 ;; Convert the region to lower case.
 (blink-cursor-mode -1)                               ;; Switch off blinking cursor mode.
 (setq large-file-warning-threshold nil)              ;; Maximum size of file above which a confirmation is requested
-(setq-default show-trailing-whitespace t)
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 (setq printer-name "pscs301")
 (tool-bar-mode -1)
@@ -501,8 +500,8 @@
            (fname (file-name-sans-extension bname))
            (ext (file-name-extension bname)))
 
+      (setq show-trailing-whitespace t)
       (c-toggle-auto-newline -1)                           ;; Turn off auto-newline feature
-      ;(gtags-mode 1)
 
       ;; add OpenFOAMcompile option
       (when (getenv "WM_COMPILE_OPTION")
@@ -558,6 +557,7 @@
     (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode) (eq major-mode 'compilation-mode)
               (eq major-mode 'jam-mode) (eq major-mode 'makefile-gmake-mode) (eq major-mode 'python-mode)
               (eq major-mode 'qt-pro-mode))
+      (local-set-key [C-S-mouse-1] (lambda (event) (interactive "e") (posn-set-point (elt event 1)) (find-tag (word-at-point))))
       ;; compile keys
       (local-set-key '[f8]   'next-error)
       (local-set-key '[S-f8] 'previous-error)

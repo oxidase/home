@@ -73,9 +73,9 @@ class SpaceShip(object):
         total_force = np.matrix([[0], [0], [0]])
         total_torque = np.matrix([0, 0, 0])
         for f, r, d in self.engines:
-            total_force = total_force + f * self.R * np.matrix(d).T
+            total_force = total_force + f * np.matrix(d).T
             total_torque = total_torque + np.cross(np.matrix(r), f * np.matrix(d))
-        self.Force = total_force
+        self.Force = self.R * total_force
         self.Torque = self.R * total_torque.T
 
     def star(self, a):
