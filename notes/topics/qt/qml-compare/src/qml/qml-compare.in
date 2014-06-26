@@ -1,0 +1,2 @@
+#!/bin/sh
+@QMLSCENE@ main.qml -I imports

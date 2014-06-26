@@ -1,8 +1,7 @@
 import QtQuick 2.0
 import QtQuick.Window 2.1
 import Qt.labs.settings 1.0
-import Helpers 1.0
-import "qml"
+import QmlDiffTool 1.0
 
 Window {
     id: window
@@ -26,7 +25,7 @@ Window {
         anchors.fill: parent
         state: 'skin'
 
-        DiffHelper{
+        DiffHelper {
             id: helper
         }
 

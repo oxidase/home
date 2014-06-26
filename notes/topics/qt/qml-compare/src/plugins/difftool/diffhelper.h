@@ -3,7 +3,7 @@
 #define DIFFHELPER_H
 
 #include <QObject>
-#include <QtQml>
+#include <QtQml/qqml.h>
 
 #include <private/qquickitem_p.h>
 #include <private/qquickstate_p.h>

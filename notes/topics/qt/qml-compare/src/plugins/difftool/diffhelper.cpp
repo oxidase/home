@@ -225,6 +225,4 @@ void DiffHelper::getChanges(QObject* oldItem, QObject* newItem)
     qDebug() << "getChanges exited" ;
 
     emit changesModelUpdated();
-
-    Q_ASSERT(visitedItems.isEmpty());
 }

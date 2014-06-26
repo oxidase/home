@@ -98,7 +98,6 @@ Item {
             id: textSkinA
             text: directoryView.directoryA + '/' + directoryView.selectedFileName
             font.pixelSize: 20
-            onTextChanged: console.log("!!!!!", text)
         }
         Loader {
             id: loaderSkinA
@@ -117,8 +116,6 @@ Item {
                 font.pixelSize: 20
                 wrapMode: Text.WordWrap
             }
-            onSourceComponentChanged: console.log('A sourceComponent', sourceComponent)
-            onStatusChanged: console.log('A status', status)
         }
         Text {
             id: textSkinB
@@ -142,8 +139,6 @@ Item {
                 font.pixelSize: 20
                 wrapMode: Text.WordWrap
             }
-            onSourceComponentChanged: console.log('B sourceComponent', sourceComponent)
-            onStatusChanged: console.log('B status', status)
         }
     }
 

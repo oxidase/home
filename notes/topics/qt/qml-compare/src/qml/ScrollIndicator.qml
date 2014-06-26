@@ -51,7 +51,6 @@ Item {
         border.width: 2
         color: "black"
         radius: 2
-        onYChanged: console.log('Item y', y)
     }
 
     // Knob that displays the relative position
@@ -62,8 +61,6 @@ Item {
         width: 12
         height: knob_height
         color: "gray"
-
-        onYChanged: console.log('y', y)
 
         MouseArea {
             anchors.fill: parent
@@ -79,7 +76,6 @@ Item {
                     return
                 var reduced_height = (scrollInd.height - parent.height)
                 var position = Math.max(0, Math.min(parent.y, reduced_height)) / reduced_height
-                console.log(position)
                 dragPosition(position)
             }
             drag.onActiveChanged: if (!drag.active && !containsMouse) hover = false

@@ -3,3 +3,5 @@ qtbase5-private-dev
 qtscript5-private-dev
 qtdeclarative5-private-dev
 qtdeclarative5-settings-plugin
+qtquick2-5-dev-tools
+qmlscene
