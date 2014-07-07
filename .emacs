@@ -543,11 +543,12 @@
     (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
               (eq major-mode 'jam-mode))
       ;; (flyspell-prog-mode)
+      (modify-syntax-entry ?_ "w" c++-mode-syntax-table)
       (local-set-key '[C-f8]   'flyspell-buffer)
       ;; source file keys
-      (local-set-key '[f3]     'find-tag)
-      (local-set-key '[C-f3]    (lambda () (interactive) (find-tag nil t)))
-      (local-set-key '[C-S-f3] 'pop-tag-mark)
+      (local-set-key '[f3]     (lambda () (interactive) (find-tag (word-at-point))))
+      (local-set-key '[C-f3]   (lambda () (interactive) (find-tag nil t)))
+      (local-set-key '[M-f3]   'pop-tag-mark)
       ;; other settings
       (setq indent-tabs-mode nil))
 
@@ -813,10 +814,11 @@
       (if (eq var 0) (describe-function (function-called-at-point)) (describe-variable var))))
    ;; Qt assistant
    ((and (eq major-mode 'c++-mode) (string= (substring (current-word) 0 1) "Q"))
-    (unless (get-process "assistant")
-      (start-process-shell-command "assistant" nil "assistant" "-enableRemoteControl"))
-    (process-send-string "assistant" (concat "setSource qthelp://com.trolltech.qt.484/qdoc/" (downcase (current-word)) ".html\r"))
-    (process-send-string "assistant" "syncContents\r"))
+   ;;  (unless (get-process "assistant")
+   ;;    (start-process-shell-command "assistant" nil "assistant" "-enableRemoteControl"))
+   ;;  (process-send-string "assistant" (concat "setSource qthelp://org.qt-project.qtmultimedia/qdoc/" (downcase (current-word)) ".html\r"))
+   ;;  (process-send-string "assistant" "syncContents\r"))
+    (browse-url (format "http://qt-project.org/doc/qt-5/%s.html" (downcase (current-word)))))
    ;; try to find a man page
    (t (when (> (length (current-word)) 1) (woman (current-word))))))
 (global-set-key [f1] 'custom-help)
