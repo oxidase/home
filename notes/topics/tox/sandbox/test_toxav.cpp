@@ -328,8 +328,7 @@ void on_file_sendrequest(Tox *m, int32_t friendnumber, uint8_t filenumber, uint6
                          const uint8_t *filename, uint16_t filename_length, void *userdata)
 {
     size_t data_id = (size_t)userdata;
-    printf("%-6s %s: %d %d (%d) %s, %lud bytes\n", person_names[data_id], __func__, friendnumber,  filenumber, filename_length, filename, filesize);
-
+    printf("%-6s %s: %d %d (%d) %s, %llud bytes\n", person_names[data_id], __func__, friendnumber,  filenumber, filename_length, filename, filesize);
 }
 
 void on_file_control (Tox *m, int32_t friendnumber, uint8_t receive_send, uint8_t filenumber,

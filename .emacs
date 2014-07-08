@@ -53,7 +53,8 @@
                         magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
                         yasnippet cedet helm
                         org org-bullets org-jira org-magit org-pomodoro kanban ob-mongo
-                        graphviz-dot-mode tdd-status-mode-line web-mode htmlize markdown-mode markdown-mode+)
+                        graphviz-dot-mode tdd-status-mode-line web-mode htmlize markdown-mode markdown-mode+
+                        auto-complete auto-complete-c-headers auto-complete-etags)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -144,6 +145,7 @@
 (tool-bar-mode -1)
 (setq vc-follow-symlinks t)
 (setq grep-command "grep -nHriI -e ")
+(setq tags-case-fold-search nil)
 (if (not (assq 'user-size initial-frame-alist))      ;; Unless we've specified a number of lines, prevent the startup code from
     (setq tool-bar-originally-present nil))          ;; shrinking the frame because we got rid of the tool-bar.
 ;; ediff
@@ -500,7 +502,6 @@
            (fname (file-name-sans-extension bname))
            (ext (file-name-extension bname)))
 
-      (setq show-trailing-whitespace t)
       (c-toggle-auto-newline -1)                           ;; Turn off auto-newline feature
 
       ;; add OpenFOAMcompile option
@@ -558,6 +559,7 @@
     (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode) (eq major-mode 'compilation-mode)
               (eq major-mode 'jam-mode) (eq major-mode 'makefile-gmake-mode) (eq major-mode 'python-mode)
               (eq major-mode 'qt-pro-mode))
+      (setq show-trailing-whitespace t)
       (local-set-key [C-S-mouse-1] (lambda (event) (interactive "e") (posn-set-point (elt event 1)) (find-tag (word-at-point))))
       ;; compile keys
       (local-set-key '[f8]   'next-error)
@@ -573,27 +575,29 @@
       (gud-def gud-frame "frame" "\C-g" "Select and print a stack frame.")
 
       ;; debug keys
-;      (local-set-key '[f5]     (lambda () (interactive)
-;                                 (if (get-buffer-process gud-comint-buffer)
-;                                     (if gdb-active-process (gud-call "cont") (gud-call "run"))
-;                                   (gud-refresh))))
+      (local-set-key '[f5]     (lambda () (interactive)
+                                 (if (get-buffer-process gud-comint-buffer)
+                                     (if gdb-active-process (gud-call "cont") (gud-call "run"))
+                                   (gud-refresh))))
       (local-set-key '[C-f5]   'gud-until)
       (local-set-key '[f9]     'gud-set-clear)
       (local-set-key '[S-f9]   'gud-break)
       (local-set-key '[C-f9]   'gud-remove)
       (local-set-key '[f10]    'gud-next)
       (local-set-key '[f11]    'gud-step)
-      (local-set-key '[f12]    'gud-finish))
+      (local-set-key '[f12]    'gud-finish)
+      (local-set-key '[c-f12]  'gdb-kill-buffers))
 
     ;; auto complete
     (when (and (boundp 'ac-sources) (listp ac-sources))
       (add-to-list 'ac-sources 'ac-source-semantic-raw))
     )))
+(modify-syntax-entry ?_ "w" c++-mode-syntax-table)
 
 ;; set global GDB properties and keys
 (setf gdb-many-windows t)
-(setf gdb-show-main t)
-(setf gdb-show-threads-by-default t)
+;(setf gdb-show-main t)
+;(setf gdb-show-threads-by-default t)
 (global-set-key (kbd "s-`") (lambda () (interactive)(when (buffer-name gud-comint-buffer) (gdb-many-windows 1))))
 (defun gdb-kill-buffers () (interactive)
   (set-process-query-on-exit-flag (get-buffer-process gud-comint-buffer) nil)
