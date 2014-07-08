@@ -29,11 +29,23 @@ def is_zero(arr, len):
 def array_to_hex_string(arr, len):
     return ''.join(['%02X'%arr[i] for i in range(len)])
 
+def remove_deep_levels(string, nspaces = 12):
+    result, spaces, strings, skipped = [], ' '*nspaces, string.split('\n'), False
+    for i in range(len(strings)):
+        if strings[i][0:nspaces] != spaces:
+            result.append(strings[i])
+            skipped = False
+        else:
+            if not skipped:
+                result[-1] += ' ...'
+                skipped = True
+    return '\n'.join(result)
+
 def append_indent(string, indent = tab_spaces):
     return ('\n' + indent).join(string.split('\n'))
 
 def clientlist_to_string(clientlist):
-    ignore_zero_id = True
+    ignore_zero_id = False
     clientlist_len = clientlist.type.sizeof // clientlist.dereference().type.sizeof
     items = map(lambda x: '[%d] = '%(x[0]) + append_indent(x[1], tab_spaces*2), \
                 [(i,str(clientlist[i])) for i in range(clientlist_len) if not ignore_zero_id or not is_zero(clientlist['client_id'], 32)])
@@ -82,14 +94,14 @@ class IPv6Printer:
         string, ip = '', self.val['uint16']
         if ip[0] != 0:
             if ip[1] != 0:
-                string = '%x:%x' % (ip[0], ip[1])
+                string = '%x:%x' % (socket.ntohs(ip[0]), socket.ntohs(ip[1]))
             else:
-                string = '%s' % (ip[0],)
+                string = '%x' % (socket.ntohs(ip[0]),)
         elif ip[1] != 0:
-            string = ':%s' % (ip[1],)
+            string = ':%x' % (socket.ntohs(ip[1]),)
         for i in range(2, 8):
             if i == 7 or ip[i] != 0:
-                string += '::%s'%int(ip[i]) if ip[i-1]==0 else ':%s'%int(ip[i])
+                string += '::%x'%int(socket.ntohs(ip[i])) if ip[i-1]==0 else ':%x'%int(socket.ntohs(ip[i]))
         return string
 
 class DHTPrinter:
@@ -118,12 +130,13 @@ class DHTPrinter:
             string += ('\n%s[%d] = '%(tab, i)) + append_indent(str(friends_list[i]), tab*2)
         string += '}'
 
-        #     Shared_Keys shared_keys_recv;
-        #     Shared_Keys shared_keys_sent;
+        string += '\nshared_keys_recv = ' + str(self.val['shared_keys_recv'])
+        string += '\nshared_keys_sent = ' + str(self.val['shared_keys_sent'])
 
-        #     struct PING   *ping;
-        #     Ping_Array    dht_ping_array;
-        #     Ping_Array    dht_harden_ping_array;
+        string += '\nping = ' + str(self.val['ping'])
+        string += '\ndht_ping_array = ' + str(self.val['dht_ping_array'])
+        string += '\ndht_harden_ping_array = ' + str(self.val['dht_harden_ping_array'])
+
         if hasattr(self.val, 'assoc'):
             string += '\nassoc = ' + str(self.val['assoc']) if self.val['assoc'] != 0 else '0' + ', '
         string += '\nlast_run = ' + str(self.val['last_run']) + ', '
@@ -135,7 +148,7 @@ class DHTPrinter:
                 string += '\n%s[%s(%d)] = %s ' %(tab, crypto_packet.get(i, i), i, cryptopackethandlers[i])
         string += '}'
 
-        return string
+        return remove_deep_levels(string)
 
 class NetworkingCorePrinter:
     def __init__(self, val):
@@ -169,7 +182,8 @@ class ClientDataPrinter:
         string += '\nclient_id = ' + array_to_hex_string(self.val['client_id'], 32) +', '
         string += '\nassoc4 = ' + append_indent(str(self.val['assoc4'])) +', '
         string += '\nassoc6 = ' + append_indent(str(self.val['assoc6']))
-        return string + ' }'
+        string += ' }'
+        return remove_deep_levels(string)
 
 
 class DHTFriendPrinter:
@@ -184,7 +198,8 @@ class DHTFriendPrinter:
         string += '\nlastgetnode = ' + str(self.val['lastgetnode']) +', '
         string += '\nbootstrap_times = ' + str(self.val['bootstrap_times']) +', '
         string += '\nnat = ' + str(self.val['nat'])
-        return string + ' }'
+        string += ' }'
+        return remove_deep_levels(string)
 
 class HardeningPrinter:
     def __init__(self, val):
@@ -202,7 +217,8 @@ class HardeningPrinter:
         string += '\ntesting_requests = ' + str(self.val['testing_requests']) +', '
         string += '\ntesting_timestamp = ' + str(self.val['testing_timestamp']) +', '
         string += '\ntesting_pingedid = ' + array_to_hex_string(self.val['testing_pingedid'], 32)
-        return string + ' }'
+        string += ' }'
+        return remove_deep_levels(string)
 
 class IPPTsPngPrinter:
     def __init__(self, val):
@@ -217,6 +233,47 @@ class IPPTsPngPrinter:
         string += '\nhardening = ' + append_indent(str(self.val['hardening']), tab_spaces) +', '
         string += '\nret_ip_port = ' + str(self.val['ret_ip_port']) +', '
         string += '\nret_timestamp = ' + str(self.val['ret_timestamp'])
+        string += ' }'
+        return remove_deep_levels(string)
+
+class IPPortPrinter:
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        tab = ' ' * tab_size
+        string = self.val.type.name + ' { '
+        string += 'ip = ' + str(self.val['ip']) + ', '
+        string += 'port = ' + str(socket.ntohs(self.val['port']))
+        return string + ' }'
+
+class OnionPathPrinter:
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        tab = ' ' * tab_size
+        string = self.val.type.name + ' { '
+        string += '\nshared_key1 = ' + array_to_hex_string(self.val['shared_key1'], 32)
+        string += '\nshared_key2 = ' + array_to_hex_string(self.val['shared_key2'], 32)
+        string += '\nshared_key3 = ' + array_to_hex_string(self.val['shared_key3'], 32)
+        string += '\npublic_key1 = ' + array_to_hex_string(self.val['public_key1'], 32)
+        string += '\npublic_key2 = ' + array_to_hex_string(self.val['public_key2'], 32)
+        string += '\npublic_key3 = ' + array_to_hex_string(self.val['public_key3'], 32)
+        string += '\nip_port1 = ' + str(self.val['ip_port1'])
+        string += '\nip_port2 = ' + str(self.val['ip_port2'])
+        string += '\nip_port3 = ' + str(self.val['ip_port3'])
+        return string + ' }'
+
+class NodeFormatPrinter:
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        tab = ' ' * tab_size
+        string = self.val.type.name + ' { '
+        string += 'client_id = ' + array_to_hex_string(self.val['client_id'], 32)
+        string += 'ip_port = ' + str(self.val['ip_port'])
         return string + ' }'
 
 # class Printer:
@@ -227,7 +284,6 @@ class IPPTsPngPrinter:
 #         tab = ' ' * tab_size
 #         string = self.val.type.name + ' { '
 #         return string + ' }'
-
 
 def build_pretty_printer():
     ## pp = gdb.printing.RegexpCollectionPrettyPrinter("toxcore library")
@@ -241,6 +297,8 @@ def build_pretty_printer():
     pp.add_printer('DHT_Friend', '^DHT_Friend$', DHTFriendPrinter)
     pp.add_printer('Hardening', '^Hardening$', HardeningPrinter)
     pp.add_printer('IPPTsPng', '^IPPTsPng$', IPPTsPngPrinter)
+    pp.add_printer('IP_Port', '^IP_Port$', IPPortPrinter)
+    pp.add_printer('Node_format', '^Node_format$', NodeFormatPrinter)
     return pp
 
 

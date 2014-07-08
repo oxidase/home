@@ -1,4 +1,4 @@
-// -*- compile-command: "g++ -Wall -std=c++11 -O0 -g sandbox_alice.cpp -o sandbox_alice -L../toxcore/build/.libs -Wl,-Bstatic -ltoxcore" -*-
+// -*- compile-command: "g++ -Wall -std=c++11 -O0 -g sandbox_alice.cpp -o sandbox_alice -L../toxcore/build/.libs -ltoxcore" -*-
 // udp and udp.port == 33445 and data.data[0] != 21
 #include <iostream>
 #include <tox/tox.h>
@@ -8,7 +8,7 @@
 
 #include "sandbox_shared.h"
 
-int main()
+int main(int argc, char* argv[])
 {
 
     int ipv6 = 1;
@@ -45,9 +45,16 @@ int main()
     // uint8_t *key_binary = hex_string_to_bin("951C88B7E75C867418ACDB5D273821372BB5BD652740BCDF623A4FA293E75D2F");
     // std::cout << "tox_bootstrap_from_address " <<  tox_bootstrap_from_address(m, "192.254.75.98", 1, htons(33445), key_binary) << "\n";
 
-    uint8_t *key_binary = hex_string_to_bin("F815AB3C949A49A65FA9C2C4EADDD468A92543104ACDA172560108FA6ACD397F");
-    std::cout << "tox_bootstrap_from_address " <<  tox_bootstrap_from_address(m, "127.0.0.1", 1, htons(33445), key_binary) << "\n";
-    free(key_binary);
+    if (argc > 1) {
+        uint8_t *key_binary = hex_string_to_bin(argv[1]);
+        std::cout << "tox_bootstrap_from_address " <<  tox_bootstrap_from_address(m, "127.0.0.1", 1, htons(33445), key_binary) << "\n";
+        free(key_binary);
+    } else {
+        uint8_t *key_binary = hex_string_to_bin("F815AB3C949A49A65FA9C2C4EADDD468A92543104ACDA172560108FA6ACD397F");
+        std::cout << "tox_bootstrap_from_address " <<  tox_bootstrap_from_address(m, "127.0.0.1", 1, htons(33445), key_binary) << "\n";
+        free(key_binary);
+    }
+
 
     bool is_connected = false;
     while (1) {
