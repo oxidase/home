@@ -2,6 +2,7 @@
 # Pretty-printers for Tox.
 import functools
 import socket
+import gdb
 import gdb.printing
 
 ## global variables
@@ -50,6 +51,30 @@ def clientlist_to_string(clientlist):
     items = map(lambda x: '[%d] = '%(x[0]) + append_indent(x[1], tab_spaces*2), \
                 [(i,str(clientlist[i])) for i in range(clientlist_len) if not ignore_zero_id or not is_zero(clientlist['client_id'], 32)])
     return ('[%d] {'%(clientlist_len)) + (',\n' + tab_spaces).join(items) + ' }'
+
+
+
+class PrintKeyCommand (gdb.Command):
+  """Greet the whole world."""
+
+  def __init__ (self):
+    super (PrintKeyCommand, self).__init__ ("pk", gdb.COMMAND_USER)
+    self.fields = {'self_public_key':32, 'self_secret_key':32, 'client_id':32,
+                   'public_key1':32, 'public_key2':32, 'public_key3':32 }
+
+  def invoke (self, arg, from_tty):
+    try:
+        val = gdb.parse_and_eval(arg)
+        if (val.type.code == gdb.TYPE_CODE_REF or val.type.code == gdb.TYPE_CODE_PTR):
+            val = val.referenced_value()
+    except gdb.error as e:
+        print('pk error: %s' % (e.args[0] if len(e.args)>0 else 'unspecified'))
+        return
+    for k, v in self.fields.items():
+        try:
+            print('%s[%d] = %s' % (k, v, array_to_hex_string(val[k], v)))
+        except gdb.error as e:
+            pass
 
 
 class ToxPrettyPrinter(gdb.printing.RegexpCollectionPrettyPrinter):
@@ -302,7 +327,9 @@ def build_pretty_printer():
     return pp
 
 
-def register_tox_printers():
+def register_tox_printers_and_commands():
     import gdb.printing
     gdb.pretty_printers = []
     gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer())
+
+PrintKeyCommand ()
