@@ -40,11 +40,72 @@
 \usepackage{bytefield}
 \bytefieldsetup{bitheight=\widthof{~0x00~},bitwidth=0.03125\textwidth,boxformatting={\centering\small\sf}}
 
+\makeatletter
 \newcommand{\hatchedbitbox}[4][lrtb]{\rlap{\bitbox[{#1}]{#3}{\tikz\fill[#2] (0,0) rectangle (\width,\height);}}\bitbox[{#1}]{#3}{#4}}
+% \newcommand{\hatchedskipbox}[1][]{\bf@bitwidth} % \tikz\fill[red] (0,0) rectangle (2,2) node {\widthof{\skippedwords}};} %
+
+
+\def\zzz{\bf@bitwidth \bits@wide}
+\def\zzza{\bf@bitwidth}
+\makeatother
 
 \begin{document}
 
 \begin{itemize}
+
+\item \PVerb{NET_PACKET_LAN_DISCOVERY}\\[2ex]
+\begin{bytefield}{32}
+  \bitheader[endianness=little]{0,1,31} \\
+  \hatchedbitbox{lightcyan}{1}{\rotatebox{90}{0x21}} &
+  \hatchedbitbox{lightgreen}{31}{sender DHT public key} \\
+
+  \bitheader[lsb=32,endianness=little]{32} \\
+  \hatchedbitbox{lightgreen}{1}{}
+\end{bytefield}
+
+
+\item \PVerb{NET_PACKET_GET_NODES}\\[2ex]
+\begin{bytefield}{32}
+  \bitheader[endianness=little]{0,1,31} \\
+  \hatchedbitbox{lightcyan}{1}{\rotatebox{90}{0x02}} &
+  \hatchedbitbox{lightgreen}{31}{sender DHT public key (node id)} \\
+
+  \bitheader[lsb=32,endianness=little]{32,33,56,57,63} \\
+  \hatchedbitbox{lightgreen}{1}{} &
+  \hatchedbitbox{lightpink}{24}{random nonce (24)} &
+  \hatchedbitbox{encoded,preaction={fill,lightgreen}}{7}{query client id} \\
+
+  \bitheader[lsb=64,endianness=little]{64,88,89,95} \\
+  \hatchedbitbox{encoded,preaction={fill,lightgreen}}{25}{query client id} &
+  \hatchedbitbox{encoded,preaction={fill,lightpink}}{7}{send back data (ping id)} \\
+
+  \bitheader[lsb=96,endianness=little]{96,97,112} \\
+  \hatchedbitbox{encoded,preaction={fill,lightpink}}{1}{} &
+  \hatchedbitbox{encoded,preaction={fill,peachpuff}}{16}{MAC}
+\end{bytefield}
+
+\item \PVerb{NET_PACKET_SEND_NODES_IPV6}\\[2ex]
+\begin{bytefield}{32}
+  \bitheader[endianness=little]{0,1,31} \\
+  \hatchedbitbox{lightcyan}{1}{\rotatebox{90}{0x04}} &
+  \hatchedbitbox{lightgreen}{31}{sender DHT public key (node id)} \\
+
+  \bitheader[lsb=32,endianness=little]{32,33,56,57,63} \\
+  \hatchedbitbox{lightgreen}{1}{} &
+  \hatchedbitbox{lightpink}{24}{random nonce (24)} &
+  \hatchedbitbox{encoded,preaction={fill,lightgreen}}{1}{\rotatebox{90}{\# nod}} \\
+
+  %\hatchedskipbox\\
+
+
+  \bitheader[lsb=64,endianness=little]{64,88,89,95} \\
+  \hatchedbitbox{encoded,preaction={fill,lightgreen}}{25}{query client id} &
+  \hatchedbitbox{encoded,preaction={fill,lightpink}}{7}{send back data (ping id)} \\
+
+  \bitheader[lsb=96,endianness=little]{96,97,112} \\
+  \hatchedbitbox{encoded,preaction={fill,lightpink}}{1}{} &
+  \hatchedbitbox{encoded,preaction={fill,peachpuff}}{16}{MAC}
+\end{bytefield}
 
 
 \item \PVerb{NET_PACKET_PING_REQUEST}\\[2ex]
@@ -82,6 +143,7 @@
   \hatchedbitbox{encoded,pattern color=lightred,preaction={fill,lightgreen}}{2}{\rotatebox{90}{\parbox{\widthof{~0x00~}}{\centering\scriptsize index \& 0x1ff}}} &
   \hatchedbitbox{encoded,pattern color=lightred,preaction={fill,peachpuff}}{16}{MAC}
 \end{bytefield}
+
 \end{itemize}
 
 
