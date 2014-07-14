@@ -46,10 +46,10 @@ def append_indent(string, indent = tab_spaces):
     return ('\n' + indent).join(string.split('\n'))
 
 def clientlist_to_string(clientlist):
-    ignore_zero_id = False
+    ignore_zero_id = True
     clientlist_len = clientlist.type.sizeof // clientlist.dereference().type.sizeof
     items = map(lambda x: '[%d] = '%(x[0]) + append_indent(x[1], tab_spaces*2), \
-                [(i,str(clientlist[i])) for i in range(clientlist_len) if not ignore_zero_id or not is_zero(clientlist['client_id'], 32)])
+                [(i,str(clientlist[i])) for i in range(clientlist_len) if not (ignore_zero_id and is_zero(clientlist[i]['client_id'], 32))])
     return ('[%d] {'%(clientlist_len)) + (',\n' + tab_spaces).join(items) + ' }'
 
 
@@ -323,11 +323,12 @@ def build_pretty_printer():
     pp.add_printer('Hardening', '^Hardening$', HardeningPrinter)
     pp.add_printer('IPPTsPng', '^IPPTsPng$', IPPTsPngPrinter)
     pp.add_printer('IP_Port', '^IP_Port$', IPPortPrinter)
+    pp.add_printer('Onion_Path', '^Onion_Path$', OnionPathPrinter)
     pp.add_printer('Node_format', '^Node_format$', NodeFormatPrinter)
     return pp
 
 
-def register_tox_printers_and_commands():
+def register_tox_printers():
     import gdb.printing
     gdb.pretty_printers = []
     gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer())

@@ -86,7 +86,6 @@
 (global-set-key [f4] 'query-replace-regexp)
 (global-set-key [s-f4] 'search-forward-regexp)
 (global-set-key [f5] 'revert-buffer)
-;; (global-set-key [f6] 'other-window)
 (global-set-key "\M-?" 'goto-line)
 (global-set-key [C-x-p] 'bury-buffer)
 (global-set-key "\C-c;" 'comment-region)
@@ -575,18 +574,18 @@
       (gud-def gud-frame "frame" "\C-g" "Select and print a stack frame.")
 
       ;; debug keys
-      (local-set-key '[f5]     (lambda () (interactive)
+      (local-set-key '[f6]     (lambda () (interactive)
                                  (if (get-buffer-process gud-comint-buffer)
                                      (if gdb-active-process (gud-call "cont") (gud-call "run"))
                                    (gud-refresh))))
-      (local-set-key '[C-f5]   'gud-until)
+      (local-set-key '[C-f6]   'gud-until)
       (local-set-key '[f9]     'gud-set-clear)
       (local-set-key '[S-f9]   'gud-break)
       (local-set-key '[C-f9]   'gud-remove)
       (local-set-key '[f10]    'gud-next)
       (local-set-key '[f11]    'gud-step)
       (local-set-key '[f12]    'gud-finish)
-      (local-set-key '[c-f12]  'gdb-kill-buffers))
+      (local-set-key '[C-f12]  'gdb-kill-buffers))
 
     ;; auto complete
     (when (and (boundp 'ac-sources) (listp ac-sources))
