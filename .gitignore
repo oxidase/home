@@ -4,6 +4,8 @@
 !.emacs.d
 !.emacs.d/*
 !.emacs.d/*/*
+.emacs.d/eshell
+.emacs.d/server
 
 # .bashrc.d
 #!.bashrc.d

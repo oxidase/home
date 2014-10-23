@@ -20,7 +20,7 @@
 
 (defun package-dir (name)
   (let* ((dir1 (file-expand-wildcards (concat custom-dir name)))
-         (dir2 (file-expand-wildcards (concat custom-dir "*/" name)))
+         (dir2 (file-expand-wildcards (concat custom-dir "elpa/" name)))
          (dirs (remove-if-not #'file-accessible-directory-p (append dir1 dir2)))
          (dirp (car dirs)))
     (message "Checking for %s pacakge: %s" name (if dirp dirp "not found"))
@@ -95,12 +95,24 @@
 (global-set-key [(mouse-5)] '(lambda () (interactive) (scroll-up   (/ (window-height) 2))))
 (global-set-key "\C-x\C-g" 'recentf-open-files)
 
-;; shift+meta+<> keys
-(global-set-key (vector (list 'super 'left))  'windmove-left)
-(global-set-key (vector (list 'super 'right)) 'windmove-right)
-(global-set-key (vector (list 'super 'up))    'windmove-up)
-(global-set-key (vector (list 'super 'down))  'windmove-down)
-
+;; windmove modifier+<> keys
+(defun windmove-default-keybindings (&optional modifier)
+  "Set up keybindings for `windmove'.
+Keybindings are of the form MODIFIER-{left,right,up,down}.
+Default MODIFIER is 'shift."
+  (interactive)
+  (unless modifier (setq modifier 'shift))
+  (global-set-key (vector (list modifier 'left))  'windmove-left)
+  (global-set-key (vector (list modifier 'right)) 'windmove-right)
+  (global-set-key (vector (list modifier 'up))    'windmove-up)
+  (global-set-key (vector (list modifier 'down))  'windmove-down))
+(cond
+ (running-on-windows
+  (setq w32-pass-apps-to-system nil)
+  (setq w32-apps-modifier 'hyper)
+  (windmove-default-keybindings 'meta))
+ (t
+  (windmove-default-keybindings 'meta)))
 
 (setq frame-title-format (list user-login-name " on " system-name " - %b - " invocation-name))
 
@@ -775,6 +787,7 @@
 (when (package-dir "org-*")
   (require 'org)
   (require 'ob-core)
+  (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
   (org-babel-do-load-languages 'org-babel-load-languages
                                '((python . t) (C . t) (R . t) (haskell . t)
                                  (latex . t) (plantuml . t) (dot . t) (ruby . t)))
@@ -821,7 +834,6 @@
 (autoload `cyclebuffer-backward "cyclebuffer" "cycle backward" t)
 (global-set-key (kbd "<C-tab>") 'cyclebuffer-forward)
 (global-set-key (kbd "<C-S-iso-lefttab>") 'cyclebuffer-backward)
-(org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -923,48 +935,23 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; NT Emacs specific settings
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  (prefer-coding-system 'utf-8)          ; TODO fix codepage
-  (codepage-setup 1251)
-  (set-w32-system-coding-system 'cp1251-dos)
-  (set-clipboard-coding-system 'cp1251-dos)
-  (setq w32-standard-fontset-spec
-  "-*-Courier New-normal-r-*-*-*-110-*-*-c-*-fontset-courier,
-         ascii:-*-Courier New-normal-r-*-*-*-110-*-*-c-*-iso8859-1,
-         latin-iso8859-1:-*-Courier New-normal-r-*-*-*-110-*-*-c-*-iso8859-1,
-         latin-iso8859-2:-*-Courier New-normal-r-*-*-*-110-*-*-c-*-iso8859-2,
-         latin-iso8859-3:-*-Courier New-normal-r-*-*-*-110-*-*-c-*-iso8859-3,
-         latin-iso8859-4:-*-Courier New-normal-r-*-*-*-110-*-*-c-*-iso8859-4,
-         latin-iso8859-9:-*-Courier New-normal-r-*-*-*-110-*-*-c-*-iso8859-9,
-         cyrillic-iso8859-5:-*-Courier New-normal-r-*-*-*-110-*-*-c-*-iso8859-5,
-         greek-iso8859-7:-*-Courier New-normal-r-*-*-*-110-*-*-c-*-iso8859-7")
-  (setq w32-enable-italics t)
-  (create-fontset-from-fontset-spec w32-standard-fontset-spec t)
-  (setq default-frame-alist '((font . "fontset-courier")
-                              (top . 0) (left . 180)
-                              (width . 134) (height . 42)
-                              (cursor-color . "black")
-                              (cursor-type . box)
-                              (foreground-color . "black")
-                              (background-color . "white"))))
+  (prefer-coding-system 'utf-8)
+  (cond
+    ;;
+    ((string-match "^mykr" user-login-name)
+     (setq default-frame-alist '((top . 0) (left . 200) (width . 208) (height . 69)
+          (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")))
+     (setenv "PATH" (concat "C:\\MinGW\\bin;" (getenv "PATH")))
+     (remove-hook 'after-init-hook 'w32-check-shell-configuration)
+     (setq shell-command-switch "/c")
+     ;(setq shell-file-name "c:/Windows/System32/cmd.exe")
+     ;(setq w32-quote-process-args nil)
+     )))
 
  (running-on-gnu/linux
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Unix specific settings
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-  (setq default-frame-alist
-        '(
-         ;;    (background-color     . "LightCyan1")
-         ;;    (cursor-color         . "purple")
-         ;;    (cursor-type          . box)
-         ;;    (foreground-color     . "grey10")
-         ;;    (vertical-scroll-bars . left)
-         ;;    (active-alpha         . 0.875)
-         ;;    (inactive-alpha       . 0.75)
-         ;;    (top . 25) (left . 50) (width . 89) (height . 50)
-         ;; (font . "-*-fixed-medium-r-*-*-*-*-*-*-*-*-*-*")
-          ))
-
   (prefer-coding-system 'utf-8)
   (global-set-key [S-delete] 'clipboard-kill-region)
   (global-set-key [S-insert] 'clipboard-yank)
