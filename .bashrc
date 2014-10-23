@@ -44,3 +44,6 @@ fi
 if [ -f ~/.sdb/.sdb-completion.bash ]; then
  source ~/.sdb/.sdb-completion.bash
 fi
+
+## git helper
+alias git-showlost='git fsck --full --no-reflogs --unreachable --lost-found && ls -1 .git/lost-found/commit/ | xargs -n 1 git log -n 1 --pretty=oneline'

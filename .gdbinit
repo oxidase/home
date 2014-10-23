@@ -18,6 +18,8 @@ define hook-quit
   set confirm off
 end
 
+
+set follow-fork-mode child
 set pagination off
 set history filename ~/.gdb_history
 set history save

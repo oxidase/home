@@ -54,7 +54,7 @@
                         yasnippet cedet helm
                         org org-bullets org-jira org-magit org-pomodoro kanban ob-mongo
                         graphviz-dot-mode tdd-status-mode-line web-mode htmlize markdown-mode markdown-mode+
-                        auto-complete auto-complete-c-headers auto-complete-etags)
+                        auto-complete auto-complete-c-headers auto-complete-etags go-mode)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -140,6 +140,8 @@
 (blink-cursor-mode -1)                               ;; Switch off blinking cursor mode.
 (setq large-file-warning-threshold nil)              ;; Maximum size of file above which a confirmation is requested
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
+(setq mode-require-final-newline nil)
+(setq delete-trailing-lines nil)
 (setq printer-name "pscs301")
 (tool-bar-mode -1)
 (setq vc-follow-symlinks t)
@@ -181,6 +183,12 @@
 ;;}}}
 
 ;;{{{ Load local packages
+
+(when (package-dir "gradle-mode*")
+  (require 'gradle-mode))
+
+(when (package-dir "go-mode*")
+  (require 'go-mode))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Smooth scrolling
@@ -350,7 +358,9 @@
 (when (package-dir "magit*")
   (require 'magit)
   (require 'magit-blame)
-  (custom-set-variables '(git-commit-summary-max-length 70)))
+  (custom-set-variables '(git-commit-summary-max-length 70))
+  (add-hook 'magit-log-mode-hook (lambda ()
+      (local-set-key "s" 'magit-status))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Matlab mode
@@ -619,6 +629,9 @@
                                     ("\\<foreach\\>" . 'qt-keywords-face)))
 (setq c-default-style "qt-gnu")
 
+(require 'sd)
+(add-to-list 'auto-mode-alist '("\\.sd$" . sd-mode))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
 (when (package-dir "python*")
@@ -792,9 +805,15 @@
   (setq mmm-global-mode 'maybe)
   (mmm-add-mode-ext-class 'html-mode "\\.php\\'" 'html-php))
 
-(when (package-dir "/web-mode")
+(when (package-dir "/web-mode*")
   (require 'web-mode)
-  )
+  (add-to-list 'auto-mode-alist '("\\.phtml\\'" . web-mode))
+  (add-to-list 'auto-mode-alist '("\\.tpl\\.php\\'" . web-mode))
+  (add-to-list 'auto-mode-alist '("\\.[gj]sp\\'" . web-mode))
+  (add-to-list 'auto-mode-alist '("\\.as[cp]x\\'" . web-mode))
+  (add-to-list 'auto-mode-alist '("\\.erb\\'" . web-mode))
+  (add-to-list 'auto-mode-alist '("\\.mustache\\'" . web-mode))
+  (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C-[S]-Tab cycle buffer
@@ -882,20 +901,16 @@
          ("\\.js\\'" . js3-mode)
          ("Jamfile.v2" . jam-mode)
          ("\\.jam$" . jam-mode)
-         ("\\.(p|s)?html$" . web-mode)
-         ("\\.tpl\\.php\\'" . web-mode)
-         ("\\.jsp\\'" . web-mode)
-         ("\\.as[cp]x\\'" . web-mode)
-         ("\\.erb\\'" . web-mode)
-         ("\\.mustache\\'" . web-mode)
-         ("\\.djhtml\\'" . web-mode)
          ("\\.mc" . m4-mode)
          ("\\.m4" . m4-mode)
          ("\.i$" . c++-mode)
          ("\.cc$" . c++-mode)
          ("\.ebuild$" . ebuild-mode)
+         ("\.gradle$" . gradle-mode)
          ("CMakeLists\\.txt\\'" . cmake-mode)
          ("\\.cmake\\'" . cmake-mode)
+         ("[Mm]akefile\\.inc$" . makefile-mode)
+         ("\.go$" . go-mode)
          ) auto-mode-alist))
 
 ;;}}}
