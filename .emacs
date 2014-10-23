@@ -51,9 +51,10 @@
 ;; Guarantee all packages are installed on start
 (defvar packages-list '(auctex bm dired-single git-blame google-translate js3-mode
                         magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
-                        yasnippet cedet helm
+                        yasnippet cedet helm sql-indent
                         org org-bullets org-jira org-magit org-pomodoro kanban ob-mongo
-                        graphviz-dot-mode tdd-status-mode-line web-mode htmlize markdown-mode markdown-mode+
+                        graphviz-dot-mode tdd-status-mode-line 
+                        web-mode htmlize markdown-mode markdown-mode+
                         auto-complete auto-complete-c-headers auto-complete-etags go-mode)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
@@ -108,11 +109,14 @@ Default MODIFIER is 'shift."
   (global-set-key (vector (list modifier 'down))  'windmove-down))
 (cond
  (running-on-windows
+  ;; #IfWinActive ahk_class Emacs ; AutoHotKey mapping
+  ;;    LWin::AppsKey
+  ;; #IfWinActive
   (setq w32-pass-apps-to-system nil)
   (setq w32-apps-modifier 'hyper)
-  (windmove-default-keybindings 'meta))
+  (windmove-default-keybindings 'hyper))
  (t
-  (windmove-default-keybindings 'meta)))
+  (windmove-default-keybindings 'super)))
 
 (setq frame-title-format (list user-login-name " on " system-name " - %b - " invocation-name))
 
@@ -151,9 +155,9 @@ Default MODIFIER is 'shift."
 (put 'downcase-region 'disabled nil)                 ;; Convert the region to lower case.
 (blink-cursor-mode -1)                               ;; Switch off blinking cursor mode.
 (setq large-file-warning-threshold nil)              ;; Maximum size of file above which a confirmation is requested
-(add-hook 'before-save-hook 'delete-trailing-whitespace)
-(setq mode-require-final-newline nil)
-(setq delete-trailing-lines nil)
+;; (add-hook 'before-save-hook 'delete-trailing-whitespace)  ;; configuration required
+;; (setq mode-require-final-newline nil)
+;; (setq delete-trailing-lines nil)
 (setq printer-name "pscs301")
 (tool-bar-mode -1)
 (setq vc-follow-symlinks t)
@@ -209,6 +213,10 @@ Default MODIFIER is 'shift."
   (setq smooth-scroll-margin 2))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Fontlocking modes
+(require 'doc-mode)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Dired mode
 (load-library "dired")
 
@@ -225,9 +233,10 @@ Default MODIFIER is 'shift."
 (define-key dired-sort-map "d" (lambda () "sort by name grouping Dirs" (interactive) (dired-sort-other (concat dired-listing-switches " --group-directories-first"))))
 
 ;; humanized output
-(setq dired-listing-switches-styles
-      (if (string-match ".tm.ro." system-name) '("-alh" "-al")
-        '("-alh --group-directories-first" "-al --group-directories-first")))
+(setq dired-listing-switches-styles '("-alh" "-al"))
+;(setq dired-listing-switches-styles
+;      (if (string-match ".tm.ro." system-name) '("-alh" "-al")
+;        '("-alh --group-directories-first" "-al --group-directories-first")))
 (setq dired-listing-switches-idx 0)
 (setq dired-listing-switches (nth dired-listing-switches-idx dired-listing-switches-styles))
 (define-key dired-mode-map "h" (lambda () (interactive)
@@ -309,12 +318,12 @@ Default MODIFIER is 'shift."
       '(("[^_]?\\.\\(ps\\|pdf\\|djvu\\)\\'" "okular" (file))
         ("\\.\\(docx?\\|odt\\|ppt\\|rtf\\|xlsx?\\)\\'" "libreoffice" (file))
         ("\\.\\(ai\\)\\'" "inkscape" (file))
+        ("\\.\\(dll\\|pyd\\)\\'" "depends.exe" (file))
         ("\\.\\(?:mpe?g\\|avi\\|wmv\\|mp4\\)\\'" "smplayer" (file)))))
 
 ;;; Shell mode
 (setq ansi-color-names-vector ["black" "red4" "green4" "yellow4" "blue3" "magenta4" "cyan4" "white"])
 (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Auto Complete Mode
@@ -434,6 +443,8 @@ Default MODIFIER is 'shift."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; setup spell checker
+(when running-on-windows
+  (add-to-list 'exec-path "C:/Program Files (x86)/Aspell/bin/"))
 (if (executable-find "aspell")
     (progn
       (require 'ispell)
@@ -647,22 +658,33 @@ Default MODIFIER is 'shift."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
 (when (package-dir "python*")
-  (setq py-install-directory python-dir)
+  ;(setq py-install-directory python-dir)
+(setq py-python-command-args '("--colors" "LightBG"))
+(setq   python-shell-interpreter "ipython"
+        python-shell-interpreter-args ""
+        python-shell-prompt-regexp "In \\[[0-9]+\\]: "
+        python-shell-prompt-output-regexp "Out\\[[0-9]+\\]: "
+        python-shell-completion-setup-code "from IPython.core.completerlib import module_completion"
+        python-shell-completion-module-string-code "';'.join(module_completion('''%s'''))\n"
+        python-shell-completion-string-code "';'.join(get_ipython().Completer.all_completions('''%s'''))\n"
+ipython-completion-command-string
+)
   (require 'python-mode)
   (setq py-load-pymacs-p t))
-(setq python-indent 2)
 
-;;pdb setup, note the python version
-(setq pdb-path
-  (cond
-   ((string= system-name "miha-lt") '/usr/lib/python2.7/pdb.py)
-   (t '/usr/lib/python2.7/pdb.py)))
-(setq gud-pdb-command-name (symbol-name pdb-path))
+;; (setq python-indent 2)
 
-(defadvice pdb (before gud-query-cmdline activate)
-  "Provide a better default command line when called interactively."
-  (interactive
-   (list (gud-query-cmdline pdb-path (file-name-nondirectory buffer-file-name)))))
+;; ;;pdb setup, note the python version
+;; (setq pdb-path
+;;   (cond
+;;    ((string= system-name "miha-lt") '/usr/lib/python2.7/pdb.py)
+;;    (t '/usr/lib/python2.7/pdb.py)))
+;; (setq gud-pdb-command-name (symbol-name pdb-path))
+
+;; (defadvice pdb (before gud-query-cmdline activate)
+;;   "Provide a better default command line when called interactively."
+;;   (interactive
+;;    (list (gud-query-cmdline pdb-path (file-name-nondirectory buffer-file-name)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Ruby mode
@@ -682,6 +704,21 @@ Default MODIFIER is 'shift."
   (require 'lua-mode)
   (add-to-list 'auto-mode-alist '("\\.lua\\'" . lua-mode)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SQL
+(when (package-dir "sql-indent*")
+  (require 'sql-indent)
+  (defun sql-indent-region (beg end)
+    "Indent the SQL statement in the region."
+    (interactive "*r")
+    (save-excursion
+      (save-restriction
+        (narrow-to-region beg end)
+        (sql-indent-buffer)))))
+
+(add-hook 'sql-mode-hook
+          (lambda ()
+            (sql-highlight-mysql-keywords)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; set hooks
@@ -788,8 +825,9 @@ Default MODIFIER is 'shift."
   (require 'org)
   (require 'ob-core)
   (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
+  (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
   (org-babel-do-load-languages 'org-babel-load-languages
-                               '((python . t) (C . t) (R . t) (haskell . t)
+                               '((python . t) (C . t) (R . t) (haskell . t) (sqlite  . t)
                                  (latex . t) (plantuml . t) (dot . t) (ruby . t)))
   (add-hook 'org-babel-after-execute-hook (lambda () (condition-case nil (org-display-inline-images) (error nil))))
   (setq org-babel-results-keyword "results")                           ;; Make babel results blocks lowercase
@@ -923,6 +961,7 @@ Default MODIFIER is 'shift."
          ("\\.cmake\\'" . cmake-mode)
          ("[Mm]akefile\\.inc$" . makefile-mode)
          ("\.go$" . go-mode)
+         ("swdd.*\\.txt$" . doc-mode)
          ) auto-mode-alist))
 
 ;;}}}
@@ -936,6 +975,10 @@ Default MODIFIER is 'shift."
   ;; NT Emacs specific settings
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (prefer-coding-system 'utf-8)
+  (when (package-dir "w32-browser*")
+    (require 'w32-browser)
+    (define-key dired-mode-map (kbd "<M-return>") 'dired-w32explore))
+
   (cond
     ;;
     ((string-match "^mykr" user-login-name)
@@ -946,6 +989,7 @@ Default MODIFIER is 'shift."
      (setq shell-command-switch "/c")
      ;(setq shell-file-name "c:/Windows/System32/cmd.exe")
      ;(setq w32-quote-process-args nil)
+     (setq org-babel-sqlite3-command "D:\\tools\\sqlite3.exe")
      )))
 
  (running-on-gnu/linux
@@ -1200,3 +1244,51 @@ If ARG is given, then insert the result to current-buffer"
   (insert (shell-command-to-string "find . -executable -type f")))
 
 ;; }}}
+
+
+;; (add-to-list 'tramp-methods
+;;   `("eb2"
+;;     (tramp-login-program        "plink")
+;;     ;; ("%h") must be a single element, see
+;;     ;; `tramp-compute-multi-hops'.
+;;     (tramp-login-args           (("-load") ("%h") ("-t")
+;; 				 ;(,(format
+;; 				 ;   "env 'TERM=%s' 'PROMPT_COMMAND=' 'PS1=%s'"
+;; 				 ;   tramp-terminal-type
+;; 				 ;   tramp-initial-end-of-output))
+;; 				 ("env 'PS1=#$ '")
+;;                  ("/bin/sh")))
+;;     (tramp-remote-shell         "/bin/sh")
+;;     (tramp-remote-shell-args    ("-c"))))
+
+
+;; (add-to-list 'tramp-methods
+;;   '("ebtel1"
+;;     (tramp-login-program        "telnet")
+;;     (tramp-login-args           (("%h") ("1234")))
+;;     (tramp-remote-shell         "/bin/sh")
+;;     (tramp-remote-shell-args    ("-c"))))
+
+
+;; (setq tramp-verbose 10)
+;; ;(setq ange-ftp-ftp-program-args '("-i" "-n" "-g" "-v" "--prompt" ""))
+;; (setq ange-ftp-ftp-program-args '("-i" "-n" "-g" "-v"))
+
+;; ;(setq ange-ftp-ftp-program-name "C:/ftp.exe")
+;; ;(setq ange-ftp-ftp-program-name "C:/Program Files (x86)/GnuWin32/bin/ftp.exe")
+;; ;(setq ange-ftp-ftp-program-name "C:/cygwin/bin/ftp.exe")
+;; ;(setq ange-ftp-ftp-program-name "C:/cygwin/bin/lftp.exe")
+;; ;(setq ange-ftp-ftp-program-name "C:/windows/system32/ftp.exe")
+
+;; (setq ange-ftp-ftp-program-name "C:/cygwin/bin/lftp.exe")
+
+
+
+;; (defadvice grep-compute-defaults (around grep-compute-defaults-advice-null-device)
+;;   "Use cygwin's /dev/null as the null-device."
+;;   (let ((null-device "/dev/null"))
+;; 	ad-do-it))
+;; (ad-activate 'grep-compute-defaults)
+
+
+;; (local-set-key [tab] 'py-shell-complete)

@@ -6,6 +6,7 @@
 !.emacs.d/*/*
 .emacs.d/eshell
 .emacs.d/server
+.emacs.d/abbrev_defs
 
 # .bashrc.d
 #!.bashrc.d
