@@ -55,7 +55,8 @@
                         org org-bullets org-jira org-magit org-pomodoro kanban ob-mongo
                         graphviz-dot-mode tdd-status-mode-line 
                         web-mode htmlize markdown-mode markdown-mode+
-                        auto-complete auto-complete-c-headers auto-complete-etags go-mode)
+                        auto-complete auto-complete-c-headers auto-complete-etags go-mode
+                        jade-mode)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -463,11 +464,9 @@ Default MODIFIER is 'shift."
   (setq js3-continued-expr-mult 4)
   (setq js3-indent-level 4))
 
-(when (package-dir "skewer-mode*")
-  (load-library "skewer-mode")
-  (add-hook 'js2-mode-hook 'skewer-mode)
-  (add-hook 'css-mode-hook 'skewer-css-mode)
-  (add-hook 'html-mode-hook 'skewer-html-mode))
+(when (package-dir "jade-mode*")
+  (load-library "jade-mode")
+  (add-to-list 'auto-mode-alist '("\\.jade\\'" . jade-mode)))
 
 (when (package-dir "qml-mode*")
   (require 'qml-mode)
