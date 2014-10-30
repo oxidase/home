@@ -50,18 +50,19 @@
   "Syntax table for `sd-mode'.")
 
 (defvar sd-font-lock-keywords
-  `(("%\\w+\\(\\[\\]\\)?" (0 font-lock-variable-name-face t))
-    ("$\\w+\\(\\[\\]\\)?" (0 font-lock-type-face t))
-    ("@@[^@]*@@" (0 highlight))
+  `(("%\\w+\\(\\[\\]\\)?" (0 font-lock-variable-name-face))
+    ("$\\w+\\(\\[\\]\\)?" (0 font-lock-type-face))
+    ("@@.*$" (0 highlight t))
     ("\\<[A-Z][A-Z0-9_]+\\>" (0 font-lock-function-name-face))
     ("\\(gosub\\|proc\\)[ \t]+\\(\\w+\\)" (2 font-lock-function-name-face))
     ;; (,(concatenate 'string "\\<" (regexp-opt '("DEST" "RESET")) "_[A-Z0-9_]+\\>") (0 font-lock-function-name-face))
     (,(concatenate 'string "^[ \t]*"
        (regexp-opt '("set" "global" "if" "else" "endif" "for" "next" "wait" "send"
-                     "quit" "proc" "endproc" "gosub" "call" "switch" "case" "endcase" "endswitch"
+                     "quit" "proc" "endproc" "gosub" "call" "switch" "case" "endcase" "endswitch" "default"
                      "file" "write" "writeln" "message" "goto" "dialogpage" "listpage" "statusbar"
                      "subregion" "region" "endregion" "return" "exit" "mapdraw" "log" "udp" "menu"
-                     "directory" "exists" "show" "while" "endwhile" "dialogbook" "mappanel" "dialog")))
+                     "directory" "exists" "show" "while" "endwhile" "dialogbook" "mappanel"
+                     "dialog" "declare" "enddeclare" "run" "system" "sleep")))
      (0 font-lock-keyword-face))
     (,(regexp-opt '("singleton" "nowindow" "skipunknownids" "skipunknownids" "nocode") `words)
      (0 font-lock-keyword-face)))
