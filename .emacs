@@ -53,7 +53,7 @@
                         magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
                         yasnippet cedet helm sql-indent
                         org org-bullets org-jira org-magit org-pomodoro kanban ob-mongo
-                        graphviz-dot-mode tdd-status-mode-line 
+                        graphviz-dot-mode tdd-status-mode-line
                         web-mode htmlize markdown-mode markdown-mode+
                         auto-complete auto-complete-c-headers auto-complete-etags go-mode
                         jade-mode)
@@ -1014,6 +1014,12 @@ ipython-completion-command-string
     ((string= system-name "miha-luxoft")
      (setq default-frame-alist `(
           (top . 0) (left . ,(if (> (x-display-pixel-width) 1920) 1380 120)) (width . 224) (height . 58)
+          (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
+          )))
+
+    ((string-match "Genius" system-name)
+     (setq default-frame-alist `(
+          (top . 0) (left . 120) (width . 224) (height . 60)
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
           )))
 
