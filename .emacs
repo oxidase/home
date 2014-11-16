@@ -534,7 +534,8 @@ Default MODIFIER is 'shift."
            (ext (file-name-extension bname)))
 
       (c-toggle-auto-newline -1)                           ;; Turn off auto-newline feature
-
+      (defun c-font-lock-invalid-string () t)              ;; Turn off invalid string highlight
+      
       ;; add OpenFOAMcompile option
       (when (getenv "WM_COMPILE_OPTION")
         (add-to-list 'mode-line-format (concat (getenv "WM_COMPILE_OPTION") " ")))
@@ -624,6 +625,26 @@ Default MODIFIER is 'shift."
       (add-to-list 'ac-sources 'ac-source-semantic-raw))
     )))
 (modify-syntax-entry ?_ "w" c++-mode-syntax-table)
+(add-hook 'c++-mode-hook
+      '(lambda()
+        (font-lock-add-keywords
+         nil '(;; complete some fundamental keywords
+           ("\\<\\(void\\|unsigned\\|signed\\|char\\|short\\|bool\\|int\\|long\\|float\\|double\\)\\>" . font-lock-keyword-face)
+           ;; add the new C++11 keywords
+           ("\\<\\(alignof\\|alignas\\|constexpr\\|decltype\\|noexcept\\|nullptr\\|static_assert\\|thread_local\\|override\\|final\\)\\>" . font-lock-keyword-face)
+           ("\\<\\(char[0-9]+_t\\)\\>" . font-lock-keyword-face)
+           ;; PREPROCESSOR_CONSTANT
+           ("\\<[A-Z]+[A-Z_]+\\>" . font-lock-constant-face)
+           ;; hexadecimal numbers
+           ("\\<0[xX][0-9A-Fa-f]+\\>" . font-lock-constant-face)
+           ;; integer/float/scientific numbers
+           ("\\<[\\-+]*[0-9]*\\.?[0-9]+\\([ulUL]+\\|[eE][\\-+]?[0-9]+\\)?\\>" . font-lock-constant-face)
+           ;; user-types (customize!)
+           ("\\<[A-Za-z_]+[A-Za-z_0-9]*_\\(t\\|type\\|ptr\\)\\>" . font-lock-type-face)
+           ("\\<\\(xstring\\|xchar\\)\\>" . font-lock-type-face)
+           ))
+        )
+      t)
 
 ;; set global GDB properties and keys
 (setf gdb-many-windows t)
@@ -640,7 +661,8 @@ Default MODIFIER is 'shift."
 (require 'qt-pro)
 (c-add-style "qt-gnu" '("gnu"
     (c-access-key . "^\\(public\\|protected\\|private\\|signals\\|public slots\\|protected slots\\|private slots\\):")
-    (c-basic-offset . 4)))
+    (c-basic-offset . 4)
+    (c-set-offset 'substatement-open '0)))
 ;; make new font for rest of qt keywords
 (make-face 'qt-keywords-face)
 (set-face-foreground 'qt-keywords-face "midnight blue")
@@ -650,6 +672,11 @@ Default MODIFIER is 'shift."
                                     ("\\<Q_[A-Z][_A-Za-z]*" . 'qt-keywords-face)
                                     ("\\<foreach\\>" . 'qt-keywords-face)))
 (setq c-default-style "qt-gnu")
+;; c++11 stuff
+(make-face 'c++11-raw-string-face)
+(set-face-foreground 'c++11-raw-string-face "#002000")
+(set-face-background 'c++11-raw-string-face "#ddffdd")
+(font-lock-add-keywords 'c++-mode '(("\\(R\\s\"\\(.\\)[^@]*\\2\\s\"\\)" 1 'c++11-raw-string-face t)))
 
 (require 'sd)
 (add-to-list 'auto-mode-alist '("\\.sd$" . sd-mode))
@@ -863,7 +890,8 @@ ipython-completion-command-string
   (add-to-list 'auto-mode-alist '("\\.as[cp]x\\'" . web-mode))
   (add-to-list 'auto-mode-alist '("\\.erb\\'" . web-mode))
   (add-to-list 'auto-mode-alist '("\\.mustache\\'" . web-mode))
-  (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode)))
+  (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
+  (add-to-list 'auto-mode-alist '("\\.tmpl\\'" . web-mode)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C-[S]-Tab cycle buffer
