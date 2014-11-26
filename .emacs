@@ -56,7 +56,7 @@
                         graphviz-dot-mode tdd-status-mode-line
                         web-mode htmlize markdown-mode markdown-mode+
                         auto-complete auto-complete-c-headers auto-complete-etags go-mode
-                        jade-mode)
+                        jade-mode hide-lines)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -157,7 +157,7 @@ Default MODIFIER is 'shift."
 (blink-cursor-mode -1)                               ;; Switch off blinking cursor mode.
 (setq large-file-warning-threshold nil)              ;; Maximum size of file above which a confirmation is requested
 ;; (add-hook 'before-save-hook 'delete-trailing-whitespace)  ;; configuration required
-;; (setq mode-require-final-newline nil)
+(setq mode-require-final-newline t)
 ;; (setq delete-trailing-lines nil)
 (setq printer-name "pscs301")
 (tool-bar-mode -1)
@@ -200,6 +200,9 @@ Default MODIFIER is 'shift."
 ;;}}}
 
 ;;{{{ Load local packages
+
+(when (package-dir "hide-lines*")
+  (require 'hide-lines))
 
 (when (package-dir "gradle-mode*")
   (require 'gradle-mode))
@@ -534,6 +537,7 @@ Default MODIFIER is 'shift."
            (ext (file-name-extension bname)))
 
       (c-toggle-auto-newline -1)                           ;; Turn off auto-newline feature
+      (c-set-offset 'substatement-open 0)                  ;; project brace indent style
 
       ;; add OpenFOAMcompile option
       (when (getenv "WM_COMPILE_OPTION")
@@ -590,7 +594,7 @@ Default MODIFIER is 'shift."
     (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode) (eq major-mode 'compilation-mode)
               (eq major-mode 'jam-mode) (eq major-mode 'makefile-gmake-mode) (eq major-mode 'python-mode)
               (eq major-mode 'qt-pro-mode))
-      (setq show-trailing-whitespace t)
+      ;; (setq show-trailing-whitespace t)
       (local-set-key [C-S-mouse-1] (lambda (event) (interactive "e") (posn-set-point (elt event 1)) (find-tag (word-at-point))))
       ;; compile keys
       (local-set-key '[f8]   'next-error)
@@ -1102,6 +1106,12 @@ ipython-completion-command-string
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CR insert/remove
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun hide-dos-eol ()
+  "Do not show ^M in files containing mixed UNIX and DOS line endings."
+  (interactive)
+  (setq buffer-display-table (make-display-table))
+  (aset buffer-display-table ?\^M []))
+
 (defun unix2dos ()
   ;; This function really does work now, changed `replace-string()'
   ;; to `replace-regexp()' which does the business !! *PP*
@@ -1147,16 +1157,19 @@ ipython-completion-command-string
   (interactive "*")
   (highlight-lines-matching-regexp "[0-9]\{9\}\.[0-9]\{9\}"))
 
-(defun ascii ()
-  (interactive)
+(defun ascii (arg_from arg_to arg_format)
+  (interactive (let ((from (string-to-char (read-string "From: " "A")))
+                     (to (string-to-char (read-string "To: " "Z")))
+                     (format (read-string "Format: " " %4x %6d %c  \n")))
+                     (list from to format)))
   ;(switch-to-buffer "*scratch*")(clone-buffer "*ASCII*" t)(erase-buffer)(text-mode)
-  (switch-to-buffer "*ASCII*")(fundamental-mode)
-  (erase-buffer)
-  (loop
-   for i from 0 to #x2fff
-   do (when (and (not (zerop i)) (zerop (mod i 256))) (insert "-------------\n"))
-   (insert (format " %4x %6d %c  \n" i i i)))
-  (beginning-of-buffer))
+  (let () ; (n (count-occurrences "%" arg_format)))
+    (switch-to-buffer "*ASCII*") (fundamental-mode)
+    (erase-buffer)
+    (loop
+     for i from arg_from to arg_to
+     do (insert (format arg_format  i i i i i i)))
+    (beginning-of-buffer)))
 
 (defun display-fonts ()
   "Sorted display of all the fonts Emacs knows about."
@@ -1298,3 +1311,24 @@ If ARG is given, then insert the result to current-buffer"
 
 
 ;; (local-set-key [tab] 'py-shell-complete)
+
+(defun get-svn-parent-directory (dir)
+  (cond
+   ((or (not dir) (string= (file-name-directory (directory-file-name dir)) dir))
+    nil)
+   ((file-accessible-directory-p (concat (file-name-as-directory dir) ".svn"))
+    dir)
+   (t
+    (get-svn-parent-directory (file-name-directory (directory-file-name dir))))))
+
+(defun insert-svn-info-message()
+  (interactive)
+  (let* ((dir (get-svn-parent-directory (buffer-file-name)))
+        (info (shell-command-to-string (concat "svn info " dir)))
+        (root (if (string-match "^Repository Root: \\([^ ]+\\)$" info) (match-string 1 info) "unknown"))
+        (fullurl (if (string-match "^URL: \\([^ ]+\\)$" info) (match-string 1 info) "unknown"))
+        (url (concat "^" (substring fullurl (length root))))
+        (rev (if (string-match "^Revision: \\([0-9]+\\)$" info) (match-string 1 info) "unknown"))
+        (head (format "Merge with %s rev %s" url rev)))
+    (insert (format "%s\n\n%s" head info))))
+
