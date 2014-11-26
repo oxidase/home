@@ -678,9 +678,10 @@ Default MODIFIER is 'shift."
 (setq c-default-style "qt-gnu")
 ;; c++11 stuff
 (make-face 'c++11-raw-string-face)
-(set-face-foreground 'c++11-raw-string-face "#002000")
+(set-face-foreground 'c++11-raw-string-face "#003000")
 (set-face-background 'c++11-raw-string-face "#ddffdd")
-(font-lock-add-keywords 'c++-mode '(("\\(R\\s\"\\(.\\)[^@]*\\2\\s\"\\)" 1 'c++11-raw-string-face t)))
+(font-lock-add-keywords 'c++-mode '(("\\(R\\s\"\\(.*\\)([^)]*)\\2\\s\"\\)" 1 'c++11-raw-string-face t)))
+
 
 (require 'sd)
 (add-to-list 'auto-mode-alist '("\\.sd$" . sd-mode))
