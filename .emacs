@@ -162,7 +162,7 @@ Default MODIFIER is 'shift."
 (setq printer-name "pscs301")
 (tool-bar-mode -1)
 (setq vc-follow-symlinks t)
-(setq grep-command "grep --exclude-dir=\".svn\" -nHriI -e ")
+(setq grep-command (if running-on-windows "grep -nHriI -e " "grep --exclude-dir=\".svn\" -nHriI -e "))
 (setq tags-case-fold-search nil)
 (if (not (assq 'user-size initial-frame-alist))      ;; Unless we've specified a number of lines, prevent the startup code from
     (setq tool-bar-originally-present nil))          ;; shrinking the frame because we got rid of the tool-bar.
@@ -840,7 +840,14 @@ ipython-completion-command-string
   (setq org-support-shift-select 'always)
   (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/plantuml.jar"))
   (add-to-list 'org-src-lang-modes (quote ("plantuml" . fundamental-mode))) ;; Use fundamental mode when editing plantuml blocks with C-c '
-  (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode)))
+  (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
+
+  (defadvice org-mode-flyspell-verify
+    (after my-org-mode-flyspell-verify activate)
+    "Don't spell check src blocks."
+    (setq ad-return-value
+          (and ad-return-value
+               (not (eq (org-element-type (org-element-at-point)) 'src-block))))))
 
 (when (package-dir "/gnuplot*")
   (autoload 'gnuplot-mode "gnuplot" "gnuplot major mode" t)
