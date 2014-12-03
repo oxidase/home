@@ -444,6 +444,9 @@ Default MODIFIER is 'shift."
 ;; Subversion mode
 (require 'psvn)
 (setf svn-status-hide-unmodified t)
+(defadvice svn-status-commit (after modify-default-commit-message activate)
+  "Insert an svn message template"
+  (insert "\n\nReviewers: \nFindings: \nRisk: medium\nKlocwork: ok\nJira key is NDSAL-\n"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; setup spell checker
