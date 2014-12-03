@@ -448,6 +448,26 @@ Default MODIFIER is 'shift."
   "Insert an svn message template"
   (insert "\n\nReviewers: \nFindings: \nRisk: medium\nKlocwork: ok\nJira key is NDSAL-\n"))
 
+(defun get-svn-parent-directory (dir)
+  (cond
+   ((or (not dir) (string= (file-name-directory (directory-file-name dir)) dir))
+    nil)
+   ((file-accessible-directory-p (concat (file-name-as-directory dir) ".svn"))
+    dir)
+   (t
+    (get-svn-parent-directory (file-name-directory (directory-file-name dir))))))
+
+(defun insert-svn-info-message()
+  (interactive)
+  (let* ((dir (get-svn-parent-directory (buffer-file-name)))
+        (info (shell-command-to-string (concat "svn info " dir)))
+        (root (if (string-match "^Repository Root: \\([^ ]+\\)$" info) (match-string 1 info) "unknown"))
+        (fullurl (if (string-match "^URL: \\([^ ]+\\)$" info) (match-string 1 info) "unknown"))
+        (url (concat "^" (substring fullurl (length root))))
+        (rev (if (string-match "^Revision: \\([0-9]+\\)$" info) (match-string 1 info) "unknown"))
+        (head (format "Merge with %s rev %s" url rev)))
+    (insert (format "%s\n\n%s" head info))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; setup spell checker
 (when running-on-windows
@@ -1350,23 +1370,4 @@ If ARG is given, then insert the result to current-buffer"
 
 ;; (local-set-key [tab] 'py-shell-complete)
 
-(defun get-svn-parent-directory (dir)
-  (cond
-   ((or (not dir) (string= (file-name-directory (directory-file-name dir)) dir))
-    nil)
-   ((file-accessible-directory-p (concat (file-name-as-directory dir) ".svn"))
-    dir)
-   (t
-    (get-svn-parent-directory (file-name-directory (directory-file-name dir))))))
-
-(defun insert-svn-info-message()
-  (interactive)
-  (let* ((dir (get-svn-parent-directory (buffer-file-name)))
-        (info (shell-command-to-string (concat "svn info " dir)))
-        (root (if (string-match "^Repository Root: \\([^ ]+\\)$" info) (match-string 1 info) "unknown"))
-        (fullurl (if (string-match "^URL: \\([^ ]+\\)$" info) (match-string 1 info) "unknown"))
-        (url (concat "^" (substring fullurl (length root))))
-        (rev (if (string-match "^Revision: \\([0-9]+\\)$" info) (match-string 1 info) "unknown"))
-        (head (format "Merge with %s rev %s" url rev)))
-    (insert (format "%s\n\n%s" head info))))
 
