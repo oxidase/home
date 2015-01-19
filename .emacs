@@ -384,8 +384,27 @@ Default MODIFIER is 'shift."
   (require 'magit)
   (require 'magit-blame)
   (custom-set-variables '(git-commit-summary-max-length 70))
-  (add-hook 'magit-log-mode-hook (lambda ()
-      (local-set-key "s" 'magit-status))))
+
+  ;; Some specific function to show/edit branch descriptions
+  (defun magit-show-description ()
+    "Print descriptions"
+    (interactive)
+    (magit-section-action info (info)
+      (branch
+       (message (magit-git-string "config" (format "branch.%s.description" info))))))
+
+  (defun magit-edit-description ()
+    "Edit descriptions"
+    (interactive) ; (list (magit-read-rev "Edit branch description" (magit-get-current-branch))))
+    (magit-section-action info (info)
+      (branch
+       (let* ((config (format "branch.%s.description" info))
+              (current (magit-git-string "config" config))
+              (description (read-string (format "Descrition of [%s]: " info) current)))
+         (magit-git-string "config" config description)))))
+
+  (define-key magit-branch-manager-mode-map (kbd "=")   'magit-show-description)
+  (define-key magit-branch-manager-mode-map (kbd "C-=") 'magit-edit-description))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Matlab mode
@@ -784,15 +803,12 @@ ipython-completion-command-string
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AucTeX
 (when (package-dir "auctex*")
+  (require 'tex-site)
   ;(load "preview-latex.el" nil t t)
   (setq preview-default-document-pt 12)
   ;;  TeX-style-path
   (setq LaTeX-enable-toolbar nil)
   (setq font-latex-title-fontify 'color)
-  ;(require 'tex)
-  ;(require 'tex-site)
-  (require 'latex)
-  ;(require 'font-latex)
   (setq TeX-command-default "XeLaTeX")
   (setq TeX-auto-save t)
   (setq TeX-parse-self t)
@@ -1323,51 +1339,3 @@ If ARG is given, then insert the result to current-buffer"
   (insert (shell-command-to-string "find . -executable -type f")))
 
 ;; }}}
-
-
-;; (add-to-list 'tramp-methods
-;;   `("eb2"
-;;     (tramp-login-program        "plink")
-;;     ;; ("%h") must be a single element, see
-;;     ;; `tramp-compute-multi-hops'.
-;;     (tramp-login-args           (("-load") ("%h") ("-t")
-;; 				 ;(,(format
-;; 				 ;   "env 'TERM=%s' 'PROMPT_COMMAND=' 'PS1=%s'"
-;; 				 ;   tramp-terminal-type
-;; 				 ;   tramp-initial-end-of-output))
-;; 				 ("env 'PS1=#$ '")
-;;                  ("/bin/sh")))
-;;     (tramp-remote-shell         "/bin/sh")
-;;     (tramp-remote-shell-args    ("-c"))))
-
-
-;; (add-to-list 'tramp-methods
-;;   '("ebtel1"
-;;     (tramp-login-program        "telnet")
-;;     (tramp-login-args           (("%h") ("1234")))
-;;     (tramp-remote-shell         "/bin/sh")
-;;     (tramp-remote-shell-args    ("-c"))))
-
-
-;; (setq tramp-verbose 10)
-;; ;(setq ange-ftp-ftp-program-args '("-i" "-n" "-g" "-v" "--prompt" ""))
-;; (setq ange-ftp-ftp-program-args '("-i" "-n" "-g" "-v"))
-
-;; ;(setq ange-ftp-ftp-program-name "C:/ftp.exe")
-;; ;(setq ange-ftp-ftp-program-name "C:/Program Files (x86)/GnuWin32/bin/ftp.exe")
-;; ;(setq ange-ftp-ftp-program-name "C:/cygwin/bin/ftp.exe")
-;; ;(setq ange-ftp-ftp-program-name "C:/cygwin/bin/lftp.exe")
-;; ;(setq ange-ftp-ftp-program-name "C:/windows/system32/ftp.exe")
-
-;; (setq ange-ftp-ftp-program-name "C:/cygwin/bin/lftp.exe")
-
-
-
-;; (defadvice grep-compute-defaults (around grep-compute-defaults-advice-null-device)
-;;   "Use cygwin's /dev/null as the null-device."
-;;   (let ((null-device "/dev/null"))
-;; 	ad-do-it))
-;; (ad-activate 'grep-compute-defaults)
-
-
-;; (local-set-key [tab] 'py-shell-complete)
