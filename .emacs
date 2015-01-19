@@ -156,13 +156,13 @@ Default MODIFIER is 'shift."
 (put 'downcase-region 'disabled nil)                 ;; Convert the region to lower case.
 (blink-cursor-mode -1)                               ;; Switch off blinking cursor mode.
 (setq large-file-warning-threshold nil)              ;; Maximum size of file above which a confirmation is requested
-;; (add-hook 'before-save-hook 'delete-trailing-whitespace)  ;; configuration required
+;(add-hook 'before-save-hook 'delete-trailing-whitespace)  ;; configuration required
 (setq mode-require-final-newline t)
 ;; (setq delete-trailing-lines nil)
 (setq printer-name "pscs301")
 (tool-bar-mode -1)
 (setq vc-follow-symlinks t)
-(setq grep-command (if running-on-windows "grep -nHriI -e " "grep --exclude-dir=\".svn\" -nHriI -e "))
+(setq grep-command "grep --exclude-dir=\".svn\" -nHriI -e ")
 (setq tags-case-fold-search nil)
 (if (not (assq 'user-size initial-frame-alist))      ;; Unless we've specified a number of lines, prevent the startup code from
     (setq tool-bar-originally-present nil))          ;; shrinking the frame because we got rid of the tool-bar.
@@ -593,6 +593,7 @@ Default MODIFIER is 'shift."
           ((eq major-mode 'qml-mode)
            (local-set-key '[S-f5]  (lambda () (interactive) (save-window-excursion (shell-command run-command))))
            "qmlscene %f &")
+          (running-on-windows "%n")
           (t "./%n"))))
       (put 'run-command 'safe-local-variable 'run-command-safe-variable)
       (defun run-command-safe-variable (var) (or
@@ -618,7 +619,7 @@ Default MODIFIER is 'shift."
     (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode) (eq major-mode 'compilation-mode)
               (eq major-mode 'jam-mode) (eq major-mode 'makefile-gmake-mode) (eq major-mode 'python-mode)
               (eq major-mode 'qt-pro-mode))
-      ;; (setq show-trailing-whitespace t)
+      (setq show-trailing-whitespace t)
       (local-set-key [C-S-mouse-1] (lambda (event) (interactive "e") (posn-set-point (elt event 1)) (find-tag (word-at-point))))
       ;; compile keys
       (local-set-key '[f8]   'next-error)
@@ -892,6 +893,7 @@ ipython-completion-command-string
   (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/plantuml.jar"))
   (add-to-list 'org-src-lang-modes (quote ("plantuml" . fundamental-mode))) ;; Use fundamental mode when editing plantuml blocks with C-c '
   (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
+  (add-hook 'org-mode-hook '(lambda () (local-set-key (kbd "<H-tab>") 'pcomplete)))
 
   (defadvice org-mode-flyspell-verify
     (after my-org-mode-flyspell-verify activate)
@@ -1369,5 +1371,3 @@ If ARG is given, then insert the result to current-buffer"
 
 
 ;; (local-set-key [tab] 'py-shell-complete)
-
-
