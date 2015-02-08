@@ -4,14 +4,14 @@ python
 import sys, os
 sys.path.insert(0, os.path.expanduser('~/.gdbinit.d/python'))
 from libstdcxx.v6.printers import register_libstdcxx_printers
-#register_libstdcxx_printers (None)
-from qt5.printers import register_qt5_printers
-#register_qt5_printers (None)
-from imp import reload
-import tox.printers
-reload(tox.printers)
-#from tox.printers import register_tox_printers
-tox.printers.register_tox_printers()
+register_libstdcxx_printers (None)
+# from qt5.printers import register_qt5_printers
+# #register_qt5_printers (None)
+# from imp import reload
+# import tox.printers
+# reload(tox.printers)
+# #from tox.printers import register_tox_printers
+# tox.printers.register_tox_printers()
 end
 
 define hook-quit

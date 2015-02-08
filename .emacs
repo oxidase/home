@@ -195,7 +195,9 @@ Default MODIFIER is 'shift."
   (ansi-color-apply-on-region (point-min) (point-max)))
 (add-hook 'compilation-filter-hook 'ansi-colorize-buffer)
 
-(server-start)
+;; Start Emacs as a server
+(unless (server-running-p)
+  (server-start))
 
 ;;}}}
 
@@ -694,9 +696,11 @@ Default MODIFIER is 'shift."
 
 ;; set global GDB properties and keys
 (setf gdb-many-windows t)
-;(setf gdb-show-main t)
-;(setf gdb-show-threads-by-default t)
-(global-set-key (kbd "s-`") (lambda () (interactive)(when (buffer-name gud-comint-buffer) (gdb-many-windows 1))))
+(setf gdb-show-threads-by-default t)
+(global-set-key (kbd "s-`") (lambda () (interactive)
+     (when (buffer-name gud-comint-buffer)
+       (gdb-many-windows 1)
+       (set-window-dedicated-p (selected-window) nil))))
 (defun gdb-kill-buffers () (interactive)
   (set-process-query-on-exit-flag (get-buffer-process gud-comint-buffer) nil)
   (kill-buffer gud-comint-buffer)
@@ -1154,7 +1158,7 @@ ipython-completion-command-string
     ;; if the last caharacter is closing parenthesis
     (if (eq (syntax-class (syntax-after (1- (point)))) 5)
      ;; get the first line and print it
-     (let* (blinpkos beginpos parenpos
+     (let* (blinkpos solpos eolpos parenpos len
             open-paren-line-string curent-message)
        ;; get corresponding opening parenthesis
        (condition-case () (setq blinkpos (scan-sexps (point) -1)) (error (setq blinkpos nil paren-first-line-pos -1)))
@@ -1163,16 +1167,22 @@ ipython-completion-command-string
          (save-excursion
            ;; get the line
            (goto-char blinkpos)
-           (setq beginpos (line-beginning-position))
-           (setq open-paren-line-string (buffer-substring beginpos (line-end-position))))
-         ;; get the parenthesis position in the line
-         (setq parenpos (- blinkpos beginpos))
+           (setq solpos (line-beginning-position) eolpos (line-end-position) parenpos (- blinkpos solpos)
+                 open-paren-line-string (buffer-substring solpos eolpos))
+           (unless (string-match "\\sw" (buffer-substring solpos eolpos))
+             (goto-char (1- solpos))
+             (setq solpos (line-beginning-position) parenpos (- blinkpos solpos)
+                   open-paren-line-string (buffer-substring solpos eolpos))))
+         ;; remove internal newlines
+         (setq len (length open-paren-line-string)
+               open-paren-line-string (replace-regexp-in-string "[\n\r]+\\s-+" " " open-paren-line-string)
+               parenpos (- parenpos (- len (length open-paren-line-string))))
          ;; highlight the parenthesis
          (put-text-property parenpos (1+ parenpos) 'face '(background-color . "turquoise" ) open-paren-line-string)
          ;; print to the message line
          (unless (= paren-first-line-pos blinkpos)
            (setf paren-first-line-pos blinkpos)
-           (message "%s" (first (split-string open-paren-line-string "\n"))))))
+           (message "%s" (s-trim-right open-paren-line-string)))))
      ;; if a non-paren symbol -> remove message locking
      (setf paren-first-line-pos -1))))
 (run-with-idle-timer 0.1 t 'blink-paren-first-line)
@@ -1337,4 +1347,3 @@ If ARG is given, then insert the result to current-buffer"
   (insert (shell-command-to-string "find . -executable -type f")))
 
 ;; }}}
-
