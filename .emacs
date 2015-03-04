@@ -136,6 +136,7 @@ Default MODIFIER is 'shift."
 (setq initial-scratch-message nil)                   ;; Clear scratch buffer
 (setq initial-major-mode 'text-mode)                 ;; text mode is default
 (set-scroll-bar-mode 'right)                         ;; vertical scroll bars on the right side.
+(setq scroll-error-top-bottom t)                     ;; scroll to top or bottom
 (global-font-lock-mode t)                            ;; Turn on font-lock in all modes that support it.
 (setq font-lock-maximum-decoration t)                ;; use the maximum decoration available
 (show-paren-mode t)                                  ;; Highlight matching parentheses.
@@ -162,7 +163,7 @@ Default MODIFIER is 'shift."
 (setq printer-name "pscs301")
 (tool-bar-mode -1)
 (setq vc-follow-symlinks t)
-(setq grep-command "grep --exclude-dir=\".svn\" -nHriI -e ")
+(setq grep-command "grep --exclude-dir=\".svn\" --exclude=TAGS -nHriI -e ")
 (setq tags-case-fold-search nil)
 (if (not (assq 'user-size initial-frame-alist))      ;; Unless we've specified a number of lines, prevent the startup code from
     (setq tool-bar-originally-present nil))          ;; shrinking the frame because we got rid of the tool-bar.
@@ -196,8 +197,7 @@ Default MODIFIER is 'shift."
 (add-hook 'compilation-filter-hook 'ansi-colorize-buffer)
 
 ;; Start Emacs as a server
-(unless (server-running-p)
-  (server-start))
+(server-start)
 
 ;;}}}
 
@@ -1176,11 +1176,15 @@ ipython-completion-command-string
              (setq solpos (line-beginning-position) parenpos (- blinkpos solpos)
                    open-paren-line-string (buffer-substring solpos eolpos))))
          ;; remove internal newlines
+         (setq open-paren-line-string (replace-regexp-in-string "\r" "" open-paren-line-string))
+         (setq open-paren-line-string (replace-regexp-in-string "\n *" " " open-paren-line-string))
+         (message (format "%s" open-paren-line-string))
          (setq len (length open-paren-line-string)
-               open-paren-line-string (replace-regexp-in-string "[\n\r]+\\s-+" " " open-paren-line-string)
+               open-paren-line-string (replace-regexp-in-string "[\n]+\\s-*" " " open-paren-line-string)
                parenpos (- parenpos (- len (length open-paren-line-string))))
          ;; highlight the parenthesis
          (put-text-property parenpos (1+ parenpos) 'face '(background-color . "turquoise" ) open-paren-line-string)
+         (message (format "%s" open-paren-line-string))
          ;; print to the message line
          (unless (= paren-first-line-pos blinkpos)
            (setf paren-first-line-pos blinkpos)
