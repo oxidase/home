@@ -1033,6 +1033,7 @@ ipython-completion-command-string
          ("\\.mc\\'" . m4-mode)
          ("\\.sql$" . sql-mode)
          ("\\.js\\'" . js3-mode)
+         ("\\.ds\\'" . java-mode)
          ("Jamfile.v2" . jam-mode)
          ("\\.jam$" . jam-mode)
          ("\\.mc" . m4-mode)

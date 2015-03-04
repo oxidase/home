@@ -8,7 +8,7 @@ git clone ssh://oxidase@codereview.qt-project.org:29418/qt/qtbase.git
 mkdir build && cd build
 ../qtbase/configure -release -developer-build -opensource -confirm-license -plugin-sql-sqlite \
    -system-sqlite -qt-harfbuzz -optimized-qmake -reduce-relocations -force-asserts \
-   -separate-debug-info -opengl desktop -nomake examples -nomake tests -no-compile-examples \
+   -separate-debug-info -debug -opengl desktop -nomake examples -nomake tests -no-compile-examples \
    -system-proxies -egl
 make -j5
 #+end_src
