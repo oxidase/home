@@ -56,7 +56,7 @@
                         graphviz-dot-mode tdd-status-mode-line
                         web-mode htmlize markdown-mode markdown-mode+
                         auto-complete auto-complete-c-headers auto-complete-etags go-mode
-                        jade-mode hide-lines)
+                        jade-mode hide-lines lua-mode)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -732,6 +732,9 @@ Default MODIFIER is 'shift."
 
 (require 'sd)
 (add-to-list 'auto-mode-alist '("\\.sd$" . sd-mode))
+
+;; find . | grep ".*\.\(hh\|hxx\|cc\)" | xargs etags -f TAGS
+;; (local-set-key (kbd "C-c C-b") (lambda () (interactive) (TeX-command "PDFLaTeX" 'TeX-master-file)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
