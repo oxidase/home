@@ -733,8 +733,10 @@ Default MODIFIER is 'shift."
 (require 'sd)
 (add-to-list 'auto-mode-alist '("\\.sd$" . sd-mode))
 
-;; find . | grep ".*\.\(hh\|hxx\|cc\)" | xargs etags -f TAGS
-;; (local-set-key (kbd "C-c C-b") (lambda () (interactive) (TeX-command "PDFLaTeX" 'TeX-master-file)))
+(defun create-tags-file (directory)
+  "Create TAGS file recursively"
+  (interactive "DCreate TAGS recursively: ")
+  (async-shell-command (format "find %s | grep '.*\\.\\(c\\|cc\\|cpp\\|cxx\\|h\\|hh\\|hxx\\)$' | xargs etags -f %s/TAGS" directory directory)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
