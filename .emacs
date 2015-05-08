@@ -131,6 +131,7 @@ Default MODIFIER is 'shift."
 (delete-selection-mode 1)                            ;; hitting delete will delete the highlighted region
 (setq undo-limit 20000000)
 (setq revert-without-query '(".*"))
+(global-eldoc-mode -1)
 (transient-mark-mode 1)                              ;; When the mark is active, the region is highlighted.
 ;(setq inhibit-startup-screen t)                     ;; Silent boot
 (setq initial-scratch-message nil)                   ;; Clear scratch buffer
@@ -148,7 +149,7 @@ Default MODIFIER is 'shift."
 (setq ring-bell-function 'ignore)                    ;; Turn the alarm totally off
 (standard-display-8bit 128 255)                      ;; Do not expand unprintable characters to their octal values.
 (setq fortran-comment-region "C MKR")                ;; Fortran comments prefix.
-(setq-default tab-width 4)                           ;; Set Tab-Width.
+(setq-default tab-width 2)                           ;; Set Tab-Width.
 (line-number-mode 1)                                 ;; Show line-number in the mode line.
 (column-number-mode 1)                               ;; Show column-number in the mode line.
 (fset 'yes-or-no-p 'y-or-n-p)                        ;; Will allow you to type just "y" instead of "yes".
@@ -322,7 +323,7 @@ Default MODIFIER is 'shift."
   (openwith-mode t)
   (setq openwith-associations
       '(("[^_]?\\.\\(ps\\|pdf\\|djvu\\)\\'" "okular" (file))
-        ("\\.\\(docx?\\|odt\\|ppt\\|rtf\\|xlsx?\\)\\'" "libreoffice" (file))
+        ("\\.\\(docx?\\|odt\\|pptx?\\|rtf\\|xlsx?\\)\\'" "libreoffice" (file))
         ("\\.\\(ai\\)\\'" "inkscape" (file))
         ("\\.\\(dll\\|pyd\\)\\'" "depends.exe" (file))
         ("\\.\\(?:mpe?g\\|avi\\|wmv\\|mp4\\)\\'" "smplayer" (file)))))
@@ -385,6 +386,7 @@ Default MODIFIER is 'shift."
 (when (package-dir "magit*")
   (require 'magit)
   (require 'magit-blame)
+  (setq magit-last-seen-setup-instructions "1.4.0")
   (custom-set-variables '(git-commit-summary-max-length 70))
 
   ;; Some specific function to show/edit branch descriptions
@@ -946,6 +948,7 @@ ipython-completion-command-string
 
 (when (package-dir "/web-mode*")
   (require 'web-mode)
+	(setq web-mode-markup-indent-offset 2)
   (add-to-list 'auto-mode-alist '("\\.phtml\\'" . web-mode))
   (add-to-list 'auto-mode-alist '("\\.tpl\\.php\\'" . web-mode))
   (add-to-list 'auto-mode-alist '("\\.[gj]sp\\'" . web-mode))
@@ -1025,6 +1028,7 @@ ipython-completion-command-string
          ("\\.fetchmailrc$" . fetchmail-mode)
          ("\\.xml$" . web-mode)
          ("\\.xsl$" . web-mode)
+         ("\\.tei$" . web-mode)
          ("\\.php$" . php-mode)
          ("\\.dcl$" . dtd-mode)
          ("\\.dec$" . dtd-mode)
@@ -1154,48 +1158,27 @@ ipython-completion-command-string
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parenthesis blinking
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun blink-paren-first-line () ; from blink-matching-open
+(defun blink-paren-first-line ()
   (interactive)
   ;; if mode is c++ or lisp and
-  (when (member major-mode '(c++-mode lisp-mode qml-mode))
-    ;; create local variable with opening paren pos
-    (unless (local-variable-p 'paren-first-line-pos)
-      (make-local-variable 'paren-first-line-pos)
-      (setf paren-first-line-pos -1))
-    ;; if the last caharacter is closing parenthesis
-    (if (eq (syntax-class (syntax-after (1- (point)))) 5)
-     ;; get the first line and print it
-     (let* (blinkpos solpos eolpos parenpos len
-            open-paren-line-string curent-message)
-       ;; get corresponding opening parenthesis
-       (condition-case () (setq blinkpos (scan-sexps (point) -1)) (error (setq blinkpos nil paren-first-line-pos -1)))
-       ;; if found -> print the first line
-       (when blinkpos
-         (save-excursion
-           ;; get the line
-           (goto-char blinkpos)
-           (setq solpos (line-beginning-position) eolpos (line-end-position) parenpos (- blinkpos solpos)
-                 open-paren-line-string (buffer-substring solpos eolpos))
-           (unless (string-match "\\sw" (buffer-substring solpos eolpos))
-             (goto-char (1- solpos))
-             (setq solpos (line-beginning-position) parenpos (- blinkpos solpos)
-                   open-paren-line-string (buffer-substring solpos eolpos))))
-         ;; remove internal newlines
-         (setq open-paren-line-string (replace-regexp-in-string "\r" "" open-paren-line-string))
-         (setq open-paren-line-string (replace-regexp-in-string "\n *" " " open-paren-line-string))
-         (message (format "%s" open-paren-line-string))
-         (setq len (length open-paren-line-string)
-               open-paren-line-string (replace-regexp-in-string "[\n]+\\s-*" " " open-paren-line-string)
-               parenpos (- parenpos (- len (length open-paren-line-string))))
-         ;; highlight the parenthesis
-         (put-text-property parenpos (1+ parenpos) 'face '(background-color . "turquoise" ) open-paren-line-string)
-         (message (format "%s" open-paren-line-string))
-         ;; print to the message line
-         (unless (= paren-first-line-pos blinkpos)
-           (setf paren-first-line-pos blinkpos)
-           (message "%s" (s-trim-right open-paren-line-string)))))
-     ;; if a non-paren symbol -> remove message locking
-     (setf paren-first-line-pos -1))))
+  (when (and (member major-mode '(c++-mode lisp-mode qml-mode))
+             (eq (syntax-class (syntax-after (1- (point)))) 5))
+    ;; get corresponding opening parenthesis
+    (let* ((open (condition-case () (scan-sexps (point) -1) (error nil)))
+           sol eol non-space a b c msg)
+      (when open
+        (save-excursion
+          (goto-char open)
+          (setq eol (line-end-position))
+          (setq non-space (save-excursion (save-restriction (save-match-data (re-search-forward  "[^ \t\r\n]" nil t) (point)))))
+          (setq sol (if (< non-space eol) (line-beginning-position)
+                (save-excursion (save-restriction (save-match-data (goto-char (1- open)) (re-search-backward  "[^ \t\r\n]" nil t) (print (point)) (line-beginning-position))))))
+          (setq a (buffer-substring  sol open) b (buffer-substring  open (1+ open)) c (buffer-substring  (1+ open) eol)))
+        ;; (message (format "%d %d %d %d |%s|%s|%s" sol open eol non-space a b c)))
+        (setq a (replace-regexp-in-string "[\n]+\\s-*" " " a)) ;; remove internal newlines
+        (setq msg (concat a b c))
+        (put-text-property (length a) (1+ (length a)) 'face '(background-color . "turquoise" ) msg)
+        (message "%s" msg)))))
 (run-with-idle-timer 0.1 t 'blink-paren-first-line)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1214,9 +1197,8 @@ ipython-completion-command-string
   (interactive)
   (save-excursion
     (goto-char (point-min))
-    (replace-regexp "$"  "\015" )
-    (goto-char (point-max))
-    (insert "\n\C-z")))
+    (replace-regexp "$"  "\015")
+    (goto-char (point-max))))
 
 (defun dos2unix ()
   "Convert this entire buffer from MS-DOS text file format to UNIX."
