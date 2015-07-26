@@ -45,17 +45,17 @@
 (add-to-list 'package-archives '("ELPA" . "http://tromey.com/elpa/") t)
 (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
 (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
-(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/") t)
 (package-initialize)
 
 ;; Guarantee all packages are installed on start
-(defvar packages-list '(auctex bm dired-single git-blame google-translate js3-mode
+(defvar packages-list '(auctex bm dired-single google-translate js3-mode
                         magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
                         yasnippet cedet helm sql-indent
                         org org-bullets org-jira org-magit org-pomodoro kanban ob-mongo
                         graphviz-dot-mode tdd-status-mode-line
                         web-mode htmlize markdown-mode markdown-mode+
-                        auto-complete auto-complete-c-headers auto-complete-etags go-mode
+                        auto-complete auto-complete-c-headers auto-complete-etags
+                        go-mode go-direx
                         jade-mode hide-lines lua-mode)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
@@ -172,7 +172,7 @@ Default MODIFIER is 'shift."
 (setq ediff-window-setup-function 'ediff-setup-windows-plain)
 (setq ediff-split-window-function 'split-window-horizontally)
 (defadvice ediff-quit (around advice-ediff-quit activate)
-      (flet ((yes-or-no-p (&rest args) t) (y-or-n-p (&rest args) t))
+      (cl-flet ((yes-or-no-p (&rest args) t) (y-or-n-p (&rest args) t))
         ad-do-it))
 
 ;; Place Backup Files in Specific Directory
@@ -187,7 +187,7 @@ Default MODIFIER is 'shift."
 
 (defadvice save-buffers-kill-emacs (around no-query-kill-emacs activate)
   "Prevent annoying \"Active processes exist\" query when you quit Emacs."
-  (flet ((process-list ())) ad-do-it))
+  (cl-flet ((process-list ())) ad-do-it))
 
 ;; ANSI colorization of a buffer
 (require 'ansi-color)
@@ -212,6 +212,9 @@ Default MODIFIER is 'shift."
 
 (when (package-dir "go-mode*")
   (require 'go-mode))
+
+(when (package-dir "go-direx*")
+  (require 'go-direx))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Smooth scrolling
@@ -379,10 +382,6 @@ Default MODIFIER is 'shift."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Git mode
-(when (package-dir "git-blame*")
-  (autoload 'git-blame-mode "git-blame"
-    "Minor mode for incremental blame for Git." t))
-
 (when (package-dir "magit*")
   (require 'magit)
   (require 'magit-blame)
@@ -407,8 +406,8 @@ Default MODIFIER is 'shift."
               (description (read-string (format "Descrition of [%s]: " info) current)))
          (magit-git-string "config" config description)))))
 
-  (define-key magit-branch-manager-mode-map (kbd "=")   'magit-show-description)
-  (define-key magit-branch-manager-mode-map (kbd "C-=") 'magit-edit-description))
+  (eval-after-load "magit-mode"
+    '(define-key magit-mode-map [C-tab] nil)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Matlab mode
@@ -652,7 +651,8 @@ Default MODIFIER is 'shift."
 
     (when (and (not running-on-windows)
                (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
-                   (eq major-mode 'gud-mode) (eq major-mode 'python-mode)))
+                   (eq major-mode 'gud-mode) (eq major-mode 'python-mode)
+                   (eq major-mode 'go-mode)))
       ;; (string-match "\\*gud-\\(.+\\)\\*" (buffer-name gud-comint-buffer))
       ;; debug functions
       (gud-def gud-frame "frame" "\C-g" "Select and print a stack frame.")
