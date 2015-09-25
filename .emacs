@@ -197,6 +197,12 @@ Default MODIFIER is 'shift."
   (ansi-color-apply-on-region (point-min) (point-max)))
 (add-hook 'compilation-filter-hook 'ansi-colorize-buffer)
 
+;; calendar settings
+(defface calendar-kw `((t (:foreground "black") (:background "pale green")))  "Face for a calendar week number column")
+(setq calendar-week-start-day 1)
+(setq calendar-intermonth-text '(propertize (format "%2d" (car (calendar-iso-from-absolute (calendar-absolute-from-gregorian (list month day year))))) 'font-lock-face 'calendar-kw))
+(setq calendar-intermonth-header (propertize "KW" 'font-lock-face 'calendar-kw))
+
 ;; Start Emacs as a server
 (server-start)
 
