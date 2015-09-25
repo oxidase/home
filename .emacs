@@ -48,7 +48,7 @@
 (package-initialize)
 
 ;; Guarantee all packages are installed on start
-(defvar packages-list '(auctex bm dired-single google-translate js3-mode
+(defvar packages-list '(auctex bm dired-single google-translate js3-mode popwin
                         magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
                         yasnippet cedet helm sql-indent
                         org org-bullets org-jira org-magit org-pomodoro kanban ob-mongo
@@ -217,10 +217,20 @@ Default MODIFIER is 'shift."
   (require 'gradle-mode))
 
 (when (package-dir "go-mode*")
-  (require 'go-mode))
+  (require 'go-mode)
+  (when (file-exists-p (concat custom-dir "/lisp/go-autocomplete.el"))
+    (require 'go-autocomplete)
+    (require 'auto-complete-config)))
 
 (when (package-dir "go-direx*")
-  (require 'go-direx))
+  (require 'go-direx)
+  (define-key go-mode-map (kbd "C-c C-j") 'go-direx-pop-to-buffer))
+
+(when (package-dir "popwin*")
+  (require 'popwin)
+  (setq display-buffer-function 'popwin:display-buffer)
+  (push '("^\*go-direx:" :regexp t :position left :width 0.2 :dedicated t :stick t)
+        popwin:special-display-config))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Smooth scrolling
@@ -596,7 +606,6 @@ Default MODIFIER is 'shift."
         (add-to-list 'mode-line-format (concat (getenv "WM_COMPILE_OPTION") " ")))
 
       ;; compiler command, depends on the major-mode
-      (local-set-key "\C-c\C-c"  'compile)
       (make-variable-buffer-local 'compile-command)
       (setq compile-command
        (get-shell-command
@@ -609,6 +618,7 @@ Default MODIFIER is 'shift."
           ((eq major-mode 'qt-pro-mode) "qmake && make")
           ((eq major-mode 'makefile-gmake-mode) "make")
           ((eq major-mode 'jam-mode) "bjam -d2")
+          ((eq major-mode 'go-mode) "go build -v && go test -v && go vet")
           (t "make"))))
 
       ;; run command, allow only commands in that starts with "./"
@@ -646,10 +656,11 @@ Default MODIFIER is 'shift."
 
     (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode) (eq major-mode 'compilation-mode)
               (eq major-mode 'jam-mode) (eq major-mode 'makefile-gmake-mode) (eq major-mode 'python-mode)
-              (eq major-mode 'qt-pro-mode))
+              (eq major-mode 'qt-pro-mode)  (eq major-mode 'go-mode))
       (setq show-trailing-whitespace t)
       (local-set-key [C-S-mouse-1] (lambda (event) (interactive "e") (posn-set-point (elt event 1)) (find-tag (word-at-point))))
       ;; compile keys
+      (local-set-key "\C-c\C-c"  'compile)
       (local-set-key '[f8]   'next-error)
       (local-set-key '[S-f8] 'previous-error)
       (local-set-key '[f7]   (lambda () (interactive) (compile (get-shell-command compile-command))))
@@ -811,9 +822,17 @@ ipython-completion-command-string
           (lambda ()
             (sql-highlight-mysql-keywords)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Go
+(add-hook 'go-mode-hook
+  '(lambda()
+     (add-hook 'before-save-hook 'gofmt-before-save)
+     (local-set-key '[f3]   'godef-jump)
+     (local-set-key '[M-f3] 'pop-tag-mark)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; set hooks
-(loop for mode in '(c-mode-hook c++-mode-hook fortran-mode-hook jam-mode-hook
+(loop for mode in '(c-mode-hook c++-mode-hook fortran-mode-hook jam-mode-hook go-mode-hook
                     qt-pro-mode-hook gud-mode-hook qml-mode-hook python-mode-hook)
       do (add-hook mode development-mode-hook))
 
@@ -1064,7 +1083,6 @@ ipython-completion-command-string
          ) auto-mode-alist))
 
 ;;}}}
-
 
 ;;{{{ OS specific
 
