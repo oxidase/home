@@ -48,7 +48,7 @@
 (package-initialize)
 
 ;; Guarantee all packages are installed on start
-(defvar packages-list '(auctex bm dired-single google-translate js3-mode popwin
+(defvar packages-list '(auctex bm dired-single google-translate js3-mode
                         magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
                         yasnippet cedet helm sql-indent
                         org org-bullets org-jira org-magit org-pomodoro kanban ob-mongo
@@ -225,12 +225,6 @@ Default MODIFIER is 'shift."
 (when (package-dir "go-direx*")
   (require 'go-direx)
   (define-key go-mode-map (kbd "C-c C-j") 'go-direx-pop-to-buffer))
-
-(when (package-dir "popwin*")
-  (require 'popwin)
-  (setq display-buffer-function 'popwin:display-buffer)
-  (push '("^\*go-direx:" :regexp t :position left :width 0.2 :dedicated t :stick t)
-        popwin:special-display-config))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Smooth scrolling
@@ -641,7 +635,8 @@ Default MODIFIER is 'shift."
     ;; settings depending on the mode
     (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
               (eq major-mode 'jam-mode))
-      ;; (flyspell-prog-mode)
+      (setq flyspell-prog-text-faces '(font-lock-comment-face font-lock-doc-face))
+      (flyspell-prog-mode)
       (modify-syntax-entry ?_ "w" c++-mode-syntax-table)
       (local-set-key '[C-f8]   'flyspell-buffer)
       ;; source file keys
