@@ -52,10 +52,9 @@
                         magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
                         yasnippet cedet helm sql-indent
                         org org-bullets org-jira org-magit org-pomodoro kanban ob-mongo
-                        graphviz-dot-mode tdd-status-mode-line
+                        tdd-status-mode-line ess
                         web-mode htmlize markdown-mode markdown-mode+
                         auto-complete auto-complete-c-headers auto-complete-etags
-                        go-mode go-direx
                         jade-mode hide-lines lua-mode)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
@@ -449,9 +448,6 @@ Default MODIFIER is 'shift."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;  Other modes
-(when (package-dir "graphviz-dot-mode*")
-  (require 'graphviz-dot-mode))
-
 
 ; (setq socks-noproxy '("localhost"))
 ; (require 'socks)
@@ -743,7 +739,6 @@ Default MODIFIER is 'shift."
 (set-face-background 'c++11-raw-string-face "#ddffdd")
 (font-lock-add-keywords 'c++-mode '(("\\(R\\s\"\\(.*\\)([^)]*)\\2\\s\"\\)" 1 'c++11-raw-string-face t)))
 
-
 (require 'sd)
 (add-to-list 'auto-mode-alist '("\\.sd$" . sd-mode))
 
@@ -876,7 +871,7 @@ ipython-completion-command-string
 
     ;; add a list of commands
     (setq TeX-command-list (append TeX-command-list
-     '(("XeLaTeX" "xelatex -synctex=1 %(mode) \"\\input\" %t" TeX-run-TeX nil (latex-mode doctex-mode) :help "Run PDFLaTeX")
+     '(("XeLaTeX" "xelatex -output-driver=\"xdvipdfmx -v\"  -synctex=1 %(mode) \"\\input\" %t" TeX-run-TeX nil (latex-mode doctex-mode) :help "Run PDFLaTeX")
        ("XeLaTeX18" "xelatex -synctex=1 %(mode) --enable-write18 \"\\input\" %t" TeX-run-TeX nil (latex-mode doctex-mode))
        ("PDFLaTeX" "pdflatex -synctex=1 %(mode) \"\\input\" %t" TeX-run-TeX nil (latex-mode doctex-mode) :help "Run PDFLaTeX")
        ("PDFLaTeX18" "pdflatex -synctex=1 %(mode) --enable-write18 \"\\input\" %t" TeX-run-TeX nil (latex-mode doctex-mode))
@@ -929,7 +924,7 @@ ipython-completion-command-string
   (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
   (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
   (org-babel-do-load-languages 'org-babel-load-languages
-                               '((python . t) (C . t) (R . t) (haskell . t) (sqlite  . t)
+                               '((python . t) (C . t) (haskell . t) (sqlite  . t)
                                  (latex . t) (plantuml . t) (dot . t) (ruby . t)))
   (add-hook 'org-babel-after-execute-hook (lambda () (condition-case nil (org-display-inline-images) (error nil))))
   (setq org-babel-results-keyword "results")                           ;; Make babel results blocks lowercase
@@ -938,7 +933,7 @@ ipython-completion-command-string
   (setq org-src-fontify-natively t)
   (setq org-support-shift-select 'always)
   (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/plantuml.jar"))
-  (add-to-list 'org-src-lang-modes (quote ("plantuml" . fundamental-mode))) ;; Use fundamental mode when editing plantuml blocks with C-c '
+  ;(add-to-list 'org-src-lang-modes (quote ("plantuml" . fundamental-mode))) ;; Use fundamental mode when editing plantuml blocks with C-c '
   (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
   (add-hook 'org-mode-hook '(lambda () (local-set-key (kbd "<H-tab>") 'pcomplete)))
 
@@ -953,7 +948,7 @@ ipython-completion-command-string
   (autoload 'gnuplot-mode "gnuplot" "gnuplot major mode" t)
   (autoload 'gnuplot-make-buffer "gnuplot" "open a buffer in gnuplot-mode" t))
 
-(when (package-dir "/ESS/lisp")
+(when (package-dir "ess")
   (require 'ess-site))
 
 (when (package-dir "/scrum")
