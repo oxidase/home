@@ -1080,6 +1080,12 @@ ipython-completion-command-string
 
 ;;{{{ OS specific
 
+(defun configuration-height-lines ()
+  (cond
+   ((and (= (display-mm-width) 677) (= (display-mm-height) 381)) 62) ; win, laptop only
+   (t (message (format "unknown screen with physical size %dx%d" (display-mm-width) (display-mm-height))) 42)
+   ))
+
 (cond
  (running-on-windows
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1092,8 +1098,8 @@ ipython-completion-command-string
 
   (cond
     ;;
-    ((string-match "^mykr" user-login-name)
-     (setq default-frame-alist '((top . 0) (left . 200) (width . 208) (height . 69)
+   ((string-match "^mykr" user-login-name)
+     (setq default-frame-alist `((top . 0) (left . 200) (width . 208) (height . ,(configuration-height-lines)) ; 69 
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")))
      (setenv "PATH" (concat "C:\\MinGW\\bin;" (getenv "PATH")))
      (remove-hook 'after-init-hook 'w32-check-shell-configuration)
@@ -1122,22 +1128,10 @@ ipython-completion-command-string
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1")
           ;;(font . "-*-Inconsolata-*-*-*-*-18-*-*-*-m-0-iso10646-1")
           )))
-    ;;
-    ((string= system-name "miha-luxoft")
-     (setq default-frame-alist `(
-          (top . 0) (left . ,(if (> (x-display-pixel-width) 1920) 1380 120)) (width . 224) (height . 58)
-          (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
-          )))
 
     ((string-match "Genius" system-name)
      (setq default-frame-alist `(
           (top . 0) (left . 120) (width . 224) (height . 60)
-          (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
-          )))
-
-    ((string-match ".tm.ro." system-name)
-     (setq default-frame-alist `(
-          (top . 0) (left . ,(if (> (x-display-pixel-width) 1920) 1380 120)) (width . 224) (height . 60)
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
           )))
     ;;
