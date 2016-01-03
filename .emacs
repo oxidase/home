@@ -34,6 +34,7 @@
 (setq recentf-save-file (concat custom-dir "/.recentf"))
 
 ;; relocate other files so we don't clutter $HOME
+(save-place-mode t)
 (setq save-place-file (concat custom-dir "/save-places"))
 (setq auto-save-list-file-prefix (concat custom-dir "/auto-save-list.d/"))
 
@@ -49,12 +50,12 @@
 
 ;; Guarantee all packages are installed on start
 (defvar packages-list '(auctex bm dired-single google-translate js3-mode
-                        magit openwith qml-mode smooth-scrolling mew w3m magit-tramp
+                        magit openwith qml-mode smooth-scrolling mew w3m
                         yasnippet cedet helm sql-indent
-                        org org-bullets org-jira org-magit org-pomodoro kanban ob-mongo
+                        org org-bullets org-jira org-pomodoro kanban
                         tdd-status-mode-line ess
                         web-mode htmlize markdown-mode markdown-mode+
-                        auto-complete auto-complete-c-headers auto-complete-etags
+                        auto-complete auto-complete-c-headers
                         jade-mode hide-lines lua-mode)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
@@ -1082,9 +1083,10 @@ ipython-completion-command-string
 
 (defun configuration-height-lines ()
   (cond
-   ((and (= (display-mm-width) 677) (= (display-mm-height) 381)) 62) ; win, laptop only
-   (t (message (format "unknown screen with physical size %dx%d" (display-mm-width) (display-mm-height))) 42)
-   ))
+   ((and (= (display-mm-width) 677) (= (display-mm-height) 381)) 62) ;; win, laptop only
+   ((and (= (display-mm-width) 508) (= (display-mm-height) 260)) 53) ;; VirtualBox, window mode
+   ((and (= (display-mm-width) 508) (= (display-mm-height) 285)) 59) ;; VirtualBox, fullscreen mode
+   (t (message (format "unknown screen with physical size %dx%d" (display-mm-width) (display-mm-height))) 42)))
 
 (cond
  (running-on-windows
@@ -1123,15 +1125,15 @@ ipython-completion-command-string
   (cond
     ;;
     ((string= system-name "miha-lt")
-     (setq default-frame-alist '(
-          (top . 0) (left . 200) (width . 160) (height . 44)
+     (setq default-frame-alist `(
+          (top . 0) (left . 200) (width . 160) (height . ,(configuration-height-lines))
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1")
           ;;(font . "-*-Inconsolata-*-*-*-*-18-*-*-*-m-0-iso10646-1")
           )))
 
-    ((string-match "Genius" system-name)
+    ((string-match "VirtualBox" system-name)
      (setq default-frame-alist `(
-          (top . 0) (left . 120) (width . 224) (height . 60)
+          (top . 0) (left . 120) (width . 224) (height . ,(configuration-height-lines))
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
           )))
     ;;
