@@ -42,7 +42,7 @@
 ;; {{{ Setup ELPA repositories
 
 (require 'package)
-(add-to-list 'package-archives '("ELPA" . "http://tromey.com/elpa/") t)
+;(add-to-list 'package-archives '("ELPA" . "http://tromey.com/elpa/") t)
 (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
 (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
 (package-initialize)
@@ -516,7 +516,8 @@ Default MODIFIER is 'shift."
 (when (package-dir "js3-mode*")
   (autoload 'js3-mode "js3" nil t)
   (setq js3-continued-expr-mult 4)
-  (setq js3-indent-level 4))
+  (setq js3-indent-level 4)
+  (add-hook 'js3-mode-hook (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace))))
 
 (when (package-dir "jade-mode*")
   (load-library "jade-mode")
@@ -916,6 +917,9 @@ ipython-completion-command-string
 ;; Text mode
 (add-hook 'text-mode-hook '(lambda () (turn-off-auto-fill) (setq fill-column 100)))
 
+(when (package-dir "ess*")
+  (require 'ess-site))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Org mode
 (when (package-dir "org-*")
@@ -925,7 +929,7 @@ ipython-completion-command-string
   (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
   (org-babel-do-load-languages 'org-babel-load-languages
                                '((python . t) (C . t) (haskell . t) (sqlite  . t)
-                                 (latex . t) (plantuml . t) (dot . t) (ruby . t)))
+                                 (latex . t) (plantuml . t) (dot . t) (ruby . t) (R . t)))
   (add-hook 'org-babel-after-execute-hook (lambda () (condition-case nil (org-display-inline-images) (error nil))))
   (setq org-babel-results-keyword "results")                           ;; Make babel results blocks lowercase
   (setq org-confirm-babel-evaluate nil)                                ;; Do not prompt to confirm evaluation
