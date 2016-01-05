@@ -34,7 +34,7 @@
 (setq recentf-save-file (concat custom-dir "/.recentf"))
 
 ;; relocate other files so we don't clutter $HOME
-(save-place-mode t)
+(if (fboundp 'save-place-mode) (save-place-mode t))
 (setq save-place-file (concat custom-dir "/save-places"))
 (setq auto-save-list-file-prefix (concat custom-dir "/auto-save-list.d/"))
 
@@ -929,7 +929,7 @@ ipython-completion-command-string
   (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
   (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
   (org-babel-do-load-languages 'org-babel-load-languages
-                               '((python . t) (C . t) (haskell . t) (sqlite  . t)
+                               '((python . t) (C . t) (haskell . t) (sqlite  . t) (maxima . t)
                                  (latex . t) (plantuml . t) (dot . t) (ruby . t) (R . t)))
   (add-hook 'org-babel-after-execute-hook (lambda () (condition-case nil (org-display-inline-images) (error nil))))
   (setq org-babel-results-keyword "results")                           ;; Make babel results blocks lowercase
