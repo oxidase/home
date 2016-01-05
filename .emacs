@@ -1084,8 +1084,8 @@ ipython-completion-command-string
 (defun configuration-height-lines ()
   (cond
    ((and (= (display-mm-width) 677) (= (display-mm-height) 381)) 62) ;; win, laptop only
-   ((and (= (display-mm-width) 508) (= (display-mm-height) 260)) 53) ;; VirtualBox, window mode
-   ((and (= (display-mm-width) 508) (= (display-mm-height) 285)) 59) ;; VirtualBox, fullscreen mode
+   ((and (< (abs (- (display-mm-width) 508)) 3) (= (display-mm-height) 260)) 53) ;; VirtualBox, window mode
+   ((and (< (abs (- (display-mm-width) 508)) 3) (= (display-mm-height) 285)) 59) ;; VirtualBox, fullscreen mode
    (t (message (format "unknown screen with physical size %dx%d" (display-mm-width) (display-mm-height))) 42)))
 
 (cond
