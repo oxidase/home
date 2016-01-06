@@ -34,7 +34,7 @@
 (setq recentf-save-file (concat custom-dir "/.recentf"))
 
 ;; relocate other files so we don't clutter $HOME
-(if (fboundp 'save-place-mode) (save-place-mode t))
+(when (fboundp 'save-place-mode) (save-place-mode t))
 (setq save-place-file (concat custom-dir "/save-places"))
 (setq auto-save-list-file-prefix (concat custom-dir "/auto-save-list.d/"))
 
@@ -346,26 +346,6 @@ Default MODIFIER is 'shift."
 (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Auto Complete Mode
-;; (semantic-mode 1)
-;; (require 'semantic/complete)
-;; (require 'semantic)
-;; (require 'semantic/ia)
-;; (require 'semantic/bovine/c)
-;; (require 'semantic/bovine/gcc)
-;; (setq qt-include-directory "/usr/include/qt4")
-;; (semantic-add-system-include qt-include-directory 'c++-mode)
-;; (add-to-list 'auto-mode-alist (cons qt-include-directory 'c++-mode))
-;; (dolist (file (list "QtCore/qconfig.h" "QtCore/qconfig-dist.h" "QtCore/qconfig-large.h"
-;;                      "QtCore/qconfig-medium.h" "QtCore/qconfig-minimal.h" "QtCore/qconfig-small.h"
-;;                      "QtCore/qglobal.h"))
-;;    (add-to-list 'semantic-lex-c-preprocessor-symbol-file (expand-file-name file qt-include-directory)))
-;; (defun my-cedet-hook ()
-;;   (local-set-key (kbd "C-,") 'semantic-ia-complete-symbol)
-;;   (local-set-key (kbd "C-.") 'semantic-ia-fast-jump))
-;; (add-hook 'c-mode-common-hook 'my-cedet-hook)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Translator (google)
 (when (package-dir "google-translate*")
   (require 'google-translate)
@@ -428,6 +408,18 @@ Default MODIFIER is 'shift."
 (custom-set-faces '(matlab-cellbreak-face ((t (:foreground "Firebrick" :weight bold)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ESS
+(when (package-dir "ess*")
+  (require 'ess-site)
+  (setq ess-ask-for-ess-directory nil))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Gnuplot
+(when (package-dir "/gnuplot*")
+  (autoload 'gnuplot-mode "gnuplot" "gnuplot major mode" t)
+  (autoload 'gnuplot-make-buffer "gnuplot" "open a buffer in gnuplot-mode" t))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; m4 mode
 (load-library "m4-mode")
 
@@ -446,14 +438,6 @@ Default MODIFIER is 'shift."
 (when (package-dir "ebuild-mode*")
   (require 'ebuild-mode)
   (require 'eselect-mode))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;  Other modes
-
-; (setq socks-noproxy '("localhost"))
-; (require 'socks)
-; (setq erc-server-connect-function 'socks-open-network-stream)
-; (setq socks-server (list "My socks server" "localhost" 3128 5))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Visible bookmarks in buffer.
@@ -918,9 +902,6 @@ ipython-completion-command-string
 ;; Text mode
 (add-hook 'text-mode-hook '(lambda () (turn-off-auto-fill) (setq fill-column 100)))
 
-(when (package-dir "ess*")
-  (require 'ess-site))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Org mode
 (when (package-dir "org-*")
@@ -941,6 +922,9 @@ ipython-completion-command-string
   ;(add-to-list 'org-src-lang-modes (quote ("plantuml" . fundamental-mode))) ;; Use fundamental mode when editing plantuml blocks with C-c '
   (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
   (add-hook 'org-mode-hook '(lambda () (local-set-key (kbd "<H-tab>") 'pcomplete)))
+  (setq org-format-latex-options '(:foreground default :background default
+      :scale 2 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0
+      :matchers ("begin" "$1" "$" "$$" "\\(" "\\[")))
 
   (defadvice org-mode-flyspell-verify
     (after my-org-mode-flyspell-verify activate)
@@ -948,16 +932,6 @@ ipython-completion-command-string
     (setq ad-return-value
           (and ad-return-value
                (not (eq (org-element-type (org-element-at-point)) 'src-block))))))
-
-(when (package-dir "/gnuplot*")
-  (autoload 'gnuplot-mode "gnuplot" "gnuplot major mode" t)
-  (autoload 'gnuplot-make-buffer "gnuplot" "open a buffer in gnuplot-mode" t))
-
-(when (package-dir "ess")
-  (require 'ess-site))
-
-(when (package-dir "/scrum")
-  (require 'scrum))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MMM mode
@@ -1101,7 +1075,7 @@ ipython-completion-command-string
   (cond
     ;;
    ((string-match "^mykr" user-login-name)
-     (setq default-frame-alist `((top . 0) (left . 200) (width . 208) (height . ,(configuration-height-lines)) ; 69 
+     (setq default-frame-alist '((top . 0) (left . 200) (width . 208) (fullscreen . fullheight)
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")))
      (setenv "PATH" (concat "C:\\MinGW\\bin;" (getenv "PATH")))
      (remove-hook 'after-init-hook 'w32-check-shell-configuration)
@@ -1125,15 +1099,15 @@ ipython-completion-command-string
   (cond
     ;;
     ((string= system-name "miha-lt")
-     (setq default-frame-alist `(
-          (top . 0) (left . 200) (width . 160) (height . ,(configuration-height-lines))
+     (setq default-frame-alist '(
+          (top . 0) (left . 200) (width . 154) (fullscreen . fullheight)
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1")
           ;;(font . "-*-Inconsolata-*-*-*-*-18-*-*-*-m-0-iso10646-1")
           )))
 
     ((string-match "VirtualBox" system-name)
      (setq default-frame-alist `(
-          (top . 0) (left . 120) (width . 224) (height . ,(configuration-height-lines))
+          (top . 0) (left . 120) (width . 224) (fullscreen . fullheight)
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
           )))
     ;;
