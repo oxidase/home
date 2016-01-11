@@ -51,8 +51,7 @@
 ;; Guarantee all packages are installed on start
 (defvar packages-list '(auctex bm dired-single google-translate js3-mode
                         magit openwith qml-mode smooth-scrolling mew w3m
-                        yasnippet cedet helm sql-indent
-                        org org-bullets org-jira org-pomodoro kanban
+                        yasnippet cedet helm sql-indent org kanban
                         tdd-status-mode-line ess
                         web-mode htmlize markdown-mode markdown-mode+
                         auto-complete auto-complete-c-headers
@@ -736,33 +735,7 @@ Default MODIFIER is 'shift."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
 (when (package-dir "python*")
-  ;(setq py-install-directory python-dir)
-(setq py-python-command-args '("--colors" "LightBG"))
-(setq   python-shell-interpreter "ipython"
-        python-shell-interpreter-args ""
-        python-shell-prompt-regexp "In \\[[0-9]+\\]: "
-        python-shell-prompt-output-regexp "Out\\[[0-9]+\\]: "
-        python-shell-completion-setup-code "from IPython.core.completerlib import module_completion"
-        python-shell-completion-module-string-code "';'.join(module_completion('''%s'''))\n"
-        python-shell-completion-string-code "';'.join(get_ipython().Completer.all_completions('''%s'''))\n"
-ipython-completion-command-string
-)
-  (require 'python-mode)
-  (setq py-load-pymacs-p t))
-
-;; (setq python-indent 2)
-
-;; ;;pdb setup, note the python version
-;; (setq pdb-path
-;;   (cond
-;;    ((string= system-name "miha-lt") '/usr/lib/python2.7/pdb.py)
-;;    (t '/usr/lib/python2.7/pdb.py)))
-;; (setq gud-pdb-command-name (symbol-name pdb-path))
-
-;; (defadvice pdb (before gud-query-cmdline activate)
-;;   "Provide a better default command line when called interactively."
-;;   (interactive
-;;    (list (gud-query-cmdline pdb-path (file-name-nondirectory buffer-file-name)))))
+  (require 'python-mode))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Ruby mode
