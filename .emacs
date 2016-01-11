@@ -910,13 +910,17 @@ ipython-completion-command-string
   (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
   (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
   (org-babel-do-load-languages 'org-babel-load-languages
-                               '((python . t) (C . t) (haskell . t) (sqlite  . t) (maxima . t)
+                               '((sh . t) (python . t) (C . t) (haskell . t) (sqlite  . t) (maxima . t)
                                  (latex . t) (plantuml . t) (dot . t) (ruby . t) (R . t)))
   (add-hook 'org-babel-after-execute-hook (lambda () (condition-case nil (org-display-inline-images) (error nil))))
   (setq org-babel-results-keyword "results")                           ;; Make babel results blocks lowercase
   (setq org-confirm-babel-evaluate nil)                                ;; Do not prompt to confirm evaluation
   (plist-put org-format-latex-options :scale 1.5)
   (setq org-src-fontify-natively t)
+  (custom-set-faces
+   '(org-block ((t (:background "#F8F8FF"))))
+   '(org-block-begin-line ((t (:underline "#A7A6AA" :foreground "#008ED1" :background "#EAEAFF"))))
+   '(org-block-end-line ((t (:overline "#A7A6AA" :foreground "#008ED1" :background "#EAEAFF")))))
   (setq org-support-shift-select 'always)
   (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/plantuml.jar"))
   ;(add-to-list 'org-src-lang-modes (quote ("plantuml" . fundamental-mode))) ;; Use fundamental mode when editing plantuml blocks with C-c '
