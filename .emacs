@@ -34,7 +34,6 @@
 (setq recentf-save-file (concat custom-dir "/.recentf"))
 
 ;; relocate other files so we don't clutter $HOME
-(when (fboundp 'save-place-mode) (save-place-mode t))
 (setq save-place-file (concat custom-dir "/save-places"))
 (setq auto-save-list-file-prefix (concat custom-dir "/auto-save-list.d/"))
 
@@ -43,17 +42,16 @@
 ;; {{{ Setup ELPA repositories
 
 (require 'package)
-;(add-to-list 'package-archives '("ELPA" . "http://tromey.com/elpa/") t)
 (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
 (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
 (package-initialize)
 
 ;; Guarantee all packages are installed on start
-(defvar packages-list '(auctex bm dired-single google-translate js3-mode
+(defvar packages-list '(auctex bm dired-single google-translate js2-mode
                         magit openwith qml-mode smooth-scrolling mew w3m
                         yasnippet cedet helm sql-indent
                         org org-bullets org-jira org-pomodoro kanban
-                        tdd-status-mode-line ess
+                        tdd-status-mode-line ess feature-mode
                         web-mode htmlize markdown-mode markdown-mode+
                         auto-complete auto-complete-c-headers
                         jade-mode hide-lines lua-mode)
@@ -141,7 +139,7 @@ Default MODIFIER is 'shift."
 (global-font-lock-mode t)                            ;; Turn on font-lock in all modes that support it.
 (setq font-lock-maximum-decoration t)                ;; use the maximum decoration available
 (show-paren-mode t)                                  ;; Highlight matching parentheses.
-(toggle-save-place-globally)                         ;; Save Emacs state for next session.
+(custom-set-variables '(save-place-mode t))          ;; Save Emacs state for next session.
 (setq default-major-mode 'text-mode)                 ;; Make text mode default major mode.
 (setq shell-prompt-pattern "^[^#$%>\n]*[#$%>\)] *")  ;; My shell prompt ends on ")".
 (setq shell-command-switch "-lc")                    ;; Shell is interactive
@@ -196,6 +194,7 @@ Default MODIFIER is 'shift."
   (when buffer-read-only (toggle-read-only))
   (ansi-color-apply-on-region (point-min) (point-max)))
 (add-hook 'compilation-filter-hook 'ansi-colorize-buffer)
+(setq ansi-color-drop-regexp "\\[\\([ABCDsuK]\\|[12][JK]\\|=[0-9]+[hI]\\|[0-9;]*[HfGg]\\|\\?[0-9]+[hl]\\)")
 
 ;; calendar settings
 (defface calendar-kw `((t (:foreground "black") (:background "pale green")))  "Face for a calendar week number column")
@@ -335,7 +334,7 @@ Default MODIFIER is 'shift."
   (require 'openwith)
   (openwith-mode t)
   (setq openwith-associations
-      '(("[^_]?\\.\\(ps\\|pdf\\|djvu\\)\\'" "okular" (file))
+      '(("[^_]?\\.\\(ps\\|pdf\\|djvu\\|epub\\)\\'" "okular" (file))
         ("\\.\\(docx?\\|odt\\|pptx?\\|rtf\\|xlsx?\\)\\'" "libreoffice" (file))
         ("\\.\\(ai\\)\\'" "inkscape" (file))
         ("\\.\\(dll\\|pyd\\)\\'" "depends.exe" (file))
@@ -498,11 +497,15 @@ Default MODIFIER is 'shift."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Javascript mode
-(when (package-dir "js3-mode*")
-  (autoload 'js3-mode "js3" nil t)
-  (setq js3-continued-expr-mult 4)
-  (setq js3-indent-level 4)
-  (add-hook 'js3-mode-hook (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace))))
+(when (package-dir "js2-mode*")
+  (load-library "js2-mode")
+  (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
+  (add-to-list 'interpreter-mode-alist '("node" . js2-mode))
+  (add-hook 'js2-mode-hook (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace))))
+
+;(when (package-dir "feature-mode*")
+;  (load-library "feature-mode")
+;  (add-to-list 'auto-mode-alist '("\.feature$" . feature-mode)))
 
 (when (package-dir "jade-mode*")
   (load-library "jade-mode")
@@ -731,7 +734,7 @@ Default MODIFIER is 'shift."
 (defun create-tags-file (directory)
   "Create TAGS file recursively"
   (interactive "DCreate TAGS recursively: ")
-  (async-shell-command (format "find %s | grep '.*\\.\\(c\\|cc\\|cpp\\|cxx\\|h\\|hh\\|hxx\\)$' | xargs etags -f %s/TAGS" directory directory)))
+  (async-shell-command (format "find %s | grep '.*\\.\\(c\\|cc\\|cpp\\|cxx\\|h\\|hh\\|hxx\\|hpp\\)$' | xargs etags -f %s/TAGS" directory directory)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
@@ -1038,7 +1041,6 @@ ipython-completion-command-string
          ("\\.m4\\'" . m4-mode)
          ("\\.mc\\'" . m4-mode)
          ("\\.sql$" . sql-mode)
-         ("\\.js\\'" . js3-mode)
          ("\\.ds\\'" . java-mode)
          ("Jamfile.v2" . jam-mode)
          ("\\.jam$" . jam-mode)
