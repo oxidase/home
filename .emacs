@@ -53,7 +53,7 @@
                         tdd-status-mode-line ess feature-mode
                         web-mode htmlize markdown-mode markdown-mode+
                         auto-complete auto-complete-c-headers
-                        jade-mode hide-lines lua-mode)
+                        jade-mode hide-lines lua-mode keychain-environment)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -210,6 +210,9 @@ Default MODIFIER is 'shift."
 
 (when (package-dir "hide-lines*")
   (require 'hide-lines))
+
+(when (package-dir "keychain-environment*")
+  (require 'keychain-environment))
 
 (when (package-dir "gradle-mode*")
   (require 'gradle-mode))
@@ -502,9 +505,9 @@ Default MODIFIER is 'shift."
   (add-to-list 'interpreter-mode-alist '("node" . js2-mode))
   (add-hook 'js2-mode-hook (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace))))
 
-;(when (package-dir "feature-mode*")
-;  (load-library "feature-mode")
-;  (add-to-list 'auto-mode-alist '("\.feature$" . feature-mode)))
+(when (package-dir "feature-mode*")
+  (load-library "feature-mode")
+  (add-to-list 'auto-mode-alist '("\.feature$" . feature-mode)))
 
 (when (package-dir "jade-mode*")
   (load-library "jade-mode")
@@ -1082,7 +1085,11 @@ Default MODIFIER is 'shift."
           (top . 0) (left . 200) (width . 154) (fullscreen . fullheight)
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1")
           ;;(font . "-*-Inconsolata-*-*-*-*-18-*-*-*-m-0-iso10646-1")
-          )))
+          ))
+     (add-hook 'erc-after-connect '(lambda (server nick)(cond ((string-match "oftc\\.net" server) (erc-join-channel "#osrm")))))
+     (setq erc-join-buffer 'bury)
+     (erc :server "irc.oftc.net" :port 6667)
+     (set-process-query-on-exit-flag (get-process "erc-irc.oftc.net-6667") nil))
 
     ((string-match "VirtualBox" system-name)
      (setq default-frame-alist `(
