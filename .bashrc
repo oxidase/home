@@ -1,5 +1,6 @@
 ## specific host settings
 
+export HOSTNAME
 case $HOSTNAME in
 pc*)
     rcfiles="pcmpi $HOSTNAME" ;;
