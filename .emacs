@@ -33,9 +33,9 @@
 (setq custom-file (concat custom-dir "custom." emacs-flavor ".el"))
 (setq recentf-save-file (concat custom-dir "/.recentf"))
 
-;; relocate other files so we don't clutter $HOME
-(setq save-place-file (concat custom-dir "/save-places"))
-(setq auto-save-list-file-prefix (concat custom-dir "/auto-save-list.d/"))
+;; Save Emacs state for next session.
+(require 'saveplace)
+(custom-set-variables '(save-place t) `(save-place-file ,(concat custom-dir "save-places")))
 
 ;;}}}
 
@@ -130,7 +130,7 @@ Default MODIFIER is 'shift."
 (setq revert-without-query '(".*"))
 (global-eldoc-mode -1)
 (transient-mark-mode 1)                              ;; When the mark is active, the region is highlighted.
-;(setq inhibit-startup-screen t)                     ;; Silent boot
+(setq inhibit-startup-screen t)                      ;; Silent boot
 (setq initial-scratch-message nil)                   ;; Clear scratch buffer
 (setq initial-major-mode 'text-mode)                 ;; text mode is default
 (set-scroll-bar-mode 'right)                         ;; vertical scroll bars on the right side.
@@ -138,7 +138,6 @@ Default MODIFIER is 'shift."
 (global-font-lock-mode t)                            ;; Turn on font-lock in all modes that support it.
 (setq font-lock-maximum-decoration t)                ;; use the maximum decoration available
 (show-paren-mode t)                                  ;; Highlight matching parentheses.
-(custom-set-variables '(save-place-mode t))          ;; Save Emacs state for next session.
 (setq default-major-mode 'text-mode)                 ;; Make text mode default major mode.
 (setq shell-prompt-pattern "^[^#$%>\n]*[#$%>\)] *")  ;; My shell prompt ends on ")".
 (setq shell-command-switch "-lc")                    ;; Shell is interactive
