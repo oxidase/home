@@ -887,7 +887,7 @@ Default MODIFIER is 'shift."
   (require 'org)
   (require 'ob-core)
   (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
-  (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
+  (org-defkey org-mode-map [(control return)] 'mini-calc)
   (org-babel-do-load-languages 'org-babel-load-languages
                                '((sh . t) (python . t) (C . t) (haskell . t) (sqlite  . t) (maxima . t)
                                  (latex . t) (plantuml . t) (dot . t) (ruby . t) (R . t)))
