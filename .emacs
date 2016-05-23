@@ -696,11 +696,13 @@ Default MODIFIER is 'shift."
       t)
 
 ;; set global GDB properties and keys
-(setf gdb-many-windows t)
 (setf gdb-show-threads-by-default t)
+(setf gdb-show-main t)
+(defun set-window-undedicated-p (window flag) "Never set window dedicated." flag)
+(advice-add 'set-window-dedicated-p :override #'set-window-undedicated-p)
 (global-set-key (kbd "s-`") (lambda () (interactive)
      (when (buffer-name gud-comint-buffer)
-       (gdb-many-windows 1)
+       (gdb-restore-windows)
        (set-window-dedicated-p (selected-window) nil))))
 (defun gdb-kill-buffers () (interactive)
   (set-process-query-on-exit-flag (get-buffer-process gud-comint-buffer) nil)
