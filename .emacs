@@ -656,11 +656,7 @@ Default MODIFIER is 'shift."
       (gud-def gud-frame "frame" "\C-g" "Select and print a stack frame.")
 
       ;; debug keys
-      (local-set-key '[f6]     (lambda () (interactive)
-                                 (if (get-buffer-process gud-comint-buffer)
-                                     (if gdb-active-process (gud-call "cont") (gud-call "run"))
-                                   (gud-refresh))))
-      (local-set-key '[C-f6]   'gud-until)
+      (local-set-key '[C-f5]   'gud-until)
       (local-set-key '[f9]     'gud-set-clear)
       (local-set-key '[S-f9]   'gud-break)
       (local-set-key '[C-f9]   'gud-remove)
@@ -698,12 +694,25 @@ Default MODIFIER is 'shift."
 ;; set global GDB properties and keys
 (setf gdb-show-threads-by-default t)
 (setf gdb-show-main t)
-(defun set-window-undedicated-p (window flag) "Never set window dedicated." flag)
-(advice-add 'set-window-dedicated-p :override #'set-window-undedicated-p)
+;;(defun set-window-undedicated-p (window flag) "Never set window dedicated." flag)
+;;(advice-add 'set-window-dedicated-p :override #'set-window-undedicated-p)
+;;(global-set-key (kbd "s-`") (lambda () (interactive)
+;;     (when (buffer-name gud-comint-buffer)
+;;       (gdb-restore-windows)
+;;       (set-window-dedicated-p (selected-window) nil))))
 (global-set-key (kbd "s-`") (lambda () (interactive)
-     (when (buffer-name gud-comint-buffer)
-       (gdb-restore-windows)
-       (set-window-dedicated-p (selected-window) nil))))
+  (when (buffer-name gud-comint-buffer)
+    (switch-to-buffer gud-comint-buffer)
+    (delete-other-windows)
+    (let* ((win (split-window (get-buffer-window gud-comint-buffer) 16))
+           (winio (split-window win -4)))
+      (set-window-buffer winio (gdb-get-buffer-create 'gdb-inferior-io))
+      (set-window-buffer win
+         (if gud-last-last-frame
+             (gud-find-file (car gud-last-last-frame))
+           (gud-find-file gdb-main-file)))
+      (setq gdb-source-window win)))))
+
 (defun gdb-kill-buffers () (interactive)
   (set-process-query-on-exit-flag (get-buffer-process gud-comint-buffer) nil)
   (kill-buffer gud-comint-buffer)
@@ -1087,10 +1096,21 @@ Default MODIFIER is 'shift."
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1")
           ;;(font . "-*-Inconsolata-*-*-*-*-18-*-*-*-m-0-iso10646-1")
           ))
-     (add-hook 'erc-after-connect '(lambda (server nick)(cond ((string-match "oftc\\.net" server) (erc-join-channel "#osrm")))))
+     ;; erc settings
+     (require 'erc)
      (setq erc-join-buffer 'bury)
+     (add-hook 'erc-after-connect '(lambda (server nick)(cond ((string-match "oftc\\.net" server) (erc-join-channel "#osrm")))))
+     ;; erc logging
+     (setq erc-log-channels-directory (concat custom-dir "erc/logs"))
+     (setq erc-save-buffer-on-part t)
+     (defadvice save-buffers-kill-emacs (before save-logs (arg) activate)
+       (save-some-buffers t (lambda () (when (eq major-mode 'erc-mode)) t)))
      (erc :server "irc.oftc.net" :port 6667)
      (set-process-query-on-exit-flag (get-process "erc-irc.oftc.net-6667") nil))
+     ;; erc connect on timer
+     ;(run-with-timer 0 300 (lambda ()
+     ;   (unless (erc-server-buffer-live-p) (erc :server "irc.oftc.net" :port 6667)
+     ;           (set-process-query-on-exit-flag (get-process "erc-irc.oftc.net-6667") nil)))))
 
     ((string-match "VirtualBox" system-name)
      (setq default-frame-alist `(
