@@ -50,7 +50,7 @@
 (defvar packages-list '(auctex bm dired-single google-translate js2-mode
                         magit openwith qml-mode smooth-scrolling mew w3m
                         yasnippet cedet helm sql-indent org kanban
-                        tdd-status-mode-line ess feature-mode
+                        tdd-status-mode-line ess feature-mode yaml-mode
                         web-mode htmlize markdown-mode markdown-mode+
                         auto-complete auto-complete-c-headers
                         jade-mode hide-lines lua-mode keychain-environment)
@@ -157,7 +157,7 @@ Default MODIFIER is 'shift."
 ;(add-hook 'before-save-hook 'delete-trailing-whitespace)  ;; configuration required
 (setq mode-require-final-newline t)
 ;; (setq delete-trailing-lines nil)
-(setq printer-name "pscs301")
+(setq printer-name "HP-ENVY-4520-series")            ;; lpstat -p -d
 (tool-bar-mode -1)
 (setq vc-follow-symlinks t)
 (setq grep-command "grep --exclude-dir=\".svn\" --exclude=TAGS -nHriI -e ")
@@ -225,6 +225,10 @@ Default MODIFIER is 'shift."
 (when (package-dir "go-direx*")
   (require 'go-direx)
   (define-key go-mode-map (kbd "C-c C-j") 'go-direx-pop-to-buffer))
+
+(when (package-dir "yaml-mode*")
+  (require 'yaml-mode)
+  (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Smooth scrolling
@@ -1169,9 +1173,9 @@ Default MODIFIER is 'shift."
           (setq sol (if (< non-space eol) (line-beginning-position)
                 (save-excursion (save-restriction (save-match-data (goto-char (1- open)) (re-search-backward  "[^ \t\r\n]" nil t) (print (point)) (line-beginning-position))))))
           (setq a (buffer-substring  sol open) b (buffer-substring  open (1+ open)) c (buffer-substring  (1+ open) eol)))
-        ;; (message (format "%d %d %d %d |%s|%s|%s" sol open eol non-space a b c)))
         (setq a (replace-regexp-in-string "[\n]+\\s-*" " " a)) ;; remove internal newlines
         (setq msg (concat a b c))
+        ;; (message (format "%d %d %d %d |%s|%s|%s" sol open eol non-space a b c))
         (put-text-property (length a) (1+ (length a)) 'face '(background-color . "turquoise" ) msg)
         (message "%s" msg)))))
 (run-with-idle-timer 0.1 t 'blink-paren-first-line)
