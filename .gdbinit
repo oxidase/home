@@ -22,3 +22,8 @@ set follow-fork-mode child
 set pagination off
 set history filename ~/.gdb_history
 set history save
+
+define sanbreaks
+  rbreak ^__ubsan_handle_.*
+  rbreak ^__asan_report_.*
+end
