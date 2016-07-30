@@ -380,6 +380,7 @@ Default MODIFIER is 'shift."
   (require 'magit)
   (require 'magit-blame)
   (setq magit-last-seen-setup-instructions "1.4.0")
+  (setq magit-save-repository-buffers nil) ; ???
   (custom-set-variables '(git-commit-summary-max-length 70))
 
   ;; Some specific function to show/edit branch descriptions
@@ -750,7 +751,7 @@ Default MODIFIER is 'shift."
 (defun create-tags-file (directory)
   "Create TAGS file recursively"
   (interactive "DCreate TAGS recursively: ")
-  (async-shell-command (format "find %s | grep '.*\\.\\(c\\|cc\\|cpp\\|cxx\\|h\\|hh\\|hxx\\|hpp\\)$' | xargs etags -f %s/TAGS" directory directory)))
+  (async-shell-command (format "find %s | grep '.*\\.\\(c\\|cc\\|cpp\\|cxx\\|h\\|hh\\|hxx\\|hpp\\)$' | etags -" directory)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
