@@ -1,5 +1,8 @@
 import gdb.printing
 
+# https://sourceware.org/gdb/onlinedocs/gdb/Pretty-Printing.html
+# https://sourceware.org/gdb/onlinedocs/gdb/Writing-a-Pretty_002dPrinter.html
+
 COORDINATE_PRECISION = 1e6
 
 class CoordinatePrinter:
@@ -34,10 +37,26 @@ class TurnInstructionPrinter:
         t = '%s (%d)' % (self.types[t], t) if t in self.types else str(t)
         return ('{type = ' + t + ', direction_modifier = ' + m + '}')
 
+class TurnLaneDataPrinter:
+    """Print a TurnLaneData object."""
+
+    mask = {0:'Empty', 1:'None', 2:'Straight', 4:'SharpLeft', 8:'Left', 16:'SlightLeft',
+            32:'SlightRight', 64:'Right', 128:'SharpRight', 256:'UTurn', 512:'MergeToLeft',
+            1024:'MergeToRight'}
+
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        tg = int(self.val['tag'])
+        fr, to = int(self.val['from']), int(self.val['to'])
+        return ('{tag = ' + self.mask[tg] + ', from = ' + str(fr) + ', to = ' + str(to) + '}')
+
 def build_pretty_printer():
     pp = gdb.printing.RegexpCollectionPrettyPrinter('OSRM')
     pp.add_printer('TurnInstruction', '::TurnInstruction$', TurnInstructionPrinter)
     pp.add_printer('Coordinate', '::Coordinate$', CoordinatePrinter)
+    pp.add_printer('TurnLaneData', '::TurnLaneData$', TurnLaneDataPrinter)
     return pp
 
 # gdb.pretty_printers = []
