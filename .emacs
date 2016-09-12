@@ -52,7 +52,7 @@
                         yasnippet cedet helm sql-indent org kanban
                         tdd-status-mode-line ess feature-mode yaml-mode
                         web-mode htmlize markdown-mode markdown-mode+
-                        auto-complete auto-complete-c-headers
+                        auto-complete auto-complete-c-headers ag
                         jade-mode hide-lines lua-mode keychain-environment)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
@@ -145,10 +145,10 @@ Default MODIFIER is 'shift."
 (setq ring-bell-function 'ignore)                    ;; Turn the alarm totally off
 (standard-display-8bit 128 255)                      ;; Do not expand unprintable characters to their octal values.
 (setq fortran-comment-region "C MKR")                ;; Fortran comments prefix.
-(setq-default tab-width 2)                           ;; Set Tab-Width.
 (line-number-mode 1)                                 ;; Show line-number in the mode line.
 (column-number-mode 1)                               ;; Show column-number in the mode line.
 (fset 'yes-or-no-p 'y-or-n-p)                        ;; Will allow you to type just "y" instead of "yes".
+(setq-default tab-width 2)                           ;; Set Tab-Width.
 (setq-default indent-tabs-mode nil)                  ;; Permanently force Emacs to indent with spaces.
 (put 'upcase-region 'disabled nil)                   ;; Convert the region to upper case.
 (put 'downcase-region 'disabled nil)                 ;; Convert the region to lower case.
@@ -191,8 +191,8 @@ Default MODIFIER is 'shift."
   (interactive)
   (when buffer-read-only (toggle-read-only))
   (ansi-color-apply-on-region (point-min) (point-max)))
-(add-hook 'compilation-filter-hook 'ansi-colorize-buffer)
 (setq ansi-color-drop-regexp "\\[\\([ABCDsuK]\\|[12][JK]\\|=[0-9]+[hI]\\|[0-9;]*[HfGg]\\|\\?[0-9]+[hl]\\)")
+;(add-hook 'compilation-filter-hook 'ansi-colorize-buffer)
 
 ;; calendar settings
 (defface calendar-kw `((t (:foreground "black") (:background "pale green")))  "Face for a calendar week number column")
@@ -630,12 +630,15 @@ Default MODIFIER is 'shift."
       (flyspell-prog-mode)
       (modify-syntax-entry ?_ "w" c++-mode-syntax-table)
       (local-set-key '[C-f8]   'flyspell-buffer)
-      ;; source file keys
-      (local-set-key '[f3]     (lambda () (interactive) (find-tag (word-at-point))))
-      (local-set-key '[C-f3]   (lambda () (interactive) (find-tag nil t)))
-      (local-set-key '[M-f3]   'pop-tag-mark)
       ;; other settings
       (setq indent-tabs-mode nil))
+
+    ;; TAGS lookup
+    (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
+              (eq major-mode 'jam-mode) (eq major-mode 'gud-mode))
+      (local-set-key '[f3]     (lambda () (interactive) (find-tag (word-at-point))))
+      (local-set-key '[C-f3]   (lambda () (interactive) (find-tag nil t)))
+      (local-set-key '[M-f3]   'pop-tag-mark))
 
     (when (eq major-mode 'fortran-mode)
       (local-set-key "\C-c'" 'fortran-comment-region))
@@ -667,8 +670,7 @@ Default MODIFIER is 'shift."
       (local-set-key '[C-f9]   'gud-remove)
       (local-set-key '[f10]    'gud-next)
       (local-set-key '[f11]    'gud-step)
-      (local-set-key '[f12]    'gud-finish)
-      (local-set-key '[C-f12]  'gdb-kill-buffers))
+      (local-set-key '[f12]    'gud-finish))
 
     ;; auto complete
     (when (and (boundp 'ac-sources) (listp ac-sources))
@@ -696,6 +698,14 @@ Default MODIFIER is 'shift."
         )
       t)
 
+;; set context-dependent tabulation widths
+(add-hook 'c++-mode-hook
+  '(lambda ()
+     (cond
+      ((string-match "^/usr/include/c++" buffer-file-name)
+       (make-variable-buffer-local 'tab-width)
+       (set-variable 'tab-width 8)))))
+
 ;; set global GDB properties and keys
 (setf gdb-show-threads-by-default t)
 (setf gdb-show-main t)
@@ -717,12 +727,6 @@ Default MODIFIER is 'shift."
              (gud-find-file (car gud-last-last-frame))
            (gud-find-file gdb-main-file)))
       (setq gdb-source-window win)))))
-
-(defun gdb-kill-buffers () (interactive)
-  (set-process-query-on-exit-flag (get-buffer-process gud-comint-buffer) nil)
-  (kill-buffer gud-comint-buffer)
-  (loop for b in '(breakpoints threads memory disassembly stack locals registers update current-context)
-        do (kill-buffer (funcall (intern (concatenate 'string "gdb-" (symbol-name b) "-buffer-name"))))))
 
 ;; Qt stuff
 (require 'qt-pro)
@@ -752,6 +756,12 @@ Default MODIFIER is 'shift."
   "Create TAGS file recursively"
   (interactive "DCreate TAGS recursively: ")
   (async-shell-command (format "find %s | grep '.*\\.\\(c\\|cc\\|cpp\\|cxx\\|h\\|hh\\|hxx\\|hpp\\)$' | etags -" directory)))
+
+
+(when (package-dir "ag*")
+  (require 'ag)
+  (custom-set-variables '(ag-ignore-list '("TAGS")) '(ag-highlight-search t))
+  (global-set-key (kbd "<s-f3>") (lambda () (interactive) (ag/search (word-at-point) (ag/project-root default-directory)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
