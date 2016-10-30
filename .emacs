@@ -49,10 +49,10 @@
 ;; Guarantee all packages are installed on start
 (defvar packages-list '(auctex bm dired-single google-translate js2-mode
                         magit openwith qml-mode smooth-scrolling mew w3m
-                        yasnippet cedet helm sql-indent org kanban
+                        cedet helm sql-indent org kanban gh-md ggtags
                         tdd-status-mode-line ess feature-mode yaml-mode
                         web-mode htmlize markdown-mode markdown-mode+
-                        auto-complete auto-complete-c-headers ag
+                        auto-complete auto-complete-c-headers ag emojify
                         jade-mode hide-lines lua-mode keychain-environment)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
@@ -507,10 +507,12 @@ Default MODIFIER is 'shift."
   (load-library "js2-mode")
   (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
   (add-to-list 'interpreter-mode-alist '("node" . js2-mode))
+  (modify-syntax-entry ?_ "w" js2-mode-syntax-table)
   (add-hook 'js2-mode-hook (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace))))
 
 (when (package-dir "feature-mode*")
   (load-library "feature-mode")
+  (modify-syntax-entry ?_ "w" feature-mode-syntax-table)
   (add-to-list 'auto-mode-alist '("\.feature$" . feature-mode)))
 
 (when (package-dir "jade-mode*")
@@ -582,13 +584,10 @@ Default MODIFIER is 'shift."
            (fname (file-name-sans-extension bname))
            (ext (file-name-extension bname)))
 
+      ;;(ggtags-mode 1)
       (c-toggle-auto-newline -1)                           ;; Turn off auto-newline feature
       (defun c-font-lock-invalid-string () t)              ;; Turn off invalid string highlight
       (c-set-offset 'substatement-open 0)                  ;; project brace indent style
-
-      ;; add OpenFOAMcompile option
-      (when (getenv "WM_COMPILE_OPTION")
-        (add-to-list 'mode-line-format (concat (getenv "WM_COMPILE_OPTION") " ")))
 
       ;; compiler command, depends on the major-mode
       (make-variable-buffer-local 'compile-command)
@@ -762,6 +761,21 @@ Default MODIFIER is 'shift."
   (require 'ag)
   (custom-set-variables '(ag-ignore-list '("TAGS")) '(ag-highlight-search t))
   (global-set-key (kbd "<s-f3>") (lambda () (interactive) (ag/search (word-at-point) (ag/project-root default-directory)))))
+
+(when (package-dir "emojify*")
+  (require 'emojify)
+  (custom-set-variables '(emojify-emoji-styles (quote (github unicode))))
+  (custom-set-variables '(emojify-program-contexts (quote (comments))))
+  (add-hook 'after-init-hook #'global-emojify-mode))
+
+;; (when (package-dir "ggtags*")
+;;   (require 'ggtags)
+;;   (define-key ggtags-mode-map (kbd "C-c g s") 'ggtags-find-other-symbol)
+;;   (define-key ggtags-mode-map (kbd "C-c g h") 'ggtags-view-tag-history)
+;;   (define-key ggtags-mode-map (kbd "C-c g r") 'ggtags-find-reference)
+;;   (define-key ggtags-mode-map (kbd "C-c g f") 'ggtags-find-file)
+;;   (define-key ggtags-mode-map (kbd "C-c g c") 'ggtags-create-tags)
+;;   (define-key ggtags-mode-map (kbd "C-c g u") 'ggtags-update-tags))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
@@ -1156,7 +1170,7 @@ Default MODIFIER is 'shift."
    creating one if none already exists."
   (interactive "FFind file: ")
   (let* ((name filename) line column)
-    (when (string-match ":+\\([0-9]+\\):*\\([0-9]+\\)?:?$" filename)
+    (when (string-match ":+\\([0-9]+\\):*\\([0-9]+\\)?[:,]?$" filename)
       (setq name (substring filename 0 (match-beginning 0)))
       (setq line (condition-case nil (string-to-number (match-string 1 filename)) (error nil)))
       (setq column (condition-case nil (string-to-number (match-string 2 filename)) (error nil))))
