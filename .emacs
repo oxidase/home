@@ -53,7 +53,8 @@
                         tdd-status-mode-line ess feature-mode yaml-mode
                         web-mode htmlize markdown-mode markdown-mode+
                         auto-complete auto-complete-c-headers ag emojify
-                        jade-mode hide-lines lua-mode keychain-environment)
+                        jade-mode hide-lines lua-mode keychain-environment
+                        docker docker-tramp)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -432,11 +433,17 @@ Default MODIFIER is 'shift."
 ;; Remote file editing via ssh
 (require 'tramp)
 (setq tramp-default-method "ssh")
+(setq tramp-debug-buffer t)
+(setq tramp-verbose 10)
 
 (global-set-key "\C-c\C-t" 'tramp-cleanup-all-connections)
 
 (when (package-dir "magit-tramp*")
   (require 'magit-tramp))
+
+(when (package-dir "docker-tramp*")
+  (require 'docker-tramp))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Gentoo ebuild mode
