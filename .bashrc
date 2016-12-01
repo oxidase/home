@@ -25,7 +25,7 @@ export LC_ALL="en_US.UTF-8"
 
 ## common settings
 export PYTHONSTARTUP=~/.pythonrc
-export PS1='[\u@\h] $(x="\w";echo "${x#${x%/*/*}/}") \$ '
+export PS1='\[\033[01;32m\][\u@\h]\[\033[00m\] \[\033[01;34m\]$(x="\w";echo "${x#${x%/*/*}/}")\[\033[00m\] \$ '
 export HISTCONTROL=ignoredups
 
 if [ -f ~/.bash_aliases ]; then
@@ -49,3 +49,6 @@ fi
 
 ## git helper
 alias git-showlost='git fsck --full --no-reflogs --unreachable --lost-found && ls -1 .git/lost-found/commit/ | xargs -n 1 git log -n 1 --pretty=oneline'
+
+export NVM_DIR="/home/miha/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm

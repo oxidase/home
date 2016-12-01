@@ -15,4 +15,4 @@ with urllib.request.urlopen('http://www.nationalgeographic.com/photography/photo
 
         desc = soup.findAll(attrs={'name':'description'})[0]['content']
         print (desc)
-        #os.system('notify-send "{}"'.format(desc))
+        os.system('notify-send "{}"'.format(desc))

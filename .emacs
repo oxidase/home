@@ -929,7 +929,7 @@ Default MODIFIER is 'shift."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Org mode
-(when (package-dir "org-*")
+(when (or (package-dir "org-*") (fboundp 'org-mode))
   (require 'org)
   (require 'ob-core)
   (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
@@ -1126,7 +1126,7 @@ Default MODIFIER is 'shift."
   ;; host specific
   (cond
     ;;
-    ((string= system-name "miha-lt")
+    ((string-match "^miha-.*" system-name)
      (setq default-frame-alist '(
           (top . 0) (left . 200) (width . 154) (fullscreen . fullheight)
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1")
