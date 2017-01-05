@@ -5,7 +5,7 @@ sys.path.append('/usr/share/gcc-6/python')
 from libstdcxx.v6.printers import register_libstdcxx_printers
 register_libstdcxx_printers (None)
 end
-source ~/foss/osrm-backend/scripts/gdb_printers.py
+source ~/.gdbinit.d/osrm-backend.py
 
 define hook-quit
   set confirm off
@@ -21,3 +21,8 @@ define sanbreaks
   rbreak ^__ubsan_handle_.*
   rbreak ^__asan_report_.*
 end
+
+# no PCRE regular expression recursion support https://regex101.com/r/kHuljM/1
+# skip -rfu ^std::([a-zA-z0-9_]+)<([^>]|(?R)?)>::~?\1 *\\(
+skip -rfu ^std::([a-zA-z0-9_]+)<.+>::\\1\\(
+skip -rfu ^std::move

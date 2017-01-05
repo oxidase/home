@@ -1,3 +1,4 @@
+;; dev packages: autoconf automake texinfo libgtk-3-dev libxpm-dev libjpeg-dev libgif-dev libtiff5-dev libgnutls28-dev librsvg2-dev libmagickwand-dev libxml2-dev libcairo2-dev libsystemd-dev libselinux1-dev libgpm-dev libgconf2-dev
 (require 'cl)
 
 ;;{{{ Variables describing environment Emacs is running in
@@ -371,7 +372,9 @@ Default MODIFIER is 'shift."
            ;; remove TeX comamnds
            (setq str (replace-regexp-in-string "\\\\[a-zA-Z]+\\({[a-zA-Z]+}\\)?" "" str))
            (setq str (replace-regexp-in-string "[{}]" "" str))
-           (insert (format "\n%s\n" (google-translate-translate src dst str)))))))
+           (google-translate-translate src dst str 'kill-ring)
+           (insert (format " "))
+           (insert (car kill-ring-yank-pointer))))))
   (setq google-translate-default-source-language "en")
   (setq google-translate-default-target-language "ru"))
 
@@ -707,10 +710,12 @@ Default MODIFIER is 'shift."
 ;; set context-dependent tabulation widths
 (add-hook 'c++-mode-hook
   '(lambda ()
-     (cond
-      ((string-match "^/usr/include/c++" buffer-file-name)
-       (make-variable-buffer-local 'tab-width)
-       (set-variable 'tab-width 8)))))
+     (when buffer-file-name
+       (cond
+        ((or (string-match "^/usr/include/c++" buffer-file-name)
+             (string-match "^/usr/include/x86_64-linux-gnu/c++" buffer-file-name))
+         (make-variable-buffer-local 'tab-width)
+         (set-variable 'tab-width 8))))))
 
 ;; set global GDB properties and keys
 (setf gdb-show-threads-by-default t)
@@ -962,6 +967,9 @@ Default MODIFIER is 'shift."
           (and ad-return-value
                (not (eq (org-element-type (org-element-at-point)) 'src-block))))))
 
+(when (package-dir "ox-gfm-*")
+  (require 'ox-gfm))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MMM mode
 (when (package-dir "/mmm-mode")
@@ -1049,6 +1057,7 @@ Default MODIFIER is 'shift."
          ("\\.Xresources$" . xrdb-mode)
          ("*.\\.ad$" . xrdb-mode)
          ("\\.fetchmailrc$" . fetchmail-mode)
+         ("\\.osm$" . web-mode)
          ("\\.xml$" . web-mode)
          ("\\.xsl$" . web-mode)
          ("\\.tei$" . web-mode)
