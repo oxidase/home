@@ -48,14 +48,14 @@
 (package-initialize)
 
 ;; Guarantee all packages are installed on start
-(defvar packages-list '(auctex bm dired-single google-translate js2-mode
+(defvar packages-list '(async auctex bm dired-single google-translate js2-mode
                         magit openwith qml-mode smooth-scrolling mew w3m
                         cedet helm sql-indent org kanban gh-md ggtags
                         tdd-status-mode-line ess feature-mode yaml-mode
                         web-mode htmlize markdown-mode markdown-mode+
                         auto-complete auto-complete-c-headers ag emojify
                         jade-mode hide-lines lua-mode keychain-environment
-                        docker docker-tramp)
+                        docker docker-tramp dash git-commit)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -156,7 +156,7 @@ Default MODIFIER is 'shift."
 (put 'downcase-region 'disabled nil)                 ;; Convert the region to lower case.
 (blink-cursor-mode -1)                               ;; Switch off blinking cursor mode.
 (setq large-file-warning-threshold nil)              ;; Maximum size of file above which a confirmation is requested
-;(add-hook 'before-save-hook 'delete-trailing-whitespace)  ;; configuration required
+(add-hook 'before-save-hook 'delete-trailing-whitespace)  ;; configuration required
 (setq mode-require-final-newline t)
 ;; (setq delete-trailing-lines nil)
 (setq printer-name "HP-ENVY-4520-series")            ;; lpstat -p -d
