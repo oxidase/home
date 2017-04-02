@@ -387,6 +387,22 @@ Default MODIFIER is 'shift."
   (setq magit-save-repository-buffers nil) ; ???
   (custom-set-variables '(git-commit-summary-max-length 70))
 
+  (defun gh-lines ()
+    "Open the current line in GitHub"
+    (interactive)
+    (let* ((remotes (magit-list-remotes))
+           (remote (cond
+                    ((null remotes) "origin")
+                    ((member "upstream" remotes) "upstream")
+                    ((member "origin" remotes) "origin")
+                    ((t (car remotes)))))
+           (remote-url (magit-get "remote" remote "url"))
+           (from (line-number-at-pos (if (and transient-mark-mode mark-active) (region-beginning) (point)))) ; or (format-mode-line "%l")
+           (to (line-number-at-pos (if (and transient-mark-mode mark-active) (region-end) (point))))
+           (lines (if (= from to) (format "L%d" from) (format "L%d-L%d" from to)))
+           (gh-url (format "%s/blob/%s/%s#%s" remote-url (magit-rev-parse "HEAD") (magit-file-relative-name) lines)))
+      (browse-url gh-url)))
+
   ;; Some specific function to show/edit branch descriptions
   (defun magit-show-description ()
     "Print descriptions"
@@ -607,7 +623,7 @@ Default MODIFIER is 'shift."
           ((eq major-mode 'c++-mode)
            (cond
             ((string-equal ext "nxc") "nbc %f -O=%n.rxe; nxt_push %n.rxe")
-            (t "g++ -Wall -std=c++11 -O0 -g %f -o %n")))
+            (t "g++ -Wall -O0 -g %f -o %n")))
           ((eq major-mode 'fortran-mode) "g77 -g %f -o %n")
           ((eq major-mode 'qt-pro-mode) "qmake && make")
           ((eq major-mode 'makefile-gmake-mode) "make")
@@ -771,7 +787,7 @@ Default MODIFIER is 'shift."
 
 (when (package-dir "ag*")
   (require 'ag)
-  (custom-set-variables '(ag-ignore-list '("TAGS")) '(ag-highlight-search t))
+  (custom-set-variables '(ag-ignore-list '("TAGS" "bundle.js")) '(ag-highlight-search t))
   (global-set-key (kbd "<s-f3>") (lambda () (interactive) (ag/search (word-at-point) (ag/project-root default-directory)))))
 
 (when (package-dir "emojify*")
@@ -792,7 +808,8 @@ Default MODIFIER is 'shift."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
 (when (package-dir "python*")
-  (require 'python-mode))
+  (require 'python-mode)
+  (modify-syntax-entry ?_ "w" python-mode-syntax-table))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Ruby mode
@@ -810,6 +827,7 @@ Default MODIFIER is 'shift."
 ;; Lua mode
 (when (package-dir "lua*")
   (require 'lua-mode)
+  (modify-syntax-entry ?_ "w" lua-mode-syntax-table)
   (add-to-list 'auto-mode-alist '("\\.lua\\'" . lua-mode)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
