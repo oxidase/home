@@ -396,7 +396,7 @@ Default MODIFIER is 'shift."
                     ((member "upstream" remotes) "upstream")
                     ((member "origin" remotes) "origin")
                     ((t (car remotes)))))
-           (remote-url (magit-get "remote" remote "url"))
+           (remote-url (replace-regexp-in-string "://[^@]+@" "://" (magit-get "remote" remote "url")))
            (from (line-number-at-pos (if (and transient-mark-mode mark-active) (region-beginning) (point)))) ; or (format-mode-line "%l")
            (to (line-number-at-pos (if (and transient-mark-mode mark-active) (region-end) (point))))
            (lines (if (= from to) (format "L%d" from) (format "L%d-L%d" from to)))
