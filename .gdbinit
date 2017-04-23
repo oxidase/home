@@ -26,3 +26,4 @@ end
 # skip -rfu ^std::([a-zA-z0-9_]+)<([^>]|(?R)?)>::~?\1 *\\(
 skip -rfu ^std::([a-zA-z0-9_]+)<.+>::\\1\\(
 skip -rfu ^std::move
+skip -rfu ^std::

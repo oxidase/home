@@ -1,4 +1,15 @@
-// -*- compile-command: "g++ test.cpp -pthread -lrt" -*-
+/* -*- compile-command: "gcc test.c -lrt -pthread" -*- */
+/*
+No hang
+./a.out 1
+./a.out 2 &  ( sleep 1 ; ./a.out 3 )
+
+Hangs on the third line with libc 2.25
+./a.out 1
+./a.out 2 &  p=$! ; ( sleep 1 ; kill -SIGABRT $p ; ./a.out 3 )
+./a.out 2 &  ( sleep 1 ; ./a.out 3 )
+*/
+
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -9,9 +20,6 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdlib.h>
-
-#include <thread>
-#include <iostream>
 
 const char mmap_name[] = "/tmp/test.mmap";
 
@@ -90,31 +98,17 @@ void* mmap_open(const char *name, size_t size)
 }
 
 
-struct InternalData
+typedef struct InternalData
 {
   pthread_mutex_t mutex;
   pthread_cond_t condition;
-};
+} InternalData;
 
 int main(int argc, char *argv[])
 {
-  //  DataWatchdog w;
-
-  if (argc == 1) {
-      std::thread t([]() {
-        InternalData* block = (InternalData*)mmap_open(mmap_name, sizeof(InternalData));
-        std::cout << "waiting\n";
-        pthread_cond_wait(&block->condition, &block->mutex);
-        std::cout << "received\n";
-      });
-
-    sleep(1);
-    abort();
-    t.join();
-  } else {
-    InternalData* block = (InternalData*)mmap_open(mmap_name, sizeof(InternalData));
-    if (!block) {
-      block = (InternalData*)mmap_create(mmap_name, sizeof(InternalData));
+  if (argc == 2) {
+    if (atoi(argv[1]) == 1) {
+      InternalData* block = (InternalData*)mmap_create(mmap_name, sizeof(InternalData));
 
       // init the cond and mutex
       pthread_condattr_t cond_attr;
@@ -128,10 +122,22 @@ int main(int argc, char *argv[])
       pthread_mutexattr_setpshared(&m_attr, PTHREAD_PROCESS_SHARED);
       pthread_mutex_init(&block->mutex, &m_attr);
       pthread_mutexattr_destroy(&m_attr);
-    }
 
-    std::cout << "sending\n";
-    pthread_cond_broadcast(&block->condition);
-    std::cout << "ok\n";
+    } else if (atoi(argv[1]) == 2) {
+      InternalData* block = (InternalData*)mmap_open(mmap_name, sizeof(InternalData));
+      pthread_mutex_lock(&block->mutex);
+      printf("waiting\n");
+      pthread_cond_wait(&block->condition, &block->mutex);
+      printf("received\n");
+      pthread_mutex_unlock(&block->mutex);
+    } else if (atoi(argv[1]) == 3) {
+      InternalData* block = (InternalData*)mmap_open(mmap_name, sizeof(InternalData));
+      pthread_mutex_lock(&block->mutex);
+      printf("sending\n");
+      pthread_cond_broadcast(&block->condition);
+      printf("sent\n");
+      pthread_mutex_unlock(&block->mutex);
+    }
   }
+  return 0;
 }
