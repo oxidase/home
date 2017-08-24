@@ -55,7 +55,9 @@
                         web-mode htmlize markdown-mode markdown-mode+
                         auto-complete auto-complete-c-headers ag emojify
                         jade-mode hide-lines lua-mode keychain-environment
-                        docker docker-tramp dash git-commit)
+                        yarn-mode docker docker-tramp dash git-commit
+                        gnuplot gnuplot-mode
+                        haskell-mode intero ghci-completion)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -162,7 +164,7 @@ Default MODIFIER is 'shift."
 (setq printer-name "HP-ENVY-4520-series")            ;; lpstat -p -d
 (tool-bar-mode -1)
 (setq vc-follow-symlinks t)
-(setq grep-command "grep --exclude-dir=\".svn\" --exclude=TAGS -nHriI -e ")
+(setq grep-command "grep --exclude-dir=\".svn\" --exclude=TAGS -nHriIZ -e ")
 (setq tags-case-fold-search nil)
 (if (not (assq 'user-size initial-frame-alist))      ;; Unless we've specified a number of lines, prevent the startup code from
     (setq tool-bar-originally-present nil))          ;; shrinking the frame because we got rid of the tool-bar.
@@ -347,6 +349,31 @@ Default MODIFIER is 'shift."
         ("\\.\\(dll\\|pyd\\)\\'" "depends.exe" (file))
         ("\\.\\(?:mpe?g\\|avi\\|wmv\\|mp4\\)\\'" "smplayer" (file)))))
 
+;; open file in alternative editor
+(defvar alternate-editor "gedit"
+  "Editor to use when visiting a buffer outside of emacs.")
+
+(defun open-in-alternate-editor (&optional arg)
+  "Open buffer in alternative editor.  If buffer is unsaved,
+bring it up in a temporary file.  With prefix argument, ask for
+the editor to use."
+  (interactive "P")
+  (let ((edit (executable-find (if arg
+                                   (read-from-minibuffer
+                                    "Enter editor to use: "
+                                    alternate-editor)
+                                 alternate-editor)))
+        (file (or (buffer-file-name)
+                  (make-temp-file "unsaved-emacs-buffer-")))
+        (buff (unless (buffer-file-name)
+                (save-restriction (widen) (buffer-string)))))
+    (when (null edit)
+      (error "Can't find alternate editor"))
+    (unless (buffer-file-name)
+      (with-temp-file file
+        (insert buff)))
+    (start-process "Alternate Editor" nil edit file (format "+%d" (line-number-at-pos)))))
+
 ;;; Shell mode
 (setq ansi-color-names-vector ["black" "red4" "green4" "yellow4" "blue3" "magenta4" "cyan4" "white"])
 (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
@@ -396,7 +423,7 @@ Default MODIFIER is 'shift."
                     ((member "upstream" remotes) "upstream")
                     ((member "origin" remotes) "origin")
                     ((t (car remotes)))))
-           (remote-url (replace-regexp-in-string "://[^@]+@" "://" (magit-get "remote" remote "url")))
+           (remote-url (replace-regexp-in-string "/+$" "" (replace-regexp-in-string "://[^@]+@" "://" (magit-get "remote" remote "url"))))
            (from (line-number-at-pos (if (and transient-mark-mode mark-active) (region-beginning) (point)))) ; or (format-mode-line "%l")
            (to (line-number-at-pos (if (and transient-mark-mode mark-active) (region-end) (point))))
            (lines (if (= from to) (format "L%d" from) (format "L%d-L%d" from to)))
@@ -603,13 +630,12 @@ Default MODIFIER is 'shift."
       (progn  (split-window-vertically) (other-window 1) (switch-to-buffer gud-comint-buffer) (other-window 1)))))
 
 (setq development-mode-hook
-  ;;(print (mapcar (lambda (x) (car x)) (buffer-local-variables)))
-  ;;(print (remove-if-not (lambda (x) (eq 'compile-command (car x))) (buffer-local-variables)))
   (function (lambda ()
     (let* ((bname (buffer-name))
            (fname (file-name-sans-extension bname))
            (ext (file-name-extension bname)))
-
+      ;;(print (mapcar (lambda (x) (car x)) (buffer-local-variables)))
+      ;;(print (remove-if-not (lambda (x) (eq 'compile-command (car x))) (buffer-local-variables)))
       ;;(ggtags-mode 1)
       (c-toggle-auto-newline -1)                           ;; Turn off auto-newline feature
       (defun c-font-lock-invalid-string () t)              ;; Turn off invalid string highlight
@@ -625,6 +651,7 @@ Default MODIFIER is 'shift."
             ((string-equal ext "nxc") "nbc %f -O=%n.rxe; nxt_push %n.rxe")
             (t "g++ -Wall -O0 -g %f -o %n")))
           ((eq major-mode 'fortran-mode) "g77 -g %f -o %n")
+          ((eq major-mode 'haskell-mode) "ghc %f -o %n")
           ((eq major-mode 'qt-pro-mode) "qmake && make")
           ((eq major-mode 'makefile-gmake-mode) "make")
           ((eq major-mode 'jam-mode) "bjam -d2")
@@ -670,7 +697,7 @@ Default MODIFIER is 'shift."
 
     (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode) (eq major-mode 'compilation-mode)
               (eq major-mode 'jam-mode) (eq major-mode 'makefile-gmake-mode) (eq major-mode 'python-mode)
-              (eq major-mode 'qt-pro-mode)  (eq major-mode 'go-mode))
+              (eq major-mode 'qt-pro-mode)  (eq major-mode 'go-mode) (eq major-mode 'haskell-mode))
       (setq show-trailing-whitespace t)
       (local-set-key [C-S-mouse-1] (lambda (event) (interactive "e") (posn-set-point (elt event 1)) (find-tag (word-at-point))))
       ;; compile keys
@@ -736,6 +763,7 @@ Default MODIFIER is 'shift."
 ;; set global GDB properties and keys
 (setf gdb-show-threads-by-default t)
 (setf gdb-show-main t)
+(setf gdb-mi-decode-strings t)  ;; decode strings for UTF-8 support
 ;;(defun set-window-undedicated-p (window flag) "Never set window dedicated." flag)
 ;;(advice-add 'set-window-dedicated-p :override #'set-window-undedicated-p)
 ;;(global-set-key (kbd "s-`") (lambda () (interactive)
@@ -807,9 +835,29 @@ Default MODIFIER is 'shift."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
-(when (package-dir "python*")
-  (require 'python-mode)
-  (modify-syntax-entry ?_ "w" python-mode-syntax-table))
+(add-hook 'python-mode-hook (lambda () (modify-syntax-entry ?_ "w" python-mode-syntax-table)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Haskel mode
+(when (package-dir "haskell*")
+  (require 'haskell-mode)
+  (require 'haskell-interactive-mode)
+  (require 'haskell-process)
+  (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
+  (modify-syntax-entry ?_ "w" haskell-mode-syntax-table)
+
+  (custom-set-variables
+   '(haskell-process-suggest-remove-import-lines t)
+   '(haskell-process-auto-import-loaded-modules t)
+   '(haskell-process-log t)
+
+   '(haskell-process-type 'cabal-repl))
+
+  (define-key haskell-mode-map (kbd "M-.") 'haskell-mode-jump-to-def)
+  (define-key haskell-mode-map (kbd "C-`") 'haskell-interactive-bring)
+
+  (require 'intero)
+  (add-hook 'haskell-mode-hook 'intero-mode))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Ruby mode
@@ -857,7 +905,7 @@ Default MODIFIER is 'shift."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; set hooks
 (loop for mode in '(c-mode-hook c++-mode-hook fortran-mode-hook jam-mode-hook go-mode-hook
-                    qt-pro-mode-hook gud-mode-hook qml-mode-hook python-mode-hook)
+                    qt-pro-mode-hook gud-mode-hook qml-mode-hook python-mode-hook haskell-mode-hook)
       do (add-hook mode development-mode-hook))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -958,11 +1006,12 @@ Default MODIFIER is 'shift."
   (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
   (org-defkey org-mode-map [(control return)] 'mini-calc)
   (org-babel-do-load-languages 'org-babel-load-languages
-                               '((sh . t) (python . t) (C . t) (haskell . t) (sqlite  . t) (maxima . t)
-                                 (latex . t) (plantuml . t) (dot . t) (ruby . t) (R . t)))
+                               '((python . t) (C . t) (haskell . t) (sqlite  . t) (maxima . t)
+                                 (latex . t) (plantuml . t) (dot . t) (ruby . t) (R . t) (gnuplot . t)))
   (add-hook 'org-babel-after-execute-hook (lambda () (condition-case nil (org-display-inline-images) (error nil))))
   (setq org-babel-results-keyword "results")                           ;; Make babel results blocks lowercase
   (setq org-confirm-babel-evaluate nil)                                ;; Do not prompt to confirm evaluation
+  (setq org-babel-python-command "python3")
   (plist-put org-format-latex-options :scale 1.5)
   (setq org-src-fontify-natively t)
   (custom-set-faces
@@ -977,6 +1026,15 @@ Default MODIFIER is 'shift."
   (setq org-format-latex-options '(:foreground default :background default
       :scale 2 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0
       :matchers ("begin" "$1" "$" "$$" "\\(" "\\[")))
+
+  (defun org-babel-kill-session ()
+    "Kill session for current code block."
+    (interactive)
+    (unless (org-in-src-block-p)
+      (error "You must be in a src-block to run this command"))
+    (save-window-excursion
+      (org-babel-switch-to-session)
+      (kill-buffer)))
 
   (defadvice org-mode-flyspell-verify
     (after my-org-mode-flyspell-verify activate)

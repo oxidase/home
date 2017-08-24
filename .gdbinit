@@ -1,11 +1,19 @@
 ## wget -N http://gcc.gnu.org/svn/gcc/trunk/libstdc++-v3/python/libstdcxx/v6/printers.py -P .gdbinit.d/python/libstdcxx/v6
 
 python
+import os, sys
 sys.path.append('/usr/share/gcc-6/python')
 from libstdcxx.v6.printers import register_libstdcxx_printers
 register_libstdcxx_printers (None)
+
+sys.path.insert(0, os.path.expanduser('~/.gdbinit.d/python'))
+from boost.printers import register_printer_gen
+register_printer_gen(None)
 end
+
 source ~/.gdbinit.d/osrm-backend.py
+#source ~/.gdbinit.d/osrm-stage.py
+
 
 define hook-quit
   set confirm off
@@ -27,3 +35,7 @@ end
 skip -rfu ^std::([a-zA-z0-9_]+)<.+>::\\1\\(
 skip -rfu ^std::move
 skip -rfu ^std::
+
+define rr
+  r -t1 -p ../profiles/car.lua map.osm
+end
