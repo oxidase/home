@@ -12,14 +12,14 @@ register_printer_gen(None)
 end
 
 source ~/.gdbinit.d/osrm-backend.py
-#source ~/.gdbinit.d/osrm-stage.py
+source ~/.gdbinit.d/osrm-stage.py
 
 
 define hook-quit
   set confirm off
 end
 
-set follow-fork-mode child
+# set follow-fork-mode child
 set pagination off
 set history filename ~/.gdb_history
 set history remove-duplicates unlimited
@@ -36,6 +36,17 @@ skip -rfu ^std::([a-zA-z0-9_]+)<.+>::\\1\\(
 skip -rfu ^std::move
 skip -rfu ^std::
 
-define rr
+define re
+  b main
   r -t1 -p ../profiles/car.lua map.osm
+  set scheduler-locking step
+  clear main
+  cont
+end
+define rr
+  b main
+  r -t1 -aMLD map.osrm
+  set scheduler-locking step
+  clear main
+  cont
 end

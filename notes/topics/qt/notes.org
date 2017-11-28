@@ -3,7 +3,7 @@
 ** Qt base
 
 #+begin_src sh
-mkdir -p ~/work/qt && cd ~/work/qt
+mkdir -p ~/foss/qt && cd ~/foss/qt
 git clone ssh://oxidase@codereview.qt-project.org:29418/qt/qtbase.git
 mkdir build && cd build
 ../qtbase/configure -release -developer-build -opensource -confirm-license -plugin-sql-sqlite \
@@ -16,7 +16,7 @@ make -j5
 ** Qt modules
 
 #+begin_src sh
-mkdir -p ~/work/qt/modules && cd ~/work/qt/modules
+mkdir -p ~/foss/qt/modules && cd ~/foss/qt/modules
 M="qtactiveqt qtx11extras qtsvg qtimageformats qtscript qtxmlpatterns qtdeclarative qtsystems qtgraphicaleffects qtquickcontrols qtmultimedia qtpim qtwayland qt3d"
 for m in $M ; do git clone ssh://oxidase@codereview.qt-project.org:29418/qt/$m.git ; done
 cat > modules.pro <<EOF

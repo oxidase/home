@@ -49,14 +49,14 @@
 
 ;; Guarantee all packages are installed on start
 (defvar packages-list '(async auctex bm dired-single google-translate js2-mode
-                        magit openwith qml-mode smooth-scrolling mew w3m
+                        magit openwith qml-mode smooth-scrolling mew
                         cedet helm sql-indent org kanban gh-md ggtags
                         tdd-status-mode-line ess feature-mode yaml-mode
                         web-mode htmlize markdown-mode markdown-mode+
                         auto-complete auto-complete-c-headers ag emojify
                         jade-mode hide-lines lua-mode keychain-environment
                         yarn-mode docker docker-tramp dash git-commit
-                        gnuplot gnuplot-mode
+                        gnuplot gnuplot-mode protobuf-mode
                         haskell-mode intero ghci-completion)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
@@ -87,7 +87,7 @@
 
 ;; functional keys
 (global-set-key [f4] 'query-replace-regexp)
-(global-set-key [s-f4] 'search-forward-regexp)
+(global-set-key [?\s-s] 'search-forward-regexp)
 (global-set-key [f5] 'revert-buffer)
 (global-set-key "\M-?" 'goto-line)
 (global-set-key [C-x-p] 'bury-buffer)
@@ -490,6 +490,8 @@ the editor to use."
 (when (package-dir "docker-tramp*")
   (require 'docker-tramp))
 
+(when (package-dir "protobuf-mode*")
+  (require 'protobuf-mode))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Gentoo ebuild mode
@@ -649,6 +651,7 @@ the editor to use."
           ((eq major-mode 'c++-mode)
            (cond
             ((string-equal ext "nxc") "nbc %f -O=%n.rxe; nxt_push %n.rxe")
+            ((string-equal ext "cu") "nvcc -O0 -g %f -o %n")
             (t "g++ -Wall -O0 -g %f -o %n")))
           ((eq major-mode 'fortran-mode) "g77 -g %f -o %n")
           ((eq major-mode 'haskell-mode) "ghc %f -o %n")
@@ -820,9 +823,9 @@ the editor to use."
 
 (when (package-dir "emojify*")
   (require 'emojify)
+  ;(add-hook 'after-init-hook #'global-emojify-mode)
   (custom-set-variables '(emojify-emoji-styles (quote (github unicode))))
-  (custom-set-variables '(emojify-program-contexts (quote (comments))))
-  (add-hook 'after-init-hook #'global-emojify-mode))
+  (custom-set-variables '(emojify-program-contexts (quote (comments)))))
 
 ;; (when (package-dir "ggtags*")
 ;;   (require 'ggtags)
@@ -832,6 +835,10 @@ the editor to use."
 ;;   (define-key ggtags-mode-map (kbd "C-c g f") 'ggtags-find-file)
 ;;   (define-key ggtags-mode-map (kbd "C-c g c") 'ggtags-create-tags)
 ;;   (define-key ggtags-mode-map (kbd "C-c g u") 'ggtags-update-tags))
+
+(when (package-dir "rosemacs*")
+  (require 'rosemacs)
+  (global-set-key "\C-x\C-r" ros-keymap))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
