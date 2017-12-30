@@ -1194,9 +1194,9 @@ the editor to use."
 
   (cond
     ;;
-   ((string-match "^mykr" user-login-name)
-     (setq default-frame-alist '((top . 0) (left . 200) (width . 208) (fullscreen . fullheight)
-          (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")))
+   ((string-match "^miha" user-login-name)
+     (setq default-frame-alist '((top . 0) (left . 200) (width . 168) (fullscreen . fullheight)
+                                (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-16-*-*-*-m-0-iso8859-1")))
      (setenv "PATH" (concat "C:\\MinGW\\bin;" (getenv "PATH")))
      (remove-hook 'after-init-hook 'w32-check-shell-configuration)
      (setq shell-command-switch "/c")
