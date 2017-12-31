@@ -9,6 +9,9 @@ register_libstdcxx_printers (None)
 sys.path.insert(0, os.path.expanduser('~/.gdbinit.d/python'))
 from boost.printers import register_printer_gen
 register_printer_gen(None)
+
+from eigen.printers import register_eigen_printers
+register_eigen_printers (None)
 end
 
 source ~/.gdbinit.d/osrm-backend.py
@@ -35,6 +38,7 @@ end
 skip -rfu ^std::([a-zA-z0-9_]+)<.+>::\\1\\(
 skip -rfu ^std::move
 skip -rfu ^std::
+skip -rfu ^Eigen::internal::conditional_aligned_malloc
 
 define re
   b main

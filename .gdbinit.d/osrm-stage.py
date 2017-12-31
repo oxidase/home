@@ -43,20 +43,28 @@ class Plotter(gdb.Command):
             'osrm::extractor::guidance::IntersectionShape': self.plot_intersection,
             'osrm::extractor::guidance::IntersectionNormalizer::NormalizationResult': self.plot_intersection,
             'osrm::extractor::intersection::IntersectionEdgeGeometries': self.plot_intersection_edges,
+            'std::vector<osrm::extractor::intersection::IntersectionEdgeGeometry, std::allocator<osrm::extractor::intersection::IntersectionEdgeGeometry> >': self.plot_intersection_edges,
             'osrm::extractor::guidance::TurnAnalysis::ShapeResult' : self.plot_intersection_shapes,
             'std::vector<osrm::util::Coordinate, std::allocator<osrm::util::Coordinate> >': self.plot_coordinates,
             'osrm::extractor::NodeBasedGraphFactory': self.plot_nbg}
 
     def invoke (self, arg, from_tty):
+        interactive = False
         if arg.startswith('/c'):
             plt.ioff()
             plt.close()
             arg = arg[2:].strip()
             if len(arg) == 0: return
         elif arg.startswith('/i'):
-            plt.ioff()
-            plt.show()
-            return
+            arg = arg[2:].strip()
+            if len(arg) == 0:
+                plt.ioff()
+                plt.show()
+                return
+            else:
+                plt.ioff()
+                plt.close()
+                interactive = True
         elif arg.startswith('/s'):
             filename = datetime.datetime.now().strftime('plot_%Y%m%d-%H%M%S.png')
             print ('saved to' , filename)
@@ -75,6 +83,7 @@ class Plotter(gdb.Command):
             print (type)
             if (self.plotters[str(type)](ax, val, *args[1:])):
                 plt.pause(0.0001)
+                if interactive: plt.ioff()
                 plt.show()
             else:
                 plt.ioff()
@@ -135,28 +144,49 @@ class Plotter(gdb.Command):
         args = ' '.join(args)
         color = re.search('[bgrcmykw]', ' '.join(args))
         color = color.group(0) if color else 'k'
-        origin = re.search('([0-9\.]+),([0-9\.]+)', args)
+        origin = re.search('([-0-9\.]+),([-0-9\.]+)', args)
         origin = [float(x) for x in origin.groups()] if origin else None
+        outgoing_edges = re.search('o(([0-9]+)(,([0-9]+))*)', args)
+        outgoing_edges = {int(x) for x in outgoing_edges.group(1).split(',')} if outgoing_edges else {}
+        incoming_edges = re.search('i(([0-9]+)(,([0-9]+))*)', args)
+        incoming_edges = {int(x) for x in incoming_edges.group(1).split(',')} if incoming_edges else {}
+        check_edges = len(outgoing_edges) + len(outgoing_edges) > 0
+
+        print (outgoing_edges, incoming_edges)
 
         for index, road in enumerate(iterate(intersection)):
             fields = set([x.name for x in road.type.fields()])
-            style = color + ('-' if 'entry_allowed' not in fields or road['entry_allowed'] else '--')
-            instruction = re.sub('[A-Za-z_]+ = ', '', str(road['instruction'])) if 'instruction' in fields else ''
             initial_bearing = math.pi * ((360. + 90. - float(road['initial_bearing'])) % 360) / 180.
             perceived_bearing = math.pi * ((360. + 90. - float(road['perceived_bearing'])) % 360) / 180.
-            eid = road['edge']
+            eid = int(road['edge'])
             angle = float(road['angle']) if 'angle' in fields else float('nan')
-            length = float(road['length'])
+            length = (1 if not check_edges or eid in outgoing_edges else -1) * float(road['length'])
+            radius = (1 if not check_edges or eid in outgoing_edges else -1) * 20
+            style = 'd--' if check_edges and eid in incoming_edges else 'd-'
+            lw = 3 if check_edges and eid in incoming_edges else 1
+
+            if check_edges and eid not in outgoing_edges and eid not in incoming_edges:
+                continue
 
             if origin is not None:
                 x0, y0 = origin
                 x1, y1 = x0 + length * math.cos(perceived_bearing) / 111319.5, y0 + length * math.sin(perceived_bearing) / 111319.5
+                x2, y2 = x0 + radius * math.cos(initial_bearing) / 111319.5, y0 + radius * math.sin(initial_bearing) / 111319.5
             else:
-                x0, y0, x1, y1 = 0, 0, length * math.cos(perceived_bearing), length * math.sin(perceived_bearing)
-            axis.plot([x0, x1], [y0, y1], style)
-            axis.text(x1, y1, '{}: {}{:.1f}m\n'.format(eid, '{:.1f}°, '.format(angle) if math.isfinite(angle) else '', length) + instruction,
+                x0, y0 = 0, 0
+                x1, y1 = length * math.cos(perceived_bearing), length * math.sin(perceived_bearing)
+                x2, y2 = radius * math.cos(initial_bearing), radius * math.sin(initial_bearing)
+
+            ## perceived bearings
+            axis.plot([x0, x1], [y0, y1], style, linewidth=lw)
+            axis.text(x1, y1, '{}: {}{:.1f}m\n'.format(eid, '{:.1f}°, '.format(angle) if math.isfinite(angle) else '', abs(length)),
                       {'ha': 'center', 'va': 'top' if perceived_bearing > math.pi else 'baseline'},
                       rotation=0 * perceived_bearing / math.pi)
+
+            ## initial bearings
+            axis.plot([x0, x2], [y0, y2], 'ro-', linewidth=lw)
+            axis.text(x2, y2, '{}'.format(eid), {'ha': 'center', 'va': 'top' if initial_bearing > math.pi else 'baseline'})
+
         axis.set_aspect('equal', 'datalim')
         return True
 

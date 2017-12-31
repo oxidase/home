@@ -753,6 +753,10 @@ the editor to use."
         )
       t)
 
+(eval-after-load "c++-mode"
+  '(define-key c++-mode-map (kbd "C-c C-p") nil))
+
+
 ;; set context-dependent tabulation widths
 (add-hook 'c++-mode-hook
   '(lambda ()
@@ -1142,6 +1146,7 @@ the editor to use."
          ("\\.fetchmailrc$" . fetchmail-mode)
          ("\\.osm$" . web-mode)
          ("\\.xml$" . web-mode)
+         ("\\.launch$" . web-mode)
          ("\\.xsl$" . web-mode)
          ("\\.tei$" . web-mode)
          ("\\.php$" . php-mode)
