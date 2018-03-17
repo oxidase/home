@@ -2,9 +2,9 @@
 
 python
 import os, sys
-sys.path.append('/usr/share/gcc-6/python')
-from libstdcxx.v6.printers import register_libstdcxx_printers
-register_libstdcxx_printers (None)
+sys.path.append('/usr/share/gcc-7/python')
+#from libstdcxx.v6.printers import register_libstdcxx_printers
+#register_libstdcxx_printers (None)
 
 sys.path.insert(0, os.path.expanduser('~/.gdbinit.d/python'))
 from boost.printers import register_printer_gen
@@ -50,6 +50,13 @@ end
 define rr
   b main
   r -t1 -aMLD map.osrm
+  set scheduler-locking step
+  clear main
+  cont
+end
+define rv
+  b main
+  r ../valhalla.json 1
   set scheduler-locking step
   clear main
   cont

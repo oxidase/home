@@ -565,6 +565,8 @@ the editor to use."
   (modify-syntax-entry ?_ "w" js2-mode-syntax-table)
   (add-hook 'js2-mode-hook (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace))))
 
+(add-hook 'json-mode-hook (lambda () (setq tab-width 2)))
+
 (when (package-dir "feature-mode*")
   (load-library "feature-mode")
   (modify-syntax-entry ?_ "w" feature-mode-syntax-table)

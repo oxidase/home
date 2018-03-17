@@ -38,12 +38,13 @@ class Plotter(gdb.Command):
         self.plotters = {
             'int': self.plot_test,
             'osrm::extractor::guidance::Intersection': self.plot_intersection,
-            'const osrm::extractor::guidance::IntersectionView': self.plot_intersection,
             'osrm::extractor::guidance::IntersectionView': self.plot_intersection,
             'osrm::extractor::guidance::IntersectionShape': self.plot_intersection,
             'osrm::extractor::guidance::IntersectionNormalizer::NormalizationResult': self.plot_intersection,
             'osrm::extractor::intersection::IntersectionEdgeGeometries': self.plot_intersection_edges,
             'std::vector<osrm::extractor::intersection::IntersectionEdgeGeometry, std::allocator<osrm::extractor::intersection::IntersectionEdgeGeometry> >': self.plot_intersection_edges,
+            'osrm::guidance::Intersection': self.plot_intersection,
+            'osrm::extractor::intersection::IntersectionView': self.plot_intersection,
             'osrm::extractor::guidance::TurnAnalysis::ShapeResult' : self.plot_intersection_shapes,
             'std::vector<osrm::util::Coordinate, std::allocator<osrm::util::Coordinate> >': self.plot_coordinates,
             'osrm::extractor::NodeBasedGraphFactory': self.plot_nbg}
@@ -116,7 +117,10 @@ class Plotter(gdb.Command):
             style = color + ('-' if 'entry_allowed' not in fields or road['entry_allowed'] else '--')
             if True:
                 instruction = re.sub('[A-Za-z_]+ = ', '', str(road['instruction'])) if 'instruction' in fields else ''
-                bearing = math.pi * ((360. + 90. - float(road['bearing'])) % 360) / 180.
+                try:
+                    bearing = math.pi * ((360. + 90. - float(road['perceived_bearing'])) % 360) / 180.
+                except:
+                    bearing = math.pi * ((360. + 90. - float(road['bearing'])) % 360) / 180.
                 eid = road['eid']
                 angle = float(road['angle']) if 'angle' in fields else float('nan')
                 segment_length = float(road['segment_length'])
@@ -158,9 +162,14 @@ class Plotter(gdb.Command):
             fields = set([x.name for x in road.type.fields()])
             initial_bearing = math.pi * ((360. + 90. - float(road['initial_bearing'])) % 360) / 180.
             perceived_bearing = math.pi * ((360. + 90. - float(road['perceived_bearing'])) % 360) / 180.
-            eid = int(road['edge'])
+            try:
+                eid = int(road['edge'])
+                length = float(road['length'])
+            except:
+                eid = int(road['eid'])
+                length = float(road['segment_length'])
             angle = float(road['angle']) if 'angle' in fields else float('nan')
-            length = (1 if not check_edges or eid in outgoing_edges else -1) * float(road['length'])
+            length = (1 if not check_edges or eid in outgoing_edges else -1) * length
             radius = (1 if not check_edges or eid in outgoing_edges else -1) * 20
             style = 'd--' if check_edges and eid in incoming_edges else 'd-'
             lw = 3 if check_edges and eid in incoming_edges else 1
@@ -250,3 +259,30 @@ class Plotter(gdb.Command):
         return False
 
 Plotter()
+
+
+
+
+
+
+class StopAtIntersection (gdb.Command):
+  """Stop at intersection in OSRM"""
+
+  def __init__ (self):
+    super (StopAtIntersection, self).__init__ ("stop-at-intersection", gdb.COMMAND_USER)
+
+  def invoke (self, arg, from_tty):
+      origin = re.search('([0-9\.+-]+), *([0-9\.+-]+)', arg)
+      if origin is None or len(origin.groups()) != 2:
+          print ('{} is not a coordinates pair'.format(arg))
+      lat, lon = [float(x) for x in origin.groups()]
+      out = gdb.execute('break {:s}'.format('osrm::extractor::intersection::getIntersectionGeometries'), to_string=True)
+      breakpoint = re.search('Breakpoint ([0-9]+) at', out)
+      if breakpoint is None:
+          print ('Cannot set a breakpoint: {}'.format(out))
+      breakpoint = breakpoint.group(1)
+      print (lon, lat, round(lon * 1000000), lat * 1000000, int(lat * 1000000 + 0.5))
+      out = gdb.execute('cond {} node_coordinates[intersection_node].lon.__value == {} && node_coordinates[intersection_node].lat.__value == {}'.format(breakpoint, int(lon * 1000000 + 0.5 * np.sign(lon)), int(lat * 1000000 + 0.5 * np.sign(lat))), to_string=True)
+      print ('Breakpoint {} at {},{}'.format(breakpoint, lon, lat))
+
+StopAtIntersection ()
