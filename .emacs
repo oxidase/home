@@ -45,11 +45,10 @@
 (require 'package)
 (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
 (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
-(package-initialize)
 
 ;; Guarantee all packages are installed on start
 (defvar packages-list '(async auctex bm dired-single google-translate js2-mode
-                        magit openwith qml-mode smooth-scrolling mew
+                        magit openwith qml-mode mew
                         cedet helm sql-indent org kanban gh-md ggtags
                         tdd-status-mode-line ess feature-mode yaml-mode
                         web-mode htmlize markdown-mode markdown-mode+
@@ -57,7 +56,8 @@
                         jade-mode hide-lines lua-mode keychain-environment
                         yarn-mode docker docker-tramp dash git-commit
                         gnuplot gnuplot-mode protobuf-mode
-                        haskell-mode intero ghci-completion)
+                        haskell-mode intero ghci-completion
+                        lsp-mode cquery)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
    (loop for p in packages-list
@@ -191,10 +191,10 @@ Default MODIFIER is 'shift."
 
 ;; ANSI colorization of a buffer
 (require 'ansi-color)
-(defun ansi-colorize-buffer ()
+(defun display-ansi-colors ()
   (interactive)
-  (when buffer-read-only (toggle-read-only))
-  (ansi-color-apply-on-region (point-min) (point-max)))
+  (let ((inhibit-read-only t))
+    (ansi-color-apply-on-region (point-min) (point-max))))
 (setq ansi-color-drop-regexp "\\[\\([ABCDsuK]\\|[12][JK]\\|=[0-9]+[hI]\\|[0-9;]*[HfGg]\\|\\?[0-9]+[hl]\\)")
 ;(add-hook 'compilation-filter-hook 'ansi-colorize-buffer)
 
@@ -377,6 +377,7 @@ the editor to use."
 ;;; Shell mode
 (setq ansi-color-names-vector ["black" "red4" "green4" "yellow4" "blue3" "magenta4" "cyan4" "white"])
 (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
+(add-hook 'sh-mode-hook (lambda () (modify-syntax-entry ?_ "w" sh-mode-syntax-table)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Translator (google)
@@ -566,6 +567,8 @@ the editor to use."
   (add-hook 'js2-mode-hook (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace))))
 
 (add-hook 'json-mode-hook (lambda () (setq tab-width 2)))
+(setq auto-mode-alist (append auto-mode-alist '(("\\.json$" . json-mode) ("\\.geojson$" . json-mode))))
+
 
 (when (package-dir "feature-mode*")
   (load-library "feature-mode")
@@ -787,9 +790,10 @@ the editor to use."
            (winio (split-window win -4)))
       (set-window-buffer winio (gdb-get-buffer-create 'gdb-inferior-io))
       (set-window-buffer win
-         (if gud-last-last-frame
-             (gud-find-file (car gud-last-last-frame))
-           (gud-find-file gdb-main-file)))
+       (cond
+        (gud-last-last-frame (gud-find-file (car gud-last-last-frame)))
+        ((gud-find-file gdb-main-file) (gud-find-file gdb-main-file))
+        (t gud-comint-buffer)))
       (setq gdb-source-window win)))))
 
 ;; Qt stuff
@@ -845,6 +849,14 @@ the editor to use."
 (when (package-dir "rosemacs*")
   (require 'rosemacs)
   (global-set-key "\C-x\C-r" ros-keymap))
+
+(require 'cquery)
+(define-key c++-mode-map (kbd "M-/") 'xref-find-references)
+(custom-set-variables '(xref-prompt-for-identifier '(not xref-find-definitions
+                                            xref-find-references
+                                            xref-find-definitions-other-window
+                                            xref-find-definitions-other-frame)))
+(add-hook 'c++-mode-hook 'lsp-cquery-enable)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
@@ -1019,7 +1031,7 @@ the editor to use."
   (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
   (org-defkey org-mode-map [(control return)] 'mini-calc)
   (org-babel-do-load-languages 'org-babel-load-languages
-                               '((python . t) (C . t) (haskell . t) (sqlite  . t) (maxima . t)
+                               '((python . t) (C . t) (haskell . t) (sqlite  . t) (maxima . t) (lua . t)
                                  (latex . t) (plantuml . t) (dot . t) (ruby . t) (R . t) (gnuplot . t)))
   (add-hook 'org-babel-after-execute-hook (lambda () (condition-case nil (org-display-inline-images) (error nil))))
   (setq org-babel-results-keyword "results")                           ;; Make babel results blocks lowercase
@@ -1049,15 +1061,13 @@ the editor to use."
       (org-babel-switch-to-session)
       (kill-buffer)))
 
-  (defadvice org-mode-flyspell-verify
-    (after my-org-mode-flyspell-verify activate)
-    "Don't spell check src blocks."
-    (setq ad-return-value
-          (and ad-return-value
-               (not (eq (org-element-type (org-element-at-point)) 'src-block))))))
-
-(when (package-dir "ox-gfm-*")
-  (require 'ox-gfm))
+  ;; (defadvice org-mode-flyspell-verify
+  ;;   (after my-org-mode-flyspell-verify activate)
+  ;;   "Don't spell check src blocks."
+  ;;   (setq ad-return-value
+  ;;         (and ad-return-value
+  ;;                (not (eq (org-element-type (org-element-at-point)) 'src-block)))))
+ )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MMM mode

@@ -1,8 +1,11 @@
 ## wget -N http://gcc.gnu.org/svn/gcc/trunk/libstdc++-v3/python/libstdcxx/v6/printers.py -P .gdbinit.d/python/libstdcxx/v6
 
 python
-import os, sys
-sys.path.append('/usr/share/gcc-7/python')
+import os, sys, glob
+
+libstdcxx = glob.glob('/usr/share/gcc-*')
+if len(libstdcxx) > 0 and os.path.isdir(libstdcxx[0] + '/python'):
+  sys.path.append(libstdcxx[0] + '/python')
 #from libstdcxx.v6.printers import register_libstdcxx_printers
 #register_libstdcxx_printers (None)
 
@@ -16,6 +19,7 @@ end
 
 source ~/.gdbinit.d/osrm-backend.py
 source ~/.gdbinit.d/osrm-stage.py
+source ~/.gdbinit.d/valhalla.py
 
 
 define hook-quit
@@ -57,6 +61,13 @@ end
 define rv
   b main
   r ../valhalla.json 1
+  set scheduler-locking step
+  clear main
+  cont
+end
+define rc
+  b main
+  r -t1 -aMLD -s --dataset cucumber
   set scheduler-locking step
   clear main
   cont
