@@ -494,6 +494,12 @@ the editor to use."
 (when (package-dir "protobuf-mode*")
   (require 'protobuf-mode))
 
+(when (package-dir "docker-*")
+  (require 'docker-tramp))
+
+(when (package-dir "twittering-mode-*")
+  (require 'twittering-mode))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Gentoo ebuild mode
 (when (package-dir "ebuild-mode*")
