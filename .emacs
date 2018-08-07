@@ -60,7 +60,9 @@
                         lsp-mode cquery)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
-   (loop for p in packages-list
+  (unless package--initialized
+    (package-initialize))
+  (loop for p in packages-list
          when (not (package-installed-p p)) do (return t)
          finally (return nil)))
 (when (has-package-not-installed)
@@ -597,6 +599,8 @@ the editor to use."
 (require 'cmake-mode)
 (require 'gud)
 (require 'gdb-mi)
+(require 'bazel-mode)
+(require 'osl-mode)
 
 (setq gud-tooltip-mode t)
 
@@ -1198,13 +1202,6 @@ the editor to use."
 
 ;;{{{ OS specific
 
-(defun configuration-height-lines ()
-  (cond
-   ((and (= (display-mm-width) 677) (= (display-mm-height) 381)) 62) ;; win, laptop only
-   ((and (< (abs (- (display-mm-width) 508)) 3) (= (display-mm-height) 260)) 53) ;; VirtualBox, window mode
-   ((and (< (abs (- (display-mm-width) 508)) 3) (= (display-mm-height) 285)) 59) ;; VirtualBox, fullscreen mode
-   (t (message (format "unknown screen with physical size %dx%d" (display-mm-width) (display-mm-height))) 42)))
-
 (cond
  (running-on-windows
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1269,6 +1266,12 @@ the editor to use."
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
           )))
     ;;
+    ((string-match "^AID-.*" system-name)
+     (setq default-frame-alist '(
+          (top . 0) (left . 2000) (width . 306) (fullscreen . fullheight)
+          (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")))
+     )
+     ;;
     (t (message (format "unknown host name %s" system-name)))))
 
  (t (message "unknown OS")))
