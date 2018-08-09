@@ -601,6 +601,7 @@ the editor to use."
 (require 'gdb-mi)
 (require 'bazel-mode)
 (require 'osl-mode)
+(require 'glsl-mode)
 
 (setq gud-tooltip-mode t)
 

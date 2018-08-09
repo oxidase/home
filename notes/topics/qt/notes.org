@@ -26,6 +26,7 @@ SUBDIRS += $M
 EOF
 mkdir -p ../build/modules && cd ../build/modules
 ../bin/qmake ../../modules
+make
 #+end_src sh
 
 ** Update

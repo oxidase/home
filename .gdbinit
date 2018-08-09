@@ -35,8 +35,8 @@ end
 
 
 python
-import os
-local_config = os.path.join(os.environ['HOME'], '.gdbinit.d', os.environ['HOSTNAME'])
+import socket, os
+local_config = os.path.join(os.environ['HOME'], '.gdbinit.d', socket.gethostname())
 if os.path.exists(local_config):
   gdb.execute('source {}'.format(local_config))
 end
