@@ -864,10 +864,10 @@ the editor to use."
 (require 'cquery)
 (define-key c++-mode-map (kbd "M-/") 'xref-find-references)
 (custom-set-variables '(xref-prompt-for-identifier '(not xref-find-definitions
-                                            xref-find-references
-                                            xref-find-definitions-other-window
-                                            xref-find-definitions-other-frame)))
-(add-hook 'c++-mode-hook 'lsp-cquery-enable)
+                                                         xref-find-references
+                                                         xref-find-definitions-other-window
+                                                         xref-find-definitions-other-frame)))
+(add-hook 'c++-mode-hook (lambda () (condition-case nil  (lsp-cquery-enable) (error nil))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
@@ -1267,11 +1267,21 @@ the editor to use."
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
           )))
     ;;
-    ((string-match "^AID-.*" system-name)
-     (setq default-frame-alist '(
-          (top . 0) (left . 2000) (width . 306) (fullscreen . fullheight)
-          (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")))
-     )
+    ((string-match "^krasny*" user-login-name)
+     (cond
+      ((eq (display-mm-width ":0") 508)
+       (setq default-frame-alist '(
+             (top . 0) (left . 100) (width . 224) (fullscreen . fullheight)
+             (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
+      ((eq (display-mm-width ":0") 1524)
+       (setq default-frame-alist '(
+             (top . 0) (left . 2000) (width . 360) (fullscreen . fullheight)
+             (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-20-*-*-*-m-0-iso10646-1"))))
+      (t
+       (setq default-frame-alist '(
+             (top . 0) (left . 2000) (width . 306) (fullscreen . fullheight)
+             (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
+     ))
      ;;
     (t (message (format "unknown host name %s" system-name)))))
 
