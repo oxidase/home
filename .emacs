@@ -177,6 +177,9 @@ Default MODIFIER is 'shift."
       (cl-flet ((yes-or-no-p (&rest args) t) (y-or-n-p (&rest args) t))
         ad-do-it))
 
+(add-hook 'comint-exec-hook                          ;; Don't ask about killing process buffers on exit
+          (lambda () (set-process-query-on-exit-flag (get-buffer-process (current-buffer)) nil)))
+
 ;; Place Backup Files in Specific Directory
 (setq make-backup-files t)                           ;; Enable backup files.
 (setq version-control t)                             ;; Enable versioning with default values.
@@ -735,7 +738,7 @@ the editor to use."
       (gud-def gud-frame "frame" "\C-g" "Select and print a stack frame.")
 
       ;; debug keys
-      (local-set-key '[C-f5]   'gud-until)
+      (local-set-key '[(super f1)]   'gud-until)
       (local-set-key '[f9]     'gud-set-clear)
       (local-set-key '[S-f9]   'gud-break)
       (local-set-key '[C-f9]   'gud-remove)
@@ -1277,6 +1280,10 @@ the editor to use."
        (setq default-frame-alist '(
              (top . 0) (left . 2000) (width . 360) (fullscreen . fullheight)
              (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-20-*-*-*-m-0-iso10646-1"))))
+      ((eq (display-mm-width ":0") 1185)
+       (setq default-frame-alist '(
+             (top . 0) (left . 2000) (width . 306) (fullscreen . fullheight)
+             (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
       (t
        (setq default-frame-alist '(
              (top . 0) (left . 2000) (width . 306) (fullscreen . fullheight)
