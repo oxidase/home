@@ -1,0 +1,3 @@
+# -*- mode: sh -*-
+
+source ~/.bash_completion.d/bazel-complete-header.bash
