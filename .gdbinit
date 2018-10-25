@@ -8,6 +8,8 @@ if len(libstdcxx) > 0 and os.path.isdir(libstdcxx[0] + '/python'):
   libstdcxx_path = libstdcxx[0] + '/python'
   sys.path.append(libstdcxx_path)
   print('Added {} to python system paths'.format(libstdcxx_path))
+  from libstdcxx.v6.printers import register_libstdcxx_printers
+  register_libstdcxx_printers(None)
 
 sys.path.insert(0, os.path.expanduser('~/.gdbinit.d/python'))
 from boost.printers import register_printer_gen
@@ -40,3 +42,9 @@ local_config = os.path.join(os.environ['HOME'], '.gdbinit.d', socket.gethostname
 if os.path.exists(local_config):
   gdb.execute('source {}'.format(local_config))
 end
+
+
+skip -gfi /usr/include/c++/*/*/*/*
+skip -gfi /usr/include/c++/*/*/*
+skip -gfi /usr/include/c++/*/*
+skip -gfi /usr/include/c++/*
