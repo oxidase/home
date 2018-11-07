@@ -49,3 +49,5 @@ fi
 
 ## git helper
 alias git-showlost='git fsck --full --no-reflogs --unreachable --lost-found && ls -1 .git/lost-found/commit/ | xargs -n 1 git log -n 1 --pretty=oneline'
+
+alias notify="(paplay --volume=98304 /usr/share/sounds/ubuntu/notifications/Positive.ogg &) ; (hash xcowsay 2>/dev/null && (xcowsay moooo &))"

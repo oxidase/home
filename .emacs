@@ -436,6 +436,23 @@ the editor to use."
            (gh-url (format "%s/blob/%s/%s#%s" remote-url (magit-rev-parse "HEAD") (magit-file-relative-name) lines)))
       (browse-url gh-url)))
 
+  (defun bb-lines ()
+    "Open the current line in Bitbucket"
+    (interactive)
+    (let* ((remotes (magit-list-remotes))
+           (remote (cond
+                    ((null remotes) "origin")
+                    ((member "upstream" remotes) "upstream")
+                    ((member "origin" remotes) "origin")
+                    ((t (car remotes)))))
+           (remote-url (replace-regexp-in-string "/+$" "" (replace-regexp-in-string "://[^@]+@" "://" (magit-get "remote" remote "url"))))
+           (proj-url (replace-regexp-in-string ".git" "/browse" (replace-regexp-in-string "scm/werk" "projects/WERK/repos" remote-url)))
+           (from (line-number-at-pos (if (and transient-mark-mode mark-active) (region-beginning) (point)))) ; or (format-mode-line "%l")
+           (to (line-number-at-pos (if (and transient-mark-mode mark-active) (region-end) (point))))
+           (lines (if (= from to) (format "%d" from) (format "%d-%d" from to)))
+           (gh-url (format "%s/%s?at=%s#%s" proj-url (magit-file-relative-name) (magit-rev-parse "HEAD") lines)))
+      (browse-url gh-url)))
+
   ;; Some specific function to show/edit branch descriptions
   (defun magit-show-description ()
     "Print descriptions"

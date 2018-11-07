@@ -3,9 +3,9 @@
 python
 import os, sys, glob
 
-libstdcxx = glob.glob('/usr/share/gcc-*')
-if len(libstdcxx) > 0 and os.path.isdir(libstdcxx[0] + '/python'):
-  libstdcxx_path = libstdcxx[0] + '/python'
+libstdcxx = glob.glob(os.path.expanduser('~/.gdbinit.d/python/libstdcxx')) + glob.glob('/usr/share/gcc-*/python/libstdcxx')
+if len(libstdcxx) > 0 and os.path.isdir(libstdcxx[0]):
+  libstdcxx_path = os.path.split(libstdcxx[0])[0]
   sys.path.append(libstdcxx_path)
   print('Added {} to python system paths'.format(libstdcxx_path))
   from libstdcxx.v6.printers import register_libstdcxx_printers
