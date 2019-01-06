@@ -245,6 +245,9 @@ Default MODIFIER is 'shift."
   (require 'smooth-scrolling)
   (setq smooth-scroll-margin 2))
 
+(global-set-key (kbd "<C-up>") 'scroll-down-command)
+(global-set-key (kbd "<C-down>") 'scroll-up-command)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Fontlocking modes
 (require 'doc-mode)
@@ -1261,8 +1264,8 @@ the editor to use."
     ;;
     ((string-match "^miha-.*" system-name)
      (setq default-frame-alist '(
-          (top . 0) (left . 200) (width . 154) (fullscreen . fullheight)
-          (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1")
+          (top . 0) (left . 200) (width . 216) (fullscreen . fullheight)
+          (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
           ;;(font . "-*-Inconsolata-*-*-*-*-18-*-*-*-m-0-iso10646-1")
           ))
      ;; erc settings
