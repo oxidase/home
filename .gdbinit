@@ -3,7 +3,7 @@
 python
 import os, sys, glob
 
-libstdcxx = glob.glob(os.path.expanduser('~/.gdbinit.d/python/libstdcxx')) + glob.glob('/usr/share/gcc-*/python/libstdcxx')
+libstdcxx = glob.glob(os.path.expanduser('~/.gdbinit.d/python/libstdcxx')) +glob.glob('/usr/share/gcc-*/python/libstdcxx')
 if len(libstdcxx) > 0 and os.path.isdir(libstdcxx[0]):
   libstdcxx_path = os.path.split(libstdcxx[0])[0]
   sys.path.append(libstdcxx_path)
@@ -48,3 +48,13 @@ skip -gfi /usr/include/c++/*/*/*/*
 skip -gfi /usr/include/c++/*/*/*
 skip -gfi /usr/include/c++/*/*
 skip -gfi /usr/include/c++/*
+
+skip -gfi /usr/bin/../lib/gcc/x86_64-linux-gnu/5.4.0/../../../../include/c++/5.4.0/bits/*
+skip -gfi /usr/bin/../lib/gcc/x86_64-linux-gnu/5.4.0/../../../../include/c++/5.4.0/*
+
+#set follow-fork-mode child
+#set detach-on-fork off
+
+set follow-fork-mode child
+set detach-on-fork off
+set follow-exec-mode same

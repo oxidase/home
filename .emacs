@@ -48,7 +48,7 @@
 
 ;; Guarantee all packages are installed on start
 (defvar packages-list '(async auctex bm dired-single google-translate js2-mode
-                        magit openwith qml-mode mew
+                        magit openwith qml-mode mew matlab-mode
                         cedet helm sql-indent org kanban gh-md ggtags
                         tdd-status-mode-line ess feature-mode yaml-mode
                         web-mode htmlize markdown-mode markdown-mode+
@@ -57,7 +57,7 @@
                         yarn-mode docker docker-tramp dash git-commit
                         gnuplot gnuplot-mode protobuf-mode
                         haskell-mode intero ghci-completion
-                        lsp-mode cquery)
+                        lsp-mode cquery yascroll)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
   (unless package--initialized
@@ -160,11 +160,14 @@ Default MODIFIER is 'shift."
 (put 'downcase-region 'disabled nil)                 ;; Convert the region to lower case.
 (blink-cursor-mode -1)                               ;; Switch off blinking cursor mode.
 (setq large-file-warning-threshold nil)              ;; Maximum size of file above which a confirmation is requested
-(add-hook 'before-save-hook 'delete-trailing-whitespace)  ;; configuration required
+(add-hook 'before-save-hook 'delete-trailing-whitespace)  ;; configuration required (remove-hook 'before-save-hook 'delete-trailing-whitespace)
+;(remove-hook 'before-save-hook 'delete-trailing-whitespace)
 (setq mode-require-final-newline t)
 ;; (setq delete-trailing-lines nil)
 (setq printer-name "HP-ENVY-4520-series")            ;; lpstat -p -d
+(menu-bar-mode -1)
 (tool-bar-mode -1)
+(scroll-bar-mode -1)
 (setq vc-follow-symlinks t)
 (setq grep-command "grep --exclude-dir=\".svn\" --exclude=TAGS -nHriIZ -e ")
 (setq tags-case-fold-search nil)
@@ -209,6 +212,10 @@ Default MODIFIER is 'shift."
 (setq calendar-intermonth-text '(propertize (format "%2d" (car (calendar-iso-from-absolute (calendar-absolute-from-gregorian (list month day year))))) 'font-lock-face 'calendar-kw))
 (setq calendar-intermonth-header (propertize "KW" 'font-lock-face 'calendar-kw))
 
+;; Thema
+(add-to-list 'custom-theme-load-path "~/.emacs.d/themes/")
+(load-theme 'solarized-dark t)
+
 ;; Start Emacs as a server
 (server-start)
 
@@ -244,6 +251,10 @@ Default MODIFIER is 'shift."
 (when (package-dir "smooth-scrolling*")
   (require 'smooth-scrolling)
   (setq smooth-scroll-margin 2))
+
+(when (package-dir "yascroll*")
+  (require 'yascroll)
+  (global-yascroll-bar-mode t))
 
 (global-set-key (kbd "<C-up>") 'scroll-down-command)
 (global-set-key (kbd "<C-down>") 'scroll-up-command)
@@ -419,9 +430,10 @@ the editor to use."
 (when (package-dir "magit*")
   (require 'magit)
   (require 'magit-blame)
+  (setq magit-refs-pad-commit-counts t)
   (setq magit-last-seen-setup-instructions "1.4.0")
-  (setq magit-save-repository-buffers nil) ; ???
-  (custom-set-variables '(git-commit-summary-max-length 70))
+  (setq magit-save-repository-buffers nil)
+  (custom-set-variables '(git-commit-summary-max-length 80))
 
   (defun gh-lines ()
     "Open the current line in GitHub"
@@ -432,7 +444,7 @@ the editor to use."
                     ((member "upstream" remotes) "upstream")
                     ((member "origin" remotes) "origin")
                     ((t (car remotes)))))
-           (remote-url (replace-regexp-in-string "/+$" "" (replace-regexp-in-string "://[^@]+@" "://" (magit-get "remote" remote "url"))))
+           (remote-url (replace-regexp-in-string "\\(.git\\|/+\\)$" "" (replace-regexp-in-string "://[^@]+@" "://" (magit-get "remote" remote "url"))))
            (from (line-number-at-pos (if (and transient-mark-mode mark-active) (region-beginning) (point)))) ; or (format-mode-line "%l")
            (to (line-number-at-pos (if (and transient-mark-mode mark-active) (region-end) (point))))
            (lines (if (= from to) (format "L%d" from) (format "L%d-L%d" from to)))
@@ -479,11 +491,13 @@ the editor to use."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Matlab mode
-(autoload 'matlab-mode "matlab" "Enter MATLAB mode." t)
-(autoload 'matlab-shell "matlab" "Interactive MATLAB mode." t)
-(custom-set-variables '(matlab-comment-region-s "% "))
-(setq matlab-fill-code nil)
-(custom-set-faces '(matlab-cellbreak-face ((t (:foreground "Firebrick" :weight bold)))))
+(when (package-dir "matlab-mode*")
+  (autoload 'matlab-mode "matlab" "Enter MATLAB mode." t)
+  (autoload 'matlab-shell "matlab" "Interactive MATLAB mode." t)
+)
+;; (custom-set-variables '(matlab-comment-region-s "% "))
+;; (setq matlab-fill-code nil)
+;; (custom-set-faces '(matlab-cellbreak-face ((t (:foreground "Firebrick" :weight bold)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ESS
@@ -1294,12 +1308,12 @@ the editor to use."
      (cond
       ((eq (display-mm-width ":0") 508)
        (setq default-frame-alist '(
-             (top . 0) (left . 100) (width . 224) (fullscreen . fullheight)
+             (top . 0) (left . 100) (width . 226) (fullscreen . fullheight)
              (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
       ((eq (display-mm-width ":0") 1524)
        (setq default-frame-alist '(
-             (top . 0) (left . 2000) (width . 360) (fullscreen . fullheight)
-             (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-20-*-*-*-m-0-iso10646-1"))))
+             (top . 0) (left . 200) (width . 330) (fullscreen . fullheight)
+             (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1"))))
       ((eq (display-mm-width ":0") 1185)
        (setq default-frame-alist '(
              (top . 0) (left . 2000) (width . 306) (fullscreen . fullheight)
