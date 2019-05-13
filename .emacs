@@ -161,7 +161,6 @@ Default MODIFIER is 'shift."
 (blink-cursor-mode -1)                               ;; Switch off blinking cursor mode.
 (setq large-file-warning-threshold nil)              ;; Maximum size of file above which a confirmation is requested
 (add-hook 'before-save-hook 'delete-trailing-whitespace)  ;; configuration required (remove-hook 'before-save-hook 'delete-trailing-whitespace)
-;(remove-hook 'before-save-hook 'delete-trailing-whitespace)
 (setq mode-require-final-newline t)
 ;; (setq delete-trailing-lines nil)
 (setq printer-name "HP-ENVY-4520-series")            ;; lpstat -p -d
