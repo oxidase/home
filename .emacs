@@ -146,7 +146,6 @@ Default MODIFIER is 'shift."
 (show-paren-mode t)                                  ;; Highlight matching parentheses.
 (setq default-major-mode 'text-mode)                 ;; Make text mode default major mode.
 (setq shell-prompt-pattern "^[^#$%>\n]*[#$%>\)] *")  ;; My shell prompt ends on ")".
-(setq shell-command-switch "-lc")                    ;; Shell is interactive
 (setq visible-bell t)                                ;; Turn off beep.
 (setq ring-bell-function 'ignore)                    ;; Turn the alarm totally off
 (standard-display-8bit 128 255)                      ;; Do not expand unprintable characters to their octal values.
@@ -162,7 +161,7 @@ Default MODIFIER is 'shift."
 (setq large-file-warning-threshold nil)              ;; Maximum size of file above which a confirmation is requested
 (add-hook 'before-save-hook 'delete-trailing-whitespace)  ;; configuration required (remove-hook 'before-save-hook 'delete-trailing-whitespace)
 (setq mode-require-final-newline t)
-;; (setq delete-trailing-lines nil)
+(setq delete-trailing-lines nil)
 (setq printer-name "HP-ENVY-4520-series")            ;; lpstat -p -d
 (menu-bar-mode -1)
 (tool-bar-mode -1)
