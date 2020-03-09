@@ -7,6 +7,9 @@
 .emacs.d/eshell
 .emacs.d/server
 .emacs.d/abbrev_defs
+.emacs.d/request
+.emacs.d/transient
+.emacs.d/srecode-map.el
 
 # .bashrc.d
 #!.bashrc.d

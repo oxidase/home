@@ -57,7 +57,8 @@
                         yarn-mode docker docker-tramp dash git-commit
                         gnuplot gnuplot-mode protobuf-mode
                         haskell-mode intero ghci-completion
-                        lsp-mode cquery yascroll)
+                        go-mode lsp-mode cquery yascroll
+                        ffmpeg-player somafm)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
   (unless package--initialized
@@ -212,7 +213,7 @@ Default MODIFIER is 'shift."
 
 ;; Thema
 (add-to-list 'custom-theme-load-path "~/.emacs.d/themes/")
-(load-theme 'solarized-dark t)
+;(load-theme 'solarized-dark t)
 
 ;; Start Emacs as a server
 (server-start)
@@ -243,6 +244,9 @@ Default MODIFIER is 'shift."
 (when (package-dir "yaml-mode*")
   (require 'yaml-mode)
   (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode)))
+
+(when (package-dir "somafm*")
+  (require 'somafm))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Smooth scrolling
@@ -359,12 +363,13 @@ Default MODIFIER is 'shift."
 (when (package-dir "openwith*")
   (require 'openwith)
   (openwith-mode t)
+  (setq pdf-app "evince")
   (setq openwith-associations
-      '(("[^_]?\\.\\(ps\\|pdf\\|djvu\\|epub\\)\\'" "okular" (file))
-        ("\\.\\(docx?\\|odt\\|pptx?\\|rtf\\|xlsx?\\)\\'" "libreoffice" (file))
-        ("\\.\\(ai\\)\\'" "inkscape" (file))
-        ("\\.\\(dll\\|pyd\\)\\'" "depends.exe" (file))
-        ("\\.\\(?:mpe?g\\|avi\\|wmv\\|mp4\\)\\'" "smplayer" (file)))))
+        '(("[^_]?\\.\\(ps\\|pdf\\|djvu\\|epub\\)\\'" "evince" (file))
+          ("\\.\\(docx?\\|odt\\|pptx?\\|rtf\\|xlsx?\\)\\'" "libreoffice" (file))
+          ("\\.\\(ai\\)\\'" "inkscape" (file))
+          ("\\.\\(dll\\|pyd\\)\\'" "depends.exe" (file))
+          ("\\.\\(?:mpe?g\\|avi\\|wmv\\|mp4\\)\\'" "smplayer" (file)))))
 
 ;; open file in alternative editor
 (defvar alternate-editor "gedit"
@@ -610,7 +615,7 @@ the editor to use."
   (add-hook 'js2-mode-hook (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace))))
 
 (add-hook 'json-mode-hook (lambda () (setq tab-width 2)))
-(setq auto-mode-alist (append auto-mode-alist '(("\\.json$" . json-mode) ("\\.geojson$" . json-mode))))
+(setq auto-mode-alist (append auto-mode-alist '(("\\.json$" . json-mode) ("\\.geojson$" . json-mode) ("\\.manifest$" . json-mode))))
 
 
 (when (package-dir "feature-mode*")
@@ -1009,9 +1014,10 @@ the editor to use."
        '("%u" (lambda () (concat "file://" (expand-file-name (funcall file (TeX-output-extension) t) (file-name-directory (TeX-master-file)))
                                  "#src:" (TeX-current-line) (TeX-current-file-name-master-relative)))))
     (setq TeX-view-program-list
-          '(("Okular" "okular \"%u\" --unique")
+          '(("Evince" "evince \"%u\"")
+            ("Okular" "okular \"%u\" --unique")
             ("Skim" "/Applications/Skim.app/Contents/SharedSupport/displayline %q")))
-    (if running-on-gnu/linux (setq TeX-view-program-selection '((output-pdf "Okular") (output-dvi "Okular"))))
+    (if running-on-gnu/linux (setq TeX-view-program-selection '((output-pdf "Evince") (output-dvi "Okular"))))
     (if running-on-darwin (setq TeX-view-program-selection '((output-pdf "Skim"))))
 
     (local-set-key (kbd "C-c C-b") (lambda () (interactive) (TeX-command "PDFLaTeX" 'TeX-master-file)))
@@ -1077,7 +1083,7 @@ the editor to use."
   (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
   (org-defkey org-mode-map [(control return)] 'mini-calc)
   (org-babel-do-load-languages 'org-babel-load-languages
-                               '((python . t) (C . t) (haskell . t) (sqlite  . t) (maxima . t) (lua . t)
+                               '((python . t) (C . t) (haskell . t) (sqlite  . t) (maxima . t)
                                  (latex . t) (plantuml . t) (dot . t) (ruby . t) (R . t) (gnuplot . t)))
   (add-hook 'org-babel-after-execute-hook (lambda () (condition-case nil (org-display-inline-images) (error nil))))
   (setq org-babel-results-keyword "results")                           ;; Make babel results blocks lowercase
