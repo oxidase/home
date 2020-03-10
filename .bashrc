@@ -23,9 +23,20 @@ export LC_PAPER="en_GB.UTF-8"
 export LC_MEASUREMENT="en_GB.UTF-8"
 export LC_ALL="en_US.UTF-8"
 
+parse_git_branch() {
+    local hash=$(git rev-parse --short HEAD 2> /dev/null)
+    if [[ ! -z $hash ]] ; then
+       local branch=$(git branch --show-current 2> /dev/null)
+       if [[ ! -z $branch ]] ; then
+           hash=" $hash|$branch"
+       fi
+    fi
+    echo "$hash"
+}
+
 ## common settings
 export PYTHONSTARTUP=~/.pythonrc
-export PS1='\[\033[01;32m\][\u@\h]\[\033[00m\] \[\033[01;34m\]$(x="\w";echo "${x#${x%/*/*}/}")\[\033[00m\] \$ '
+export PS1='\[\033[01;32m\][\u@\h]\[\033[00m\]\[\033[38;5;67m\]$(parse_git_branch)\[\033[00m\] \[\033[01;34m\]$(x="\w";echo "${x#${x%/*/*}/}")\[\033[00m\] \$ '
 export HISTCONTROL=ignoredups
 
 if [ -f ~/.bash_aliases ]; then
