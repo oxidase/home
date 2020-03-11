@@ -438,37 +438,45 @@ the editor to use."
   (setq magit-save-repository-buffers nil)
   (custom-set-variables '(git-commit-summary-max-length 80))
 
-  (defun gh-lines ()
+  (defun gh-lines (ref)
     "Open the current line in GitHub"
-    (interactive)
+    (interactive (list (magit-read-other-branch-or-commit "Show line for")))
     (let* ((remotes (magit-list-remotes))
            (remote (cond
                     ((null remotes) "origin")
                     ((member "upstream" remotes) "upstream")
                     ((member "origin" remotes) "origin")
                     ((t (car remotes)))))
-           (remote-url (replace-regexp-in-string "\\(.git\\|/+\\)$" "" (replace-regexp-in-string "://[^@]+@" "://" (magit-get "remote" remote "url"))))
+           (remote-url
+            (replace-regexp-in-string "\\(.git\\|/+\\)$" "" ; remove trailing slashes or .git suffix
+            (replace-regexp-in-string "://[^@]+@" "://" ; remove user name
+            (replace-regexp-in-string "^git@github.com:" "https://github.com/" ; change protocol to https
+             (magit-get "remote" remote "url")))))
            (from (line-number-at-pos (if (and transient-mark-mode mark-active) (region-beginning) (point)))) ; or (format-mode-line "%l")
-           (to (line-number-at-pos (if (and transient-mark-mode mark-active) (region-end) (point))))
-           (lines (if (= from to) (format "L%d" from) (format "L%d-L%d" from to)))
-           (gh-url (format "%s/blob/%s/%s#%s" remote-url (magit-rev-parse "HEAD") (magit-file-relative-name) lines)))
+           (to (line-number-at-pos (if (and transient-mark-mode mark-active) (- (region-end) (if (= (current-column) 0) 1 0)) (point))))
+           (lines (if (>= from to) (format "%d" from) (format "%d-%d" from to)))
+           (gh-url (format "%s/blob/%s/%s#%s" remote-url (substring (magit-rev-parse ref) 0 8) (magit-file-relative-name) lines)))
       (browse-url gh-url)))
 
-  (defun bb-lines ()
+  (defun bb-lines (ref)
     "Open the current line in Bitbucket"
-    (interactive)
+    (interactive (list (magit-read-other-branch-or-commit "Show line for")))
     (let* ((remotes (magit-list-remotes))
            (remote (cond
                     ((null remotes) "origin")
                     ((member "upstream" remotes) "upstream")
                     ((member "origin" remotes) "origin")
                     ((t (car remotes)))))
-           (remote-url (replace-regexp-in-string "/+$" "" (replace-regexp-in-string "://[^@]+@" "://" (magit-get "remote" remote "url"))))
+           (remote-url
+            (replace-regexp-in-string "/+$" "" ; remove trailing slashes
+            (replace-regexp-in-string ":[0-9]+/" "/" ; remove port number
+            (replace-regexp-in-string "://[^@]+@" "://" ; remove user name
+             (magit-get "remote" remote "url")))))
            (proj-url (replace-regexp-in-string ".git" "/browse" (replace-regexp-in-string "scm/werk" "projects/WERK/repos" remote-url)))
            (from (line-number-at-pos (if (and transient-mark-mode mark-active) (region-beginning) (point)))) ; or (format-mode-line "%l")
-           (to (line-number-at-pos (if (and transient-mark-mode mark-active) (region-end) (point))))
-           (lines (if (= from to) (format "%d" from) (format "%d-%d" from to)))
-           (gh-url (format "%s/%s?at=%s#%s" proj-url (magit-file-relative-name) (magit-rev-parse "HEAD") lines)))
+           (to (line-number-at-pos (if (and transient-mark-mode mark-active) (- (region-end) (if (= (current-column) 0) 1 0)) (point))))
+           (lines (if (>= from to) (format "%d" from) (format "%d-%d" from to)))
+           (gh-url (format "%s/%s?at=%s#%s" proj-url (magit-file-relative-name) (substring (magit-rev-parse ref) 0 8) lines)))
       (browse-url gh-url)))
 
   ;; Some specific function to show/edit branch descriptions
