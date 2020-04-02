@@ -2,6 +2,7 @@
 
 python
 import os, sys, glob
+print ('Using Python ' + ' '.join([sys.executable] + sys.version.split('\n')))
 
 libstdcxx = glob.glob(os.path.expanduser('~/.gdbinit.d/python/libstdcxx')) +glob.glob('/usr/share/gcc-*/python/libstdcxx')
 if len(libstdcxx) > 0 and os.path.isdir(libstdcxx[0]):
@@ -43,18 +44,11 @@ if os.path.exists(local_config):
   gdb.execute('source {}'.format(local_config))
 end
 
-
 skip -gfi /usr/include/c++/*/*/*/*
 skip -gfi /usr/include/c++/*/*/*
 skip -gfi /usr/include/c++/*/*
 skip -gfi /usr/include/c++/*
 
-skip -gfi /usr/bin/../lib/gcc/x86_64-linux-gnu/5.4.0/../../../../include/c++/5.4.0/bits/*
-skip -gfi /usr/bin/../lib/gcc/x86_64-linux-gnu/5.4.0/../../../../include/c++/5.4.0/*
-
-#set follow-fork-mode child
-#set detach-on-fork off
-
 set follow-fork-mode child
-set detach-on-fork off
-set follow-exec-mode same
+#set detach-on-fork off
+#set follow-exec-mode same

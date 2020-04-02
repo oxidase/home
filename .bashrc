@@ -28,10 +28,10 @@ parse_git_branch() {
     if [[ ! -z $hash ]] ; then
        local branch=$(git branch --show-current 2> /dev/null)
        if [[ ! -z $branch ]] ; then
-           hash=" $hash|$branch"
+           hash="$hash|$branch"
        fi
     fi
-    echo "$hash"
+    echo " $hash"
 }
 
 ## common settings

@@ -21,8 +21,9 @@
 
 (defun package-dir (name)
   (let* ((dir1 (file-expand-wildcards (concat custom-dir name)))
-         (dir2 (file-expand-wildcards (concat custom-dir "elpa/" name)))
-         (dirs (remove-if-not #'file-accessible-directory-p (append dir1 dir2)))
+         (dir2 (file-expand-wildcards (concat custom-dir "quelpa/**/" name)))
+         (dir3 (file-expand-wildcards (concat custom-dir "elpa/" name)))
+         (dirs (remove-if-not #'file-accessible-directory-p (append dir1 dir2 dir3)))
          (dirp (car dirs)))
     (message "Checking for %s pacakge: %s" name (if dirp dirp "not found"))
     (when dirp (add-to-list 'load-path dirp))
@@ -42,12 +43,21 @@
 
 ;; {{{ Setup ELPA repositories
 
+(unless (package-installed-p 'quelpa)
+    (with-temp-buffer
+      (url-insert-file-contents "https://github.com/quelpa/quelpa/raw/master/quelpa.el")
+      (eval-buffer)
+      (quelpa-self-upgrade)))
+
+(require 'quelpa)
+(quelpa '(elf-mode :repo "oxidase/elf-mode" :fetcher github))
+
 (require 'package)
 (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
 (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
 
 ;; Guarantee all packages are installed on start
-(defvar packages-list '(async auctex bm dired-single google-translate js2-mode
+(defvar packages-list '(async bm dired-single google-translate js2-mode
                         magit openwith qml-mode mew matlab-mode
                         cedet helm sql-indent org kanban gh-md ggtags
                         tdd-status-mode-line ess feature-mode yaml-mode
@@ -57,8 +67,8 @@
                         yarn-mode docker docker-tramp dash git-commit
                         gnuplot gnuplot-mode protobuf-mode
                         haskell-mode intero ghci-completion
-                        go-mode lsp-mode cquery yascroll
-                        ffmpeg-player somafm)
+                        go-mode lsp-mode bazel-mode cquery yascroll
+                        ffmpeg-player somafm volume elfeed)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
   (unless package--initialized
@@ -155,6 +165,7 @@ Default MODIFIER is 'shift."
 (column-number-mode 1)                               ;; Show column-number in the mode line.
 (fset 'yes-or-no-p 'y-or-n-p)                        ;; Will allow you to type just "y" instead of "yes".
 (setq-default tab-width 2)                           ;; Set Tab-Width.
+(setq sh-basic-offset 2)                             ;; Set tab-width in shell scripts
 (setq-default indent-tabs-mode nil)                  ;; Permanently force Emacs to indent with spaces.
 (put 'upcase-region 'disabled nil)                   ;; Convert the region to upper case.
 (put 'downcase-region 'disabled nil)                 ;; Convert the region to lower case.
@@ -216,7 +227,8 @@ Default MODIFIER is 'shift."
 ;(load-theme 'solarized-dark t)
 
 ;; Start Emacs as a server
-(server-start)
+(load "server")
+(unless (server-running-p) (server-start))
 
 ;;}}}
 
@@ -247,6 +259,31 @@ Default MODIFIER is 'shift."
 
 (when (package-dir "somafm*")
   (require 'somafm))
+
+(when (package-dir "volume*")
+  (autoload 'volume "volume" "Tweak your sound card volume." t))
+
+(global-set-key (kbd "C-x w") (lambda () (elfeed) (elfeed-update)))
+(setq elfeed-feeds
+      '("http://nullprogram.com/feed/"
+        "http://arxiv.org/rss/cs.CV"
+        "http://arxiv.org/rss/cs.RO"
+        "http://arxiv.org/rss/cs.SY"
+        "http://arxiv.org/rss/eess.SP"
+        "https://www.reddit.com/r/Cyberpunk/.rss"
+        "https://www.reddit.com/r/cpp/.rss"
+        "https://www.reddit.com/r/robotics/.rss"
+        "https://www.reddit.com/r/SelfDrivingCars/.rss"
+        "https://www.reddit.com/r/Driverless/.rss"
+        "https://xkcd.com/rss.xml"
+        "https://hnrss.org/newest"
+        "https://www.wired.com/feed/rss"
+        "https://www.wired.com/feed/category/science/latest/rss"
+        "https://www.wired.com/feed/category/security/latest/rss"
+        "https://www.wired.com/feed/category/transportation/latest/rss"
+        "https://www.wired.com/feed/category/ideas/latest/rss"
+        "https://www.wired.com/feed/category/gear/latest/rss"
+        "https://habr.com/ru/rss/best/daily/?fl=ru"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Smooth scrolling
@@ -639,6 +676,14 @@ the editor to use."
   (require 'qml-mode)
   (add-hook 'qml-mode-hook (lambda () (modify-syntax-entry ?' "|"))))
 
+(when (package-dir "bazel-mode*")
+  (require 'bazel-mode))
+
+(when (package-dir "elf-mode*")
+  (require 'elf-mode)
+  ;(elf-setup-default)
+  )
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C and C++ modes
 (require 'cc-langs)
@@ -647,7 +692,6 @@ the editor to use."
 (require 'cmake-mode)
 (require 'gud)
 (require 'gdb-mi)
-(require 'bazel-mode)
 (require 'osl-mode)
 (require 'glsl-mode)
 
@@ -796,6 +840,8 @@ the editor to use."
       (add-to-list 'ac-sources 'ac-source-semantic-raw))
     )))
 (modify-syntax-entry ?_ "w" c++-mode-syntax-table)
+(modify-syntax-entry ?_ "w" java-mode-syntax-table)
+
 (add-hook 'c++-mode-hook
       '(lambda()
         (font-lock-add-keywords
@@ -887,7 +933,7 @@ the editor to use."
 
 (when (package-dir "ag*")
   (require 'ag)
-  (custom-set-variables '(ag-ignore-list '("TAGS" "bundle.js")) '(ag-highlight-search t))
+  (custom-set-variables '(ag-ignore-list '("TAGS" "bundle.js" "*.ipynb")) '(ag-highlight-search t))
   (global-set-key (kbd "<s-f3>") (lambda () (interactive) (ag/search (word-at-point) (ag/project-root default-directory)))))
 
 (when (package-dir "emojify*")
@@ -919,7 +965,11 @@ the editor to use."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
-(add-hook 'python-mode-hook (lambda () (modify-syntax-entry ?_ "w" python-mode-syntax-table)))
+(add-hook 'python-mode-hook (lambda ()
+        (setq indent-tabs-mode nil)
+        (setq tab-width 4)
+        (setq python-indent-offset 4)
+        (modify-syntax-entry ?_ "w" python-mode-syntax-table)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Haskel mode

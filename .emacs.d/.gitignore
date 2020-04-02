@@ -1,4 +1,5 @@
 *.elc
+quelpa/
 git-emacs
 custom.*
 .recentf
