@@ -68,7 +68,7 @@
                         gnuplot gnuplot-mode protobuf-mode
                         haskell-mode intero ghci-completion
                         go-mode lsp-mode bazel-mode cquery yascroll
-                        ffmpeg-player somafm volume elfeed)
+                        ffmpeg-player somafm volume elfeed fish-mode)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
   (unless package--initialized
@@ -437,6 +437,7 @@ the editor to use."
 (setq ansi-color-names-vector ["black" "red4" "green4" "yellow4" "blue3" "magenta4" "cyan4" "white"])
 (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
 (add-hook 'sh-mode-hook (lambda () (modify-syntax-entry ?_ "w" sh-mode-syntax-table)))
+(add-hook 'fish-mode-hook (lambda () (modify-syntax-entry ?_ "w" fish-mode-syntax-table)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Translator (google)

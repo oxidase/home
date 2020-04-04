@@ -1,0 +1,3 @@
+if [[ -x /usr/local/bin/fish ]] ; then
+   SHELL=/usr/local/bin/fish
+fi

@@ -30,8 +30,8 @@ parse_git_branch() {
        if [[ ! -z $branch ]] ; then
            hash="$hash|$branch"
        fi
+       echo " $hash"
     fi
-    echo " $hash"
 }
 
 ## common settings

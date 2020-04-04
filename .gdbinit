@@ -1,5 +1,7 @@
 ## wget -N http://gcc.gnu.org/svn/gcc/trunk/libstdc++-v3/python/libstdcxx/v6/printers.py -P .gdbinit.d/python/libstdcxx/v6
 
+#source ~/.gdbinit.d/python3.5
+
 python
 import os, sys, glob
 print ('Using Python ' + ' '.join([sys.executable] + sys.version.split('\n')))
