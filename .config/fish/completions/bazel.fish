@@ -34,6 +34,7 @@ function __fish_bazel_target
                     printf "%s\tTarget\n" (bazel query $comp:all 2> /dev/null)
                 case run
                     printf "%s\tBinary\n" (bazel query "kind('.*(binary|application)',$comp:*)" 2> /dev/null)
+                    printf "%s\tWrapper\n" (bazel query "attr(binary,'.*',$comp:*)" 2> /dev/null)
                 case test
                     printf "%s\tTest\n" (bazel query "kind(test,$comp:*)" 2> /dev/null)
             end
