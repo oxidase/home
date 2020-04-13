@@ -295,13 +295,13 @@ Default MODIFIER is 'shift."
   (defun elfeed-show-quick-url-note ()
     "Fastest way to capture entry link to org agenda from elfeed show mode"
     (interactive)
-    (elfeed-entry-title elfeed-show-entry)
+    (kill-new (format "[[%s][%s]]" (elfeed-entry-link elfeed-show-entry) (elfeed-entry-title elfeed-show-entry)))
     (org-capture nil "n")
     (yank)
     (org-capture-finalize))
 
-  ;(define-key elfeed-show-mode-map "l" elfeed-show-link-title)
-  ;(define-key elfeed-show-mode-map "v" elfeed-show-quick-url-note)
+  (define-key elfeed-show-mode-map "l" elfeed-show-link-title)
+  (define-key elfeed-show-mode-map "v" elfeed-show-quick-url-note)
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1197,6 +1197,14 @@ the editor to use."
   ;;   (setq ad-return-value
   ;;         (and ad-return-value
   ;;                (not (eq (org-element-type (org-element-at-point)) 'src-block)))))
+
+  (require 'org-agenda)
+  (setq org-directory "~/share/org")
+  (global-set-key "\C-ca" 'org-agenda)
+  (setq org-tag-alist '(("BIO" . ?b) ("COMP" . ?c) ("EMACS" . ?e) ("LOC" . ?l)))
+  (global-set-key "\C-cc" 'org-capture)
+  (setq org-capture-templates
+        '(("n" "note" entry (file+datetree "~/share/org/notes.org") "* %?\nEntered on %U\n  %i")))
  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
