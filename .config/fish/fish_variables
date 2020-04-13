@@ -1,3 +1,4 @@
+# -*- mode: fish -*-
 # This file contains fish universal variable definitions.
 # VERSION: 3.0
 SETUVAR __done_min_cmd_duration:60000
@@ -33,3 +34,13 @@ SETUVAR fish_pager_color_completion:B3A06D
 SETUVAR fish_pager_color_description:B3A06D
 SETUVAR fish_pager_color_prefix:cyan\x1e\x2d\x2dunderline
 SETUVAR fish_pager_color_progress:brwhite\x1e\x2d\x2dbackground\x3dcyan
+SETUVAR __fish_git_prompt_color_branch:008080
+SETUVAR __fish_git_prompt_color_branch_detached:800000
+SETUVAR __fish_git_prompt_color_dirtystate:800000
+SETUVAR __fish_git_prompt_color_stagedstate:800000
+SETUVAR __fish_git_prompt_color_stashstate:800000
+SETUVAR __fish_git_prompt_color_untrackedfiles:800000
+SETUVAR __fish_git_prompt_color_bare:800000
+SETUVAR __fish_git_prompt_color_merging:800000
+SETUVAR __fish_git_prompt_color_upstream:800000
+SETUVAR __fish_git_prompt_color_cleanstate:008000

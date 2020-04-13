@@ -263,27 +263,46 @@ Default MODIFIER is 'shift."
 (when (package-dir "volume*")
   (autoload 'volume "volume" "Tweak your sound card volume." t))
 
-(global-set-key (kbd "C-x w") (lambda () (elfeed) (elfeed-update)))
-(setq elfeed-feeds
-      '("http://nullprogram.com/feed/"
-        "http://arxiv.org/rss/cs.CV"
-        "http://arxiv.org/rss/cs.RO"
-        "http://arxiv.org/rss/cs.SY"
-        "http://arxiv.org/rss/eess.SP"
-        "https://www.reddit.com/r/Cyberpunk/.rss"
-        "https://www.reddit.com/r/cpp/.rss"
-        "https://www.reddit.com/r/robotics/.rss"
-        "https://www.reddit.com/r/SelfDrivingCars/.rss"
-        "https://www.reddit.com/r/Driverless/.rss"
-        "https://xkcd.com/rss.xml"
-        "https://hnrss.org/newest"
-        "https://www.wired.com/feed/rss"
-        "https://www.wired.com/feed/category/science/latest/rss"
-        "https://www.wired.com/feed/category/security/latest/rss"
-        "https://www.wired.com/feed/category/transportation/latest/rss"
-        "https://www.wired.com/feed/category/ideas/latest/rss"
-        "https://www.wired.com/feed/category/gear/latest/rss"
-        "https://habr.com/ru/rss/best/daily/?fl=ru"))
+(when (package-dir "elfeed*")
+  (require 'elfeed)
+  (global-set-key (kbd "C-x w") (lambda () (interactive) (elfeed) (elfeed-update)))
+  (setq elfeed-feeds
+        '("http://nullprogram.com/feed/"
+          "http://arxiv.org/rss/cs.CV"
+          "http://arxiv.org/rss/cs.RO"
+          "http://arxiv.org/rss/cs.SY"
+          "http://arxiv.org/rss/eess.SP"
+          "https://www.reddit.com/r/Cyberpunk/.rss"
+          "https://www.reddit.com/r/cpp/.rss"
+          "https://www.reddit.com/r/robotics/.rss"
+          "https://www.reddit.com/r/SelfDrivingCars/.rss"
+          "https://www.reddit.com/r/Driverless/.rss"
+          "https://xkcd.com/rss.xml"
+          "https://hnrss.org/newest"
+          "https://www.wired.com/feed/rss"
+          "https://www.wired.com/feed/category/science/latest/rss"
+          "https://www.wired.com/feed/category/security/latest/rss"
+          "https://www.wired.com/feed/category/transportation/latest/rss"
+          "https://www.wired.com/feed/category/ideas/latest/rss"
+          "https://www.wired.com/feed/category/gear/latest/rss"
+          "https://habr.com/ru/rss/best/daily/?fl=ru"))
+
+  (defun elfeed-show-link-title ()
+    "Copy the current entry title and URL as org link to the clipboard."
+    (interactive)
+    (elfeed-link-title elfeed-show-entry))
+
+  (defun elfeed-show-quick-url-note ()
+    "Fastest way to capture entry link to org agenda from elfeed show mode"
+    (interactive)
+    (elfeed-entry-title elfeed-show-entry)
+    (org-capture nil "n")
+    (yank)
+    (org-capture-finalize))
+
+  ;(define-key elfeed-show-mode-map "l" elfeed-show-link-title)
+  ;(define-key elfeed-show-mode-map "v" elfeed-show-quick-url-note)
+  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Smooth scrolling
