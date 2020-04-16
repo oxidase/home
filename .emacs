@@ -287,22 +287,28 @@ Default MODIFIER is 'shift."
           "https://www.wired.com/feed/category/gear/latest/rss"
           "https://habr.com/ru/rss/best/daily/?fl=ru"))
 
-  (defun elfeed-show-link-title ()
-    "Copy the current entry title and URL as org link to the clipboard."
-    (interactive)
-    (elfeed-link-title elfeed-show-entry))
-
   (defun elfeed-show-quick-url-note ()
     "Fastest way to capture entry link to org agenda from elfeed show mode"
     (interactive)
-    (kill-new (format "[[%s][%s]]" (elfeed-entry-link elfeed-show-entry) (elfeed-entry-title elfeed-show-entry)))
-    (org-capture nil "n")
-    (yank)
-    (org-capture-finalize))
+    (let* ((link (elfeed-entry-link elfeed-show-entry))
+           (title (replace-regexp-in-string "[][]" "" (elfeed-entry-title elfeed-show-entry)))
+           (tags `(,(when (string-match-p "arxiv.org" link) ":ARXIV:")))
+           (note (format "[[%s][%s]] %s" link title (mapconcat 'identity (remove-if 'not tags) " "))))
+      (kill-new note)
+      (org-capture nil "n")
+      (yank)
+      (org-capture-finalize)))
 
-  (define-key elfeed-show-mode-map "l" elfeed-show-link-title)
-  (define-key elfeed-show-mode-map "v" elfeed-show-quick-url-note)
-  )
+  (define-key elfeed-show-mode-map "v" 'elfeed-show-quick-url-note))
+
+
+(defun my-flymd-browser-function (url)
+  (let ((process-environment (browse-url-process-environment)))
+    (apply 'start-process
+           (concat "google-chrome " url) nil
+           "google-chrome"
+           (list "--new-window" "--allow-file-access-from-files" url))))
+(setq flymd-browser-open-function 'my-flymd-browser-function)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Smooth scrolling
@@ -511,7 +517,7 @@ the editor to use."
              (magit-get "remote" remote "url")))))
            (from (line-number-at-pos (if (and transient-mark-mode mark-active) (region-beginning) (point)))) ; or (format-mode-line "%l")
            (to (line-number-at-pos (if (and transient-mark-mode mark-active) (- (region-end) (if (= (current-column) 0) 1 0)) (point))))
-           (lines (if (>= from to) (format "%d" from) (format "%d-%d" from to)))
+           (lines (if (>= from to) (format "L%d" from) (format "L%d-L%d" from to)))
            (gh-url (format "%s/blob/%s/%s#%s" remote-url (substring (magit-rev-parse ref) 0 8) (magit-file-relative-name) lines)))
       (browse-url gh-url)))
 
