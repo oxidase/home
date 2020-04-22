@@ -1,3 +1,5 @@
+# -*- mode: sh -*-
 if [[ -x /usr/local/bin/fish ]] ; then
    SHELL=/usr/local/bin/fish
 fi
+rclone --vfs-cache-mode full  --fast-list mount remote:share ~/share &

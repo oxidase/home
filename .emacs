@@ -1405,7 +1405,7 @@ the editor to use."
       ((eq (display-mm-width ":0") 508)
        (setq default-frame-alist '(
              (top . 0) (left . 100) (width . 226) (fullscreen . fullheight)
-             (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
+             (font . "-*-DejaVuSansMono Nerd Font-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
       ((eq (display-mm-width ":0") 1524)
        (setq default-frame-alist '(
              (top . 0) (left . 200) (width . 330) (fullscreen . fullheight)
