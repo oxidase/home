@@ -61,7 +61,7 @@
                         magit openwith qml-mode mew matlab-mode
                         cedet helm sql-indent org kanban gh-md ggtags
                         tdd-status-mode-line ess feature-mode yaml-mode
-                        web-mode htmlize markdown-mode markdown-mode+
+                        web-mode htmlize markdown-mode markdown-mode+ markdown-preview-mode
                         auto-complete auto-complete-c-headers ag emojify
                         jade-mode hide-lines lua-mode keychain-environment
                         yarn-mode docker docker-tramp dash git-commit
@@ -209,12 +209,16 @@ Default MODIFIER is 'shift."
 
 ;; ANSI colorization of a buffer
 (require 'ansi-color)
-(defun display-ansi-colors ()
+(defun ansi-colors ()
   (interactive)
-  (let ((inhibit-read-only t))
+  (let ((inhibit-read-only t)
+        (ansi-color-apply-face-function
+         (lambda (beg end face)
+           (when face
+             (put-text-property beg end 'face face)))))
     (ansi-color-apply-on-region (point-min) (point-max))))
 (setq ansi-color-drop-regexp "\\[\\([ABCDsuK]\\|[12][JK]\\|=[0-9]+[hI]\\|[0-9;]*[HfGg]\\|\\?[0-9]+[hl]\\)")
-;(add-hook 'compilation-filter-hook 'ansi-colorize-buffer)
+;;(add-hook 'compilation-filter-hook 'ansi-colorize-buffer)
 
 ;; calendar settings
 (defface calendar-kw `((t (:foreground "black") (:background "pale green")))  "Face for a calendar week number column")
@@ -300,15 +304,6 @@ Default MODIFIER is 'shift."
       (org-capture-finalize)))
 
   (define-key elfeed-show-mode-map "v" 'elfeed-show-quick-url-note))
-
-
-(defun my-flymd-browser-function (url)
-  (let ((process-environment (browse-url-process-environment)))
-    (apply 'start-process
-           (concat "google-chrome " url) nil
-           "google-chrome"
-           (list "--new-window" "--allow-file-access-from-files" url))))
-(setq flymd-browser-open-function 'my-flymd-browser-function)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Smooth scrolling
@@ -670,9 +665,11 @@ the editor to use."
       (require 'ispell)
       (setq-default ispell-program-name "aspell")
       (ispell-change-dictionary "american" t)
-      (setq ispell-check-comments nil)
+      (setq ispell-check-comments t)
       (global-set-key (kbd "C-`") 'ispell-word)
       (add-hook 'text-mode-hook 'flyspell-mode)
+      (add-hook 'c-mode-hook 'flyspell-mode)
+      (add-hook 'python-mode-hook 'flyspell-mode)
       (add-hook 'org-mode-hook 'flyspell-mode))
   (message "Aspell not found."))
 
