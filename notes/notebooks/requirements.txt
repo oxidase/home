@@ -1,0 +1,7 @@
+numpy
+matplotlib
+overpy
+geographiclib
+pygeodesy
+srtm4
+https://github.com/matplotlib/basemap/archive/master.zip
