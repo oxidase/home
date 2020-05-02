@@ -68,7 +68,8 @@
                         gnuplot gnuplot-mode protobuf-mode
                         haskell-mode intero ghci-completion
                         go-mode lsp-mode bazel-mode cquery yascroll
-                        ffmpeg-player somafm volume elfeed fish-mode)
+                        ffmpeg-player somafm volume elfeed fish-mode
+                        paren-face highlight-parentheses)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
   (unless package--initialized
@@ -495,6 +496,9 @@ the editor to use."
   (setq magit-last-seen-setup-instructions "1.4.0")
   (setq magit-save-repository-buffers nil)
   (custom-set-variables '(git-commit-summary-max-length 80))
+  ;; in .dir-locals.el
+  ;; ((json-mode . ((js-indent-level . 2)))
+  ;;  (magit-refs-mode . ((eval . (remove-hook 'magit-refs-sections-hook 'magit-insert-remote-branches)))))
 
   (defun gh-lines (ref)
     "Open the current line in GitHub"
@@ -1474,6 +1478,23 @@ the editor to use."
         (put-text-property (length a) (1+ (length a)) 'face '(background-color . "turquoise" ) msg)
         (message "%s" msg)))))
 (run-with-idle-timer 0.1 t 'blink-paren-first-line)
+
+;; ;; Make parentheses more obvious.
+;; (require 'paren-face)
+;; (require 'highlight-parentheses)
+;; (set-face-attribute 'parenthesis nil :inherit 'font-lock-keyword-face)
+;; (set-face-attribute 'show-paren-match nil :background nil  :inverse-video t)
+;; (set-face-attribute 'show-paren-mismatch nil :inherit 'warning)
+;; (set-face-attribute 'hl-paren-face nil :inverse-video t)
+
+;; ;; Adapts ‘highlight-parentheses-mode’ colours to theme.
+;; (let ((c (face-attribute 'font-lock-keyword-face :foreground)))
+;;   (setf hl-paren-colors
+;;         (list
+;;          (color-lighten-name c 10)
+;;          (color-lighten-name c 20)
+;;          (color-lighten-name c 30)
+;;          (color-lighten-name c 40))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CR insert/remove
