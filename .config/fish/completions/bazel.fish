@@ -50,12 +50,12 @@ function __fish_bazel_target
                 if test -e "$comp/BUILD" -o -e "$comp/BUILD.bazel"
                     printf "//%s:\tTargets\n" $comp
                 end
-                if test (count (find $comp -maxdepth 1 -type d)) -gt 2
+                if test (count (find $comp -maxdepth 1 -type d)) -gt 1
                     printf "//%s/\tDirectory %s\n" $comp
                 end
             end
         case '' '/'
-            printf '//'
+            printf '//\n'
     end
 end
 
@@ -84,10 +84,10 @@ end
 
 for bin in bazel bazelisk ;
     complete -f -c $bin -n "__fish_seen_subcommand_from help" -a (printf "%s\n" "$bazel_commands startup_options target-syntax info-keys")
-    complete -f -c $bin -n "__fish_seen_subcommand_from build; and not __fish_seen_subcommand_from (__fish_bazel_target build)" -a "(__fish_bazel_target build)"
-    complete -f -c $bin -n "__fish_seen_subcommand_from run; and not __fish_seen_subcommand_from (__fish_bazel_target run)" -a "(__fish_bazel_target run)"
-    complete -f -c $bin -n "__fish_seen_subcommand_from query; and not __fish_seen_subcommand_from (__fish_bazel_target test)" -a "(__fish_bazel_target query)"
-    complete -f -c $bin -n "__fish_seen_subcommand_from test; and not __fish_seen_subcommand_from (__fish_bazel_target test)" -a "(__fish_bazel_target test)"
+    complete -f -c $bin -n "__fish_seen_subcommand_from build; and not __fish_seen_subcommand_from (__fish_bazel_target build); and not contains -- -- (commandline -opc)" -a "(__fish_bazel_target build)"
+    complete -f -c $bin -n "__fish_seen_subcommand_from run; and not __fish_seen_subcommand_from (__fish_bazel_target run); and not contains -- -- (commandline -opc)" -a "(__fish_bazel_target run)"
+    complete -f -c $bin -n "__fish_seen_subcommand_from query; and not __fish_seen_subcommand_from (__fish_bazel_target test); and not contains -- -- (commandline -opc)" -a "(__fish_bazel_target query)"
+    complete -f -c $bin -n "__fish_seen_subcommand_from test; and not __fish_seen_subcommand_from (__fish_bazel_target test); and not contains -- -- (commandline -opc)" -a "(__fish_bazel_target test)"
     complete -f -c $bin -n "__fish_is_option" -a "(__fish_bazel_options)"
 end
 
