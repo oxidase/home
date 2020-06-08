@@ -58,18 +58,17 @@
 
 ;; Guarantee all packages are installed on start
 (defvar packages-list '(async bm dired-single google-translate js2-mode
-                        magit openwith qml-mode mew matlab-mode
-                        cedet helm sql-indent org kanban gh-md ggtags
-                        tdd-status-mode-line ess feature-mode yaml-mode
+                        magit openwith qml-mode matlab-mode
+                        helm sql-indent org gh-md
+                        ess feature-mode yaml-mode
                         web-mode htmlize markdown-mode markdown-mode+ markdown-preview-mode
-                        auto-complete auto-complete-c-headers ag emojify
-                        jade-mode hide-lines lua-mode keychain-environment
-                        yarn-mode docker docker-tramp dash git-commit
+                        ag emojify
+                        jade-mode lua-mode
+                        yarn-mode docker docker-tramp dash
                         gnuplot gnuplot-mode protobuf-mode
-                        haskell-mode intero ghci-completion
-                        go-mode lsp-mode bazel-mode cquery yascroll
-                        ffmpeg-player somafm volume elfeed fish-mode
-                        paren-face highlight-parentheses)
+                        haskell-mode intero
+                        go-mode lsp-mode bazel-mode
+                        ffmpeg-player somafm volume elfeed fish-mode)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
   (unless package--initialized
@@ -239,12 +238,6 @@ Default MODIFIER is 'shift."
 
 ;;{{{ Load local packages
 
-(when (package-dir "hide-lines*")
-  (require 'hide-lines))
-
-(when (package-dir "keychain-environment*")
-  (require 'keychain-environment))
-
 (when (package-dir "gradle-mode*")
   (require 'gradle-mode))
 
@@ -311,10 +304,6 @@ Default MODIFIER is 'shift."
 (when (package-dir "smooth-scrolling*")
   (require 'smooth-scrolling)
   (setq smooth-scroll-margin 2))
-
-(when (package-dir "yascroll*")
-  (require 'yascroll)
-  (global-yascroll-bar-mode t))
 
 (global-set-key (kbd "<C-up>") 'scroll-down-command)
 (global-set-key (kbd "<C-down>") 'scroll-up-command)
@@ -982,14 +971,6 @@ the editor to use."
   (require 'rosemacs)
   (global-set-key "\C-x\C-r" ros-keymap))
 
-(require 'cquery)
-(define-key c++-mode-map (kbd "M-/") 'xref-find-references)
-(custom-set-variables '(xref-prompt-for-identifier '(not xref-find-definitions
-                                                         xref-find-references
-                                                         xref-find-definitions-other-window
-                                                         xref-find-definitions-other-frame)))
-(add-hook 'c++-mode-hook (lambda () (condition-case nil  (lsp-cquery-enable) (error nil))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
 (add-hook 'python-mode-hook (lambda ()
@@ -1041,15 +1022,15 @@ the editor to use."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SQL
-(when (package-dir "sql-indent*")
-  (require 'sql-indent)
-  (defun sql-indent-region (beg end)
-    "Indent the SQL statement in the region."
-    (interactive "*r")
-    (save-excursion
-      (save-restriction
-        (narrow-to-region beg end)
-        (sql-indent-buffer)))))
+;; (when (package-dir "sql-indent*")
+;;   (require 'sql-indent)
+;;   (defun sql-indent-region (beg end)
+;;     "Indent the SQL statement in the region."
+;;     (interactive "*r")
+;;     (save-excursion
+;;       (save-restriction
+;;         (narrow-to-region beg end)
+;;         (sql-indent-buffer)))))
 
 (add-hook 'sql-mode-hook
           (lambda ()
