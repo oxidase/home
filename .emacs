@@ -43,32 +43,34 @@
 
 ;; {{{ Setup ELPA repositories
 
+(require 'package)
+(require 'quelpa)
+(quelpa '(elf-mode :repo "oxidase/elf-mode" :fetcher github))
+
 (unless (package-installed-p 'quelpa)
     (with-temp-buffer
       (url-insert-file-contents "https://github.com/quelpa/quelpa/raw/master/quelpa.el")
       (eval-buffer)
       (quelpa-self-upgrade)))
 
-(require 'quelpa)
-(quelpa '(elf-mode :repo "oxidase/elf-mode" :fetcher github))
 
-(require 'package)
 (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
 (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
 
 ;; Guarantee all packages are installed on start
-(defvar packages-list '(async bm dired-single google-translate js2-mode
-                        magit openwith qml-mode matlab-mode
-                        helm sql-indent org gh-md
-                        ess feature-mode yaml-mode
-                        web-mode htmlize markdown-mode markdown-mode+ markdown-preview-mode
-                        ag emojify
-                        jade-mode lua-mode
-                        yarn-mode docker docker-tramp dash
-                        gnuplot gnuplot-mode protobuf-mode
-                        haskell-mode intero
-                        go-mode lsp-mode bazel-mode
-                        ffmpeg-player somafm volume elfeed fish-mode)
+(defvar packages-list '(ag bm dired-single magit openwith bazel-mode google-c-style docker docker-tramp elfeed)
+;; (defvar packages-list '(async bm dired-single google-translate js2-mode
+;;                         magit openwith qml-mode matlab-mode
+;;                         helm sql-indent org gh-md
+;;                         ess feature-mode yaml-mode
+;;                         web-mode htmlize markdown-mode markdown-mode+ markdown-preview-mode
+;;                         ag emojify
+;;                         jade-mode lua-mode
+;;                         yarn-mode docker docker-tramp dash
+;;                         gnuplot gnuplot-mode protobuf-mode
+;;                         haskell-mode intero
+;;                         go-mode lsp-mode bazel-mode
+;;                         ffmpeg-player somafm volume elfeed fish-mode)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
   (unless package--initialized
@@ -136,6 +138,9 @@ Default MODIFIER is 'shift."
 (setq frame-title-format (list user-login-name " on " system-name " - %b - " invocation-name))
 
 (when (> emacs-major-version 22) (savehist-mode 1))
+(setenv "LANG" "en_US.UTF-8")
+(setenv "LC_ALL" "en_US.UTF-8")
+(setenv "LC_CTYPE" "en_US.UTF-8")
 (menu-bar-enable-clipboard)
 (turn-off-auto-fill)
 (setq fill-column 120)
@@ -693,7 +698,8 @@ the editor to use."
   (add-hook 'qml-mode-hook (lambda () (modify-syntax-entry ?' "|"))))
 
 (when (package-dir "bazel-mode*")
-  (require 'bazel-mode))
+  (require 'bazel-mode)
+  (modify-syntax-entry ?_ "w" bazel-mode-syntax-table))
 
 (when (package-dir "elf-mode*")
   (require 'elf-mode)
@@ -1191,8 +1197,7 @@ the editor to use."
   (global-set-key "\C-ca" 'org-agenda)
   (setq org-tag-alist '(("BIO" . ?b) ("COMP" . ?c) ("EMACS" . ?e) ("LOC" . ?l)))
   (global-set-key "\C-cc" 'org-capture)
-  (setq org-capture-templates
-        '(("n" "note" entry (file+datetree "~/share/org/notes.org") "* %?\nEntered on %U\n  %i")))
+  (setq org-capture-templates '(("n" "note" entry (file+datetree "~/notes/notes.org") "* %?\nEntered on %U\n  %i")))
  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1382,12 +1387,12 @@ the editor to use."
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
           )))
     ;;
-    ((string-match "^krasny*" user-login-name)
+    ((string-match ".*krasny.*" user-login-name)
      (cond
       ((eq (display-mm-width ":0") 508)
        (setq default-frame-alist '(
              (top . 0) (left . 100) (width . 226) (fullscreen . fullheight)
-             (font . "-*-DejaVuSansMono Nerd Font-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
+             (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
       ((eq (display-mm-width ":0") 1524)
        (setq default-frame-alist '(
              (top . 0) (left . 200) (width . 330) (fullscreen . fullheight)
@@ -1405,6 +1410,12 @@ the editor to use."
     (t (message (format "unknown host name %s" system-name)))))
 
  (t (message "unknown OS")))
+
+;;}}}
+
+;;{{{ Host specific
+
+(when (file-readable-p (concat custom-dir (system-name))) (load (concat custom-dir (system-name))))
 
 ;;}}}
 
@@ -1458,7 +1469,7 @@ the editor to use."
         ;; (message (format "%d %d %d %d |%s|%s|%s" sol open eol non-space a b c))
         (put-text-property (length a) (1+ (length a)) 'face '(background-color . "turquoise" ) msg)
         (message "%s" msg)))))
-(run-with-idle-timer 0.1 t 'blink-paren-first-line)
+(run-with-idle-timer 0.5 t 'blink-paren-first-line)
 
 ;; ;; Make parentheses more obvious.
 ;; (require 'paren-face)

@@ -312,3 +312,24 @@ def lookup_function(val):
 pretty_printers_dict = {}
 
 build_eigen_dictionary ()
+
+
+class MyEigenMatrixPrinter(EigenMatrixPrinter):
+    def __init__(self, val):
+        super(MyEigenMatrixPrinter, self).__init__("Matrix", val)
+
+class MyEigenArrayPrinter(EigenMatrixPrinter):
+    def __init__(self, val):
+        super(MyEigenMatrixPrinter, self).__init__("Array", val)
+
+def build_pretty_printer():
+    pp = gdb.printing.RegexpCollectionPrettyPrinter('Eigen')
+    pp.add_printer('Eigen::Quaternion', '^Eigen::Quaternion<.*>$', EigenQuaternionPrinter)
+    pp.add_printer('Eigen::Matrix', '^Eigen::Matrix<.*>$', MyEigenMatrixPrinter)
+    pp.add_printer('Eigen::SparseMatrix', '^Eigen::SparseMatrix<.*>$', EigenSparseMatrixPrinter)
+    pp.add_printer('Eigen::Array', '^Eigen::Array<.*>$', MyEigenArrayPrinter)
+    return pp
+
+## unregister pretty printers before (re)loading
+gdb.pretty_printers = [x for x in gdb.pretty_printers if not isinstance(x, gdb.printing.RegexpCollectionPrettyPrinter) or x.name != 'Eigen']
+gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer())
