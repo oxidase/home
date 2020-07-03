@@ -44,8 +44,6 @@
 ;; {{{ Setup ELPA repositories
 
 (require 'package)
-(require 'quelpa)
-(quelpa '(elf-mode :repo "oxidase/elf-mode" :fetcher github))
 
 (unless (package-installed-p 'quelpa)
     (with-temp-buffer
@@ -53,12 +51,14 @@
       (eval-buffer)
       (quelpa-self-upgrade)))
 
+(require 'quelpa)
+(quelpa '(elf-mode :repo "oxidase/elf-mode" :fetcher github))
 
 (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
 (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
 
 ;; Guarantee all packages are installed on start
-(defvar packages-list '(ag bm dired-single magit openwith bazel-mode google-c-style docker docker-tramp elfeed)
+(defvar packages-list '(ag bm dired-single magit openwith bazel-mode google-c-style docker docker-tramp elfeed fish-mode)
 ;; (defvar packages-list '(async bm dired-single google-translate js2-mode
 ;;                         magit openwith qml-mode matlab-mode
 ;;                         helm sql-indent org gh-md
@@ -1357,57 +1357,68 @@ the editor to use."
   (define-key global-map [(control delete)]  'kill-region)
 
   ;; host specific
-  (cond
-    ;;
-    ((string-match "^miha-.*" system-name)
-     (setq default-frame-alist '(
+  (let* ((display (car (x-display-list))))
+    (cond
+      ;;
+      ((string-match "^miha-.*" system-name)
+       (setq default-frame-alist '(
           (top . 0) (left . 200) (width . 216) (fullscreen . fullheight)
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
           ;;(font . "-*-Inconsolata-*-*-*-*-18-*-*-*-m-0-iso10646-1")
-          ))
-     ;; erc settings
-     (require 'erc)
-     (setq erc-join-buffer 'bury)
-     (add-hook 'erc-after-connect '(lambda (server nick)(cond ((string-match "oftc\\.net" server) (erc-join-channel "#osrm")))))
-     ;; erc logging
-     (setq erc-log-channels-directory (concat custom-dir "erc/logs"))
-     (setq erc-save-buffer-on-part t)
-     (defadvice save-buffers-kill-emacs (before save-logs (arg) activate)
-       (save-some-buffers t (lambda () (when (eq major-mode 'erc-mode)) t)))
-     (erc :server "irc.oftc.net" :port 6667)
-     (set-process-query-on-exit-flag (get-process "erc-irc.oftc.net-6667") nil))
-     ;; erc connect on timer
-     ;(run-with-timer 0 300 (lambda ()
-     ;   (unless (erc-server-buffer-live-p) (erc :server "irc.oftc.net" :port 6667)
-     ;           (set-process-query-on-exit-flag (get-process "erc-irc.oftc.net-6667") nil)))))
+       ))
 
-    ((string-match "VirtualBox" system-name)
-     (setq default-frame-alist `(
+       ;; erc settings
+       (require 'erc)
+       (setq erc-join-buffer 'bury)
+       (add-hook 'erc-after-connect '(lambda (server nick)(cond ((string-match "oftc\\.net" server) (erc-join-channel "#osrm")))))
+       ;; erc logging
+       (setq erc-log-channels-directory (concat custom-dir "erc/logs"))
+       (setq erc-save-buffer-on-part t)
+       (defadvice save-buffers-kill-emacs (before save-logs (arg) activate)
+         (save-some-buffers t (lambda () (when (eq major-mode 'erc-mode)) t)))
+       (erc :server "irc.oftc.net" :port 6667)
+       (set-process-query-on-exit-flag (get-process "erc-irc.oftc.net-6667") nil))
+      ;; erc connect on timer
+      ;; (run-with-timer 0 300 (lambda ()
+      ;;   (unless (erc-server-buffer-live-p) (erc :server "irc.oftc.net" :port 6667)
+      ;; (set-process-query-on-exit-flag (get-process "erc-irc.oftc.net-6667") nil)))))
+
+      ((string-match "VirtualBox" system-name)
+       (setq default-frame-alist `(
           (top . 0) (left . 120) (width . 224) (fullscreen . fullheight)
           (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
           )))
-    ;;
-    ((string-match ".*krasny.*" user-login-name)
-     (cond
-      ((eq (display-mm-width ":0") 508)
-       (setq default-frame-alist '(
+      ;;
+      ((string-match ".*krasny.*" user-login-name)
+       (cond
+         ((not (and display (display-graphic-p))))
+         ((eq (display-mm-width display) 508)
+          (setq default-frame-alist '(
              (top . 0) (left . 100) (width . 226) (fullscreen . fullheight)
              (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
-      ((eq (display-mm-width ":0") 1524)
-       (setq default-frame-alist '(
+         ((eq (display-mm-width display) 482)
+          (setq default-frame-alist '(
+             (top . 0) (left . 100) (width . 226) (fullscreen . fullheight)
+             (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
+         ((eq (display-mm-width display) 677)
+          (setq default-frame-alist '(
+             (top . 0) (left . 100) (width . 306) (fullscreen . fullheight)
+             (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
+         ((eq (display-mm-width display) 1524)
+          (setq default-frame-alist '(
              (top . 0) (left . 200) (width . 330) (fullscreen . fullheight)
              (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1"))))
-      ((eq (display-mm-width ":0") 1185)
-       (setq default-frame-alist '(
+         ((eq (display-mm-width display) 1185)
+          (setq default-frame-alist '(
              (top . 0) (left . 2000) (width . 306) (fullscreen . fullheight)
              (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
-      (t
-       (setq default-frame-alist '(
+         (t
+          (setq default-frame-alist '(
              (top . 0) (left . 2000) (width . 306) (fullscreen . fullheight)
              (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
-     ))
+         )))))
      ;;
-    (t (message (format "unknown host name %s" system-name)))))
+    (t (message (format "unknown host name %s" system-name)))
 
  (t (message "unknown OS")))
 
