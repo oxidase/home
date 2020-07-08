@@ -58,11 +58,12 @@
 (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
 
 ;; Guarantee all packages are installed on start
-(defvar packages-list '(ag bm dired-single magit openwith bazel-mode google-c-style docker docker-tramp elfeed fish-mode)
+(defvar packages-list '(ag bm dired-single magit openwith bazel-mode google-c-style docker docker-tramp elfeed
+                        yaml-mode fish-mode protobuf-mode)
 ;; (defvar packages-list '(async bm dired-single google-translate js2-mode
 ;;                         magit openwith qml-mode matlab-mode
 ;;                         helm sql-indent org gh-md
-;;                         ess feature-mode yaml-mode
+;;                         ess feature-mode
 ;;                         web-mode htmlize markdown-mode markdown-mode+ markdown-preview-mode
 ;;                         ag emojify
 ;;                         jade-mode lua-mode
@@ -506,7 +507,7 @@ the editor to use."
            (remote-url
             (replace-regexp-in-string "\\(.git\\|/+\\)$" "" ; remove trailing slashes or .git suffix
             (replace-regexp-in-string "://[^@]+@" "://" ; remove user name
-            (replace-regexp-in-string "^git@github.com:" "https://github.com/" ; change protocol to https
+            (replace-regexp-in-string "^git@github.\\([^:]+\\):" "https://github.\\1/" ; change protocol to https
              (magit-get "remote" remote "url")))))
            (from (line-number-at-pos (if (and transient-mark-mode mark-active) (region-beginning) (point)))) ; or (format-mode-line "%l")
            (to (line-number-at-pos (if (and transient-mark-mode mark-active) (- (region-end) (if (= (current-column) 0) 1 0)) (point))))
@@ -1280,7 +1281,6 @@ the editor to use."
          ("\\.y$" . c-mode)
          ("\\.glsl$" . c++-mode)
          ("\\.py$" . python-mode)
-         ("\\.yaml$" . python-mode)
          ("\\.css$" . css-mode)
          ("\\.Xdefaults$" . xrdb-mode)
          ("\\.Xenvironment$" . xrdb-mode)
