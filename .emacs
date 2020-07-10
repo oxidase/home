@@ -59,7 +59,7 @@
 
 ;; Guarantee all packages are installed on start
 (defvar packages-list '(ag bm dired-single magit openwith bazel-mode google-c-style docker docker-tramp elfeed
-                        yaml-mode fish-mode protobuf-mode)
+                        yaml-mode fish-mode protobuf-mode fish-mode ob-http)
 ;; (defvar packages-list '(async bm dired-single google-translate js2-mode
 ;;                         magit openwith qml-mode matlab-mode
 ;;                         helm sql-indent org gh-md
@@ -1156,7 +1156,7 @@ the editor to use."
   (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
   (org-defkey org-mode-map [(control return)] 'mini-calc)
   (org-babel-do-load-languages 'org-babel-load-languages
-                               '((python . t) (C . t) (haskell . t) (sqlite  . t) (maxima . t)
+                               '((http . t) (python . t) (C . t) (haskell . t) (sqlite  . t) (maxima . t)
                                  (latex . t) (plantuml . t) (dot . t) (ruby . t) (R . t) (gnuplot . t)))
   (add-hook 'org-babel-after-execute-hook (lambda () (condition-case nil (org-display-inline-images) (error nil))))
   (setq org-babel-results-keyword "results")                           ;; Make babel results blocks lowercase

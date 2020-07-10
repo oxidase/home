@@ -69,15 +69,18 @@ function __fish_bazel_options
     set -e commands[1]
     for command in $commands
         if contains $command $bazel_commands
-            for option in ($bazel help $command 2>/dev/null | string match -r "^ +--.*")
-                set -l parts (string match -r "^ +--(\[no\])?([^ ]+) .*" $option)
-                if string length $parts[3]
-                    printf -- "--no%s\tOption\n" $parts[3]
-                    printf -- "--%s\tOption\n" $parts[3]
-                else
-                    printf -- "--%s\tOption\n" $parts[2]
+            set -l options ($bazel help $command 2>/dev/null | string match -r "^ +--.*")
+            if test $status -eq 0
+                for option in $options
+                    set -l parts (string match -r "^ +--(\[no\])?([^ ]+) .*" $option)
+                    if string length $parts[3]
+                        printf -- "--no%s\tOption\n" $parts[3]
+                        printf -- "--%s\tOption\n" $parts[3]
+                    else
+                        printf -- "--%s\tOption\n" $parts[2]
+                    end
                 end
-            end
+           end
         end
     end
 end
@@ -91,7 +94,7 @@ for bin in bazel bazelisk ;
     complete -f -c $bin -n "__fish_is_option" -a "(__fish_bazel_options)"
 end
 
-complete -c bz -w "bazelisk"
-complete -c bb -w "bazelisk build"
-complete -c br -w "bazelisk run"
-complete -c bt -w "bazelisk test"
+complete -c bz -w "bazel"
+complete -c bb -w "bazel build"
+complete -c br -w "bazel run"
+complete -c bt -w "bazel test"
