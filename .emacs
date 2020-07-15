@@ -207,7 +207,7 @@ Default MODIFIER is 'shift."
       (list `(".*" . ,(concat custom-dir "/.emacs.backups"))))
 
 (defvar insert-time-format "%T" "*Format for \\[insert-time].")
-(defvar insert-date-format "%e %B %Y" "*Format for \\[insert-date].")
+(defvar insert-date-format "%e %B %Y %T" "*Format for \\[insert-date].")
 
 (defadvice save-buffers-kill-emacs (around no-query-kill-emacs activate)
   "Prevent annoying \"Active processes exist\" query when you quit Emacs."
