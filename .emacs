@@ -835,11 +835,10 @@ the editor to use."
       (setq show-trailing-whitespace t)
       (local-set-key [C-S-mouse-1] (lambda (event) (interactive "e") (posn-set-point (elt event 1)) (find-tag (word-at-point))))
       ;; compile keys
-      (local-set-key "\C-c\C-c"  'compile)
-      (local-set-key '[f8]   'next-error)
-      (local-set-key '[S-f8] 'previous-error)
-      (local-set-key '[f7]   (lambda () (interactive) (compile (get-shell-command compile-command))))
-      (local-set-key "\C-c\C-c" 'compile))
+      (local-set-key "\C-c\C-c" (lambda () (interactive)
+                                  (if (fboundp 'compile-local)
+                                      (compile-local (get-shell-command compile-command))
+                                      (compile (get-shell-command compile-command))))))
 
     (when (and (not running-on-windows)
                (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
@@ -965,18 +964,25 @@ the editor to use."
   (custom-set-variables '(emojify-emoji-styles (quote (github unicode))))
   (custom-set-variables '(emojify-program-contexts (quote (comments)))))
 
-;; (when (package-dir "ggtags*")
-;;   (require 'ggtags)
-;;   (define-key ggtags-mode-map (kbd "C-c g s") 'ggtags-find-other-symbol)
-;;   (define-key ggtags-mode-map (kbd "C-c g h") 'ggtags-view-tag-history)
-;;   (define-key ggtags-mode-map (kbd "C-c g r") 'ggtags-find-reference)
-;;   (define-key ggtags-mode-map (kbd "C-c g f") 'ggtags-find-file)
-;;   (define-key ggtags-mode-map (kbd "C-c g c") 'ggtags-create-tags)
-;;   (define-key ggtags-mode-map (kbd "C-c g u") 'ggtags-update-tags))
-
 (when (package-dir "rosemacs*")
   (require 'rosemacs)
   (global-set-key "\C-x\C-r" ros-keymap))
+
+(defun fmq-compilation-finish (buffer status)
+  (let ((time (time-convert (time-subtract (current-time) (buffer-local-value 'compile-starts-at buffer)) 'integer)))
+    (when (> time 20)
+      (call-process "notify-send" nil nil nil
+                    "-i" "emacs"
+                    (format "%s %s" status (car (buffer-local-value 'compilation-arguments buffer)))
+                    (format "in %s %ds" (buffer-local-value 'compilation-directory buffer) time)))))
+
+(setq compilation-process-setup-function
+      (lambda () (make-local-variable 'compile-starts-at)
+        (setq compile-starts-at (current-time))))
+
+(setq compilation-finish-functions
+      (append compilation-finish-functions
+          '(fmq-compilation-finish)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
