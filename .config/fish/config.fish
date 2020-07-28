@@ -1,4 +1,5 @@
 set fish_greeting
+set -x SHELL /usr/bin/fish
 source ~/.config/fish/conf.d/done.fish
 source ~/.config/fish/functions/fish_prompt.fish
 source ~/.config/fish/completions/bazel.fish
