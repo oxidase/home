@@ -59,7 +59,7 @@
 
 ;; Guarantee all packages are installed on start
 (defvar packages-list '(ag bm dired-single magit openwith bazel-mode google-c-style docker docker-tramp elfeed
-                        yaml-mode fish-mode protobuf-mode fish-mode ob-http)
+                        yaml-mode fish-mode protobuf-mode fish-mode ob-http string-inflection)
 ;; (defvar packages-list '(async bm dired-single google-translate js2-mode
 ;;                         magit openwith qml-mode matlab-mode
 ;;                         helm sql-indent org gh-md
@@ -706,6 +706,11 @@ the editor to use."
   (require 'elf-mode)
   ;(elf-setup-default)
   )
+
+(when (package-dir "string-inflection*")
+  ;; cycle between snake case, camel case, etc.
+  (require 'string-inflection)
+  (global-set-key (kbd "C-c i") 'string-inflection-cycle))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C and C++ modes
