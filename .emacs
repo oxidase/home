@@ -383,8 +383,6 @@ Default MODIFIER is 'shift."
     ;; TODO: add call stack
     (add-hook 'before-change-major-mode-hook
               '(lambda () (when (eq major-mode 'dired-mode)
-                            (print 'aaa)
-                            (print (previous-buffer))
                             (make-local-variable 'dired-stack)
                             (setq dired-stack '('hello)))))
     ;; global stack works, but local stack can not be saved
@@ -513,6 +511,7 @@ the editor to use."
            (to (line-number-at-pos (if (and transient-mark-mode mark-active) (- (region-end) (if (= (current-column) 0) 1 0)) (point))))
            (lines (if (>= from to) (format "L%d" from) (format "L%d-L%d" from to)))
            (gh-url (format "%s/blob/%s/%s#%s" remote-url (substring (magit-rev-parse ref) 0 8) (magit-file-relative-name) lines)))
+      (kill-new gh-url)
       (browse-url gh-url)))
 
   (defun bb-lines (ref)
@@ -534,6 +533,7 @@ the editor to use."
            (to (line-number-at-pos (if (and transient-mark-mode mark-active) (- (region-end) (if (= (current-column) 0) 1 0)) (point))))
            (lines (if (>= from to) (format "%d" from) (format "%d-%d" from to)))
            (gh-url (format "%s/%s?at=%s#%s" proj-url (magit-file-relative-name) (substring (magit-rev-parse ref) 0 8) lines)))
+      (kill-new gh-url)
       (browse-url gh-url)))
 
   ;; Some specific function to show/edit branch descriptions
@@ -836,7 +836,8 @@ the editor to use."
 
     (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode) (eq major-mode 'compilation-mode)
               (eq major-mode 'jam-mode) (eq major-mode 'makefile-gmake-mode) (eq major-mode 'python-mode)
-              (eq major-mode 'qt-pro-mode)  (eq major-mode 'go-mode) (eq major-mode 'haskell-mode))
+              (eq major-mode 'qt-pro-mode)  (eq major-mode 'go-mode) (eq major-mode 'haskell-mode)
+              (eq major-mode 'bazel-build-mode) (eq major-mode 'bazel-starlark-mode))
       (setq show-trailing-whitespace t)
       (local-set-key [C-S-mouse-1] (lambda (event) (interactive "e") (posn-set-point (elt event 1)) (find-tag (word-at-point))))
       ;; compile keys
@@ -1065,7 +1066,8 @@ the editor to use."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; set hooks
 (loop for mode in '(c-mode-hook c++-mode-hook fortran-mode-hook jam-mode-hook go-mode-hook
-                    qt-pro-mode-hook gud-mode-hook qml-mode-hook python-mode-hook haskell-mode-hook)
+                    qt-pro-mode-hook gud-mode-hook qml-mode-hook python-mode-hook haskell-mode-hook
+                    bazel-build-mode-hook bazel-starlark-mode-hook)
       do (add-hook mode development-mode-hook))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
