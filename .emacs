@@ -700,7 +700,8 @@ the editor to use."
 
 (when (package-dir "bazel-mode*")
   (require 'bazel-mode)
-  (modify-syntax-entry ?_ "w" bazel-mode-syntax-table))
+  (modify-syntax-entry ?_ "w" bazel-mode-syntax-table)
+  (add-to-list 'auto-mode-alist '("\BUILD.[^/]+$" . feature-mode)))
 
 (when (package-dir "elf-mode*")
   (require 'elf-mode)
