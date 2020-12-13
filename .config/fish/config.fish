@@ -19,3 +19,5 @@ end
 #     unzip -o (curl -sL https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/$name.zip | psub) -d ~/.local/share/fonts/$name
 # end;
 # fc-cache -f ~/.local/share/fonts/
+
+bind --user \cq "emacsclient -n --eval (printf '(find-file-goto \"%s\" \"%s\")' (xclip -o) (pwd))"

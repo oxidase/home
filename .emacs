@@ -55,11 +55,11 @@
 (quelpa '(elf-mode :repo "oxidase/elf-mode" :fetcher github))
 
 (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
-(add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
+(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 
 ;; Guarantee all packages are installed on start
 (defvar packages-list '(ag bm dired-single magit openwith bazel-mode google-c-style docker docker-tramp elfeed
-                        yaml-mode fish-mode protobuf-mode fish-mode ob-http string-inflection)
+                        ess yaml-mode fish-mode protobuf-mode fish-mode ob-html-chrome ob-http string-inflection back-button)
 ;; (defvar packages-list '(async bm dired-single google-translate js2-mode
 ;;                         magit openwith qml-mode matlab-mode
 ;;                         helm sql-indent org gh-md
@@ -178,6 +178,7 @@ Default MODIFIER is 'shift."
 (blink-cursor-mode -1)                               ;; Switch off blinking cursor mode.
 (setq large-file-warning-threshold nil)              ;; Maximum size of file above which a confirmation is requested
 (add-hook 'before-save-hook 'delete-trailing-whitespace)  ;; configuration required (remove-hook 'before-save-hook 'delete-trailing-whitespace)
+(setq find-file-visit-truename t)                    ;; Follow symbolic links when file is visited
 (setq mode-require-final-newline t)
 (setq delete-trailing-lines nil)
 (setq printer-name "HP-ENVY-4520-series")            ;; lpstat -p -d
@@ -346,6 +347,7 @@ Default MODIFIER is 'shift."
                                  (setq dired-listing-switches (nth dired-listing-switches-idx dired-listing-switches-styles))
                                  (setq dired-actual-switches dired-listing-switches)
                                  (revert-buffer)))
+(define-key dired-mode-map "c" (lambda () (interactive) (kill-new (dired-get-filename nil t))))
 
 ;; additional faces
 (defface dired-compressed-file
@@ -701,7 +703,8 @@ the editor to use."
 (when (package-dir "bazel-mode*")
   (require 'bazel-mode)
   (modify-syntax-entry ?_ "w" bazel-mode-syntax-table)
-  (add-to-list 'auto-mode-alist '("\BUILD.[^/]+$" . feature-mode)))
+  (add-to-list 'auto-mode-alist '("BUILD(.[^/]+)?$" . bazel-mode))
+  (add-to-list 'auto-mode-alist '("\\.BUILD$" . bazel-mode)))
 
 (when (package-dir "elf-mode*")
   (require 'elf-mode)
@@ -962,7 +965,7 @@ the editor to use."
 
 (when (package-dir "ag*")
   (require 'ag)
-  (custom-set-variables '(ag-ignore-list '("TAGS" "bundle.js" "*.ipynb")) '(ag-highlight-search t))
+  (custom-set-variables '(ag-ignore-list '("TAGS" "bundle.js" "*.ipynb" "*.html")) '(ag-highlight-search t))
   (global-set-key (kbd "<s-f3>") (lambda () (interactive) (ag/search (word-at-point) (ag/project-root default-directory)))))
 
 (when (package-dir "emojify*")
@@ -1170,7 +1173,7 @@ the editor to use."
   (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
   (org-defkey org-mode-map [(control return)] 'mini-calc)
   (org-babel-do-load-languages 'org-babel-load-languages
-                               '((http . t) (python . t) (C . t) (haskell . t) (sqlite  . t) (maxima . t)
+                               '((http . t) (html-chrome . t) (python . t) (C . t) (haskell . t) (sqlite  . t) (maxima . t)
                                  (latex . t) (plantuml . t) (dot . t) (ruby . t) (R . t) (gnuplot . t)))
   (add-hook 'org-babel-after-execute-hook (lambda () (condition-case nil (org-display-inline-images) (error nil))))
   (setq org-babel-results-keyword "results")                           ;; Make babel results blocks lowercase
@@ -1294,7 +1297,8 @@ the editor to use."
          ("\\.l$" . c-mode)
          ("\\.y$" . c-mode)
          ("\\.glsl$" . c++-mode)
-         ("\\.py$" . python-mode)
+         ("\\.pyi?$" . python-mode)
+         ("\\.py.j2$" . python-mode)
          ("\\.css$" . css-mode)
          ("\\.Xdefaults$" . xrdb-mode)
          ("\\.Xenvironment$" . xrdb-mode)
@@ -1406,7 +1410,7 @@ the editor to use."
       ((string-match ".*krasny.*" user-login-name)
        (cond
          ((not (and display (display-graphic-p))))
-         ((eq (display-mm-width display) 508)
+         ((eq (display-mm-width display) 508) ;; (x-display-pixel-width) (x-display-pixel-height)
           (setq default-frame-alist '(
              (top . 0) (left . 100) (width . 226) (fullscreen . fullheight)
              (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
@@ -1455,19 +1459,40 @@ the editor to use."
 ;; Open file and go to line
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun find-file-goto (filename)
+(defun find-file-goto (filename &optional cwd)
   "Edit file FILENAME.
    Switch to a buffer visiting file FILENAME,
    creating one if none already exists."
   (interactive "FFind file: ")
-  (let* ((name filename) line column)
-    (when (string-match ":+\\([0-9]+\\):*\\([0-9]+\\)?[:,]?$" filename)
-      (setq name (substring filename 0 (match-beginning 0)))
-      (setq line (condition-case nil (string-to-number (match-string 1 filename)) (error nil)))
-      (setq column (condition-case nil (string-to-number (match-string 2 filename)) (error nil))))
-    (switch-to-buffer (find-file-noselect name))
-    (when line (goto-line line))
-    (when column (forward-char (- column (current-column))))))
+  (let* ((name filename) line column target point)
+    (cond
+      ;; compiler error messages
+      ;; set puuid (gsettings get org.gnome.Terminal.ProfilesList default | tr -d "'")
+      ;; gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:$puuid/ word-char-exceptions '@ms "-=&#:/.?@+~_%;"'
+      ((string-match ":+\\([0-9]+\\):*\\([0-9]+\\)?[:,]?$" filename)
+       (setq name (substring filename 0 (match-beginning 0)))
+       (setq line (condition-case nil (string-to-number (match-string 1 filename)) (error nil)))
+       (setq column (condition-case nil (string-to-number (match-string 2 filename)) (error nil)))
+       (switch-to-buffer (find-file-noselect name))
+       (when line (goto-line line))
+       (when column (forward-char (- column (current-column)))))
+
+      ;; bazel target
+      ((and cwd (string-match "/\\(/.*\\):\\([][[:alnum:]!%-@^_` \"#$&'()*-+,;<=>?{|}~/.]+\\):?$" filename))
+       (setq name (concat cwd (match-string 1 filename) "/BUILD"))
+       (setq target (match-string 2 filename))
+       (switch-to-buffer (find-file-noselect name))
+       (setq point (point))
+       (condition-case nil
+           (progn
+             (goto-line 1)
+             (re-search-forward (concat "name = \"" target "\""))
+             (goto-char (match-beginning 0)))
+         (error (goto-char point))))
+
+      ;; open a file
+      (t (switch-to-buffer (find-file-noselect name))))
+    ))
 (global-set-key [(control x) (control f)] 'find-file-goto)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
