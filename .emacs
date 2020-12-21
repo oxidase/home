@@ -225,7 +225,9 @@ Default MODIFIER is 'shift."
              (put-text-property beg end 'face face)))))
     (ansi-color-apply-on-region (point-min) (point-max))))
 (setq ansi-color-drop-regexp "\\[\\([ABCDsuK]\\|[12][JK]\\|=[0-9]+[hI]\\|[0-9;]*[HfGg]\\|\\?[0-9]+[hl]\\)")
-;;(add-hook 'compilation-filter-hook 'ansi-colorize-buffer)
+(add-hook 'compilation-filter-hook (lambda () (ignore-errors (when (eq major-mode 'compilation-mode)
+      (ansi-color-apply-on-region compilation-filter-start (point-max))))))
+
 
 ;; calendar settings
 (defface calendar-kw `((t (:foreground "black") (:background "pale green")))  "Face for a calendar week number column")
