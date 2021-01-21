@@ -58,7 +58,7 @@
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 
 ;; Guarantee all packages are installed on start
-(defvar packages-list '(ag bm dired-single magit openwith bazel-mode google-c-style docker docker-tramp elfeed
+(defvar packages-list '(adoc-mode ag bm dired-single magit openwith bazel-mode google-c-style docker docker-tramp elfeed
                         ess yaml-mode fish-mode protobuf-mode fish-mode ob-html-chrome ob-http string-inflection back-button)
 ;; (defvar packages-list '(async bm dired-single google-translate js2-mode
 ;;                         magit openwith qml-mode matlab-mode
@@ -247,6 +247,9 @@ Default MODIFIER is 'shift."
 
 ;;{{{ Load local packages
 
+(when (package-dir "adoc-mode*")
+  (require 'adoc-mode))
+
 (when (package-dir "gradle-mode*")
   (require 'gradle-mode))
 
@@ -349,7 +352,10 @@ Default MODIFIER is 'shift."
                                  (setq dired-listing-switches (nth dired-listing-switches-idx dired-listing-switches-styles))
                                  (setq dired-actual-switches dired-listing-switches)
                                  (revert-buffer)))
-(define-key dired-mode-map "c" (lambda () (interactive) (kill-new (dired-get-filename nil t))))
+(define-key dired-mode-map "z" (lambda () (interactive)
+                                 (let ((name (or (dired-get-filename nil t) default-directory)))
+                                   (kill-new name)
+                                   (x-set-selection nil name))))
 
 ;; additional faces
 (defface dired-compressed-file

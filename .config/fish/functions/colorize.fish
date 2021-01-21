@@ -1,22 +1,18 @@
 function colorize
     while read -l input
-        switch (string lower $input)
-            case "[error]*"
+        switch $input
+            case "EE:*"
                 set_color F66
                 echo $input
-            case "error:*"
-                set_color F66
-                echo $input
-            case "[warn]*"
+            case "WW:*"
                 set_color AD7FA8
                 echo $input
-            case "[info]*"
+            case "II:*"
                 set_color 5AE
                 echo $input
             case "*"
-                set_color normal
                 echo $input
         end
+        set_color normal
     end
-    set_color normal
 end
