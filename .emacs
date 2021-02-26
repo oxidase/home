@@ -58,7 +58,7 @@
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 
 ;; Guarantee all packages are installed on start
-(defvar packages-list '(adoc-mode ag bm dired-single magit openwith bazel-mode google-c-style docker docker-tramp elfeed
+(defvar packages-list '(adoc-mode ag bitbake bm dired-single magit openwith bazel-mode geiser google-c-style docker docker-tramp elfeed
                         ess yaml-mode fish-mode protobuf-mode fish-mode ob-html-chrome ob-http string-inflection back-button)
 ;; (defvar packages-list '(async bm dired-single google-translate js2-mode
 ;;                         magit openwith qml-mode matlab-mode
@@ -190,6 +190,8 @@ Default MODIFIER is 'shift."
 (setq tags-case-fold-search nil)
 (if (not (assq 'user-size initial-frame-alist))      ;; Unless we've specified a number of lines, prevent the startup code from
     (setq tool-bar-originally-present nil))          ;; shrinking the frame because we got rid of the tool-bar.
+(when running-on-darwin
+  (setq exec-path (append exec-path '("/usr/local/bin"))))
 ;; ediff
 (setq ediff-window-setup-function 'ediff-setup-windows-plain)
 (setq ediff-split-window-function 'split-window-horizontally)
@@ -328,6 +330,9 @@ Default MODIFIER is 'shift."
 ;; Dired mode
 (load-library "dired")
 
+(when running-on-darwin
+  (setq dired-use-ls-dired nil))
+
 (setenv "LANG" "POSIX")
 
 (defvar dired-sort-map (make-sparse-keymap))
@@ -426,11 +431,18 @@ Default MODIFIER is 'shift."
   (openwith-mode t)
   (setq pdf-app "evince")
   (setq openwith-associations
-        '(("[^_]?\\.\\(ps\\|pdf\\|djvu\\|epub\\)\\'" "evince" (file))
-          ("\\.\\(docx?\\|odt\\|pptx?\\|rtf\\|xlsx?\\)\\'" "libreoffice" (file))
-          ("\\.\\(ai\\)\\'" "inkscape" (file))
-          ("\\.\\(dll\\|pyd\\)\\'" "depends.exe" (file))
-          ("\\.\\(?:mpe?g\\|avi\\|wmv\\|mp4\\)\\'" "smplayer" (file)))))
+        (cond
+         (running-on-gnu/linux
+          '(("[^_]?\\.\\(ps\\|pdf\\|djvu\\|epub\\)\\'" "evince" (file))
+            ("\\.\\(docx?\\|odt\\|pptx?\\|rtf\\|xlsx?\\)\\'" "libreoffice" (file))
+            ("\\.\\(ai\\)\\'" "inkscape" (file))
+            ("\\.\\(?:mpe?g\\|avi\\|wmv\\|mp4\\)\\'" "smplayer" (file))))
+         (running-on-windows
+          ("\\.\\(dll\\|pyd\\)\\'" "depends.exe" (file)))
+         (running-on-darwin
+          '(("[^_]?\\.\\(ps\\|pdf\\|djvu\\|epub\\)\\'" "/System/Applications/Preview.app/Contents/MacOS/Preview" (file))
+            ("\\.\\(ai\\)\\'" "/Applications/Inkscape.app/Contents/MacOS/inkscape" (file))))
+         )))
 
 ;; open file in alternative editor
 (defvar alternate-editor "gedit"
@@ -703,6 +715,9 @@ the editor to use."
 (when (package-dir "jade-mode*")
   (load-library "jade-mode")
   (add-to-list 'auto-mode-alist '("\\.jade\\'" . jade-mode)))
+
+(when (package-dir "bitbake*")
+  (require 'bitbake))
 
 (when (package-dir "qml-mode*")
   (require 'qml-mode)
@@ -1182,11 +1197,13 @@ the editor to use."
   (org-defkey org-mode-map [(control return)] 'mini-calc)
   (org-babel-do-load-languages 'org-babel-load-languages
                                '((http . t) (html-chrome . t) (python . t) (C . t) (haskell . t) (sqlite  . t) (maxima . t)
-                                 (latex . t) (plantuml . t) (dot . t) (ruby . t) (R . t) (gnuplot . t)))
+                                 (latex . t) (plantuml . t) (dot . t) (ruby . t) (R . t) (gnuplot . t) (scheme . t)))
   (add-hook 'org-babel-after-execute-hook (lambda () (condition-case nil (org-display-inline-images) (error nil))))
   (setq org-babel-results-keyword "results")                           ;; Make babel results blocks lowercase
   (setq org-confirm-babel-evaluate nil)                                ;; Do not prompt to confirm evaluation
   (setq org-babel-python-command "python3")
+  (add-hook 'scheme-mode-hook 'geiser-mode)
+  (setq geiser-default-implementation 'guile)
   (plist-put org-format-latex-options :scale 1.5)
   (setq org-src-fontify-natively t)
   (custom-set-faces
@@ -1372,6 +1389,13 @@ the editor to use."
      (setq org-babel-sqlite3-command "D:\\tools\\sqlite3.exe")
      )))
 
+ ;; Darwin specific settings
+ (running-on-darwin
+  (setq default-frame-alist '(
+                              (top . 0) (left . 100) (width . 242) (fullscreen . fullheight)
+                              ))
+  )
+
  (running-on-gnu/linux
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Unix specific settings
@@ -1526,7 +1550,8 @@ the editor to use."
         (setq msg (concat a b c))
         ;; (message (format "%d %d %d %d |%s|%s|%s" sol open eol non-space a b c))
         (put-text-property (length a) (1+ (length a)) 'face '(background-color . "turquoise" ) msg)
-        (message "%s" msg)))))
+        (let ((message-log-max nil))
+          (message "%s" msg))))))
 (run-with-idle-timer 0.5 t 'blink-paren-first-line)
 
 ;; ;; Make parentheses more obvious.

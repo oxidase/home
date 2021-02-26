@@ -2,7 +2,7 @@
 if [[ -x /usr/bin/fish ]] ; then
  SHELL=/usr/bin/fish
 fi
-# if [[ -x /usr/local/bin/fish ]] ; then
-#  SHELL=/usr/local/bin/fish
-# fi
+if [[ -x /usr/local/bin/fish ]] ; then
+ SHELL=/usr/local/bin/fish
+fi
 # rclone --vfs-cache-mode full  --fast-list mount remote:share ~/share &
