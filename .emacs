@@ -142,6 +142,7 @@ Default MODIFIER is 'shift."
 (setenv "LANG" "en_US.UTF-8")
 (setenv "LC_ALL" "en_US.UTF-8")
 (setenv "LC_CTYPE" "en_US.UTF-8")
+(set-face-attribute 'region nil :background "#b8d8ff")
 (menu-bar-enable-clipboard)
 (turn-off-auto-fill)
 (setq fill-column 120)
@@ -436,6 +437,7 @@ Default MODIFIER is 'shift."
           '(("[^_]?\\.\\(ps\\|pdf\\|djvu\\|epub\\)\\'" "evince" (file))
             ("\\.\\(docx?\\|odt\\|pptx?\\|rtf\\|xlsx?\\)\\'" "libreoffice" (file))
             ("\\.\\(ai\\)\\'" "inkscape" (file))
+            ("\\.\\(svg\\)\\'" "eog" (file))
             ("\\.\\(?:mpe?g\\|avi\\|wmv\\|mp4\\)\\'" "smplayer" (file))))
          (running-on-windows
           ("\\.\\(dll\\|pyd\\)\\'" "depends.exe" (file)))
@@ -1204,6 +1206,7 @@ the editor to use."
   (setq org-babel-python-command "python3")
   (add-hook 'scheme-mode-hook 'geiser-mode)
   (setq geiser-default-implementation 'guile)
+  (setq org-log-done 'time)
   (plist-put org-format-latex-options :scale 1.5)
   (setq org-src-fontify-natively t)
   (custom-set-faces
@@ -1446,6 +1449,10 @@ the editor to use."
           (setq default-frame-alist '(
              (top . 0) (left . 100) (width . 226) (fullscreen . fullheight)
              (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
+         ((eq (display-mm-width display) 542)
+          (setq default-frame-alist '(
+             (top . 0) (left . 100) (width . 242) (fullscreen . fullheight)
+             (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
          ((eq (display-mm-width display) 482)
           (setq default-frame-alist '(
              (top . 0) (left . 100) (width . 226) (fullscreen . fullheight)
@@ -1508,6 +1515,12 @@ the editor to use."
        (switch-to-buffer (find-file-noselect name))
        (when line (goto-line line))
        (when column (forward-char (- column (current-column)))))
+
+      ((string-match "#L+\\([0-9]+\\)$" filename)
+       (setq name (substring filename 0 (match-beginning 0)))
+       (setq line (condition-case nil (string-to-number (match-string 1 filename)) (error nil)))
+       (switch-to-buffer (find-file-noselect name))
+       (when line (goto-line line)))
 
       ;; bazel target
       ((and cwd (string-match "/\\(/.*\\):\\([][[:alnum:]!%-@^_` \"#$&'()*-+,;<=>?{|}~/.]+\\):?$" filename))

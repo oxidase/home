@@ -16,12 +16,17 @@ for h in $rcfiles ; do
     [ -f "$HOME/.bashrc.d/$h" ] && source "$HOME/.bashrc.d/$h"
 done
 
-## locale settings
-export LANG="en_US.UTF-8"
-export LC_TIME="de_DE.UTF-8"
-export LC_PAPER="en_GB.UTF-8"
-export LC_MEASUREMENT="en_GB.UTF-8"
-export LC_ALL="en_US.UTF-8"
+case "$-" in
+  *i*)
+    ## locale settings
+    export LANG="en_US.UTF-8"
+    export LC_TIME="de_DE.UTF-8"
+    export LC_PAPER="en_GB.UTF-8"
+    export LC_MEASUREMENT="en_GB.UTF-8"
+    export LC_ALL="en_US.UTF-8"
+  ;;
+  *)
+esac
 
 parse_git_branch() {
     local hash=$(git rev-parse --short HEAD 2> /dev/null)

@@ -6,6 +6,9 @@ python
 import os, sys, glob
 print ('Using Python ' + ' '.join([sys.executable] + sys.version.split('\n')))
 
+os.environ['SHELL'] = '/bin/bash'
+
+
 libstdcxx = glob.glob(os.path.expanduser('~/.gdbinit.d/python/libstdcxx')) +glob.glob('/usr/share/gcc-*/python/libstdcxx')
 if len(libstdcxx) > 0 and os.path.isdir(libstdcxx[0]):
   libstdcxx_path = os.path.split(libstdcxx[0])[0]
@@ -14,12 +17,14 @@ if len(libstdcxx) > 0 and os.path.isdir(libstdcxx[0]):
   from libstdcxx.v6.printers import register_libstdcxx_printers
   register_libstdcxx_printers(None)
 
-sys.path.insert(0, os.path.expanduser('~/.gdbinit.d/python'))
-from boost.printers import register_printer_gen
-register_printer_gen(None)
+python_dir = os.path.expanduser('~/.gdbinit.d/python')
+if os.path.exists(python_dir):
+  sys.path.insert(0, python_dir)
+  from boost.printers import register_printer_gen
+  register_printer_gen(None)
 
-from eigen.printers import register_eigen_printers
-register_eigen_printers (None)
+  from eigen.printers import register_eigen_printers
+  register_eigen_printers (None)
 end
 
 
