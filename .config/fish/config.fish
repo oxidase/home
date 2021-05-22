@@ -21,3 +21,5 @@ end
 # fc-cache -f ~/.local/share/fonts/
 
 bind --user \cq "emacsclient -n --eval (printf '(find-file-goto \"%s\" \"%s\")' (xclip -o) (pwd))"
+
+alias R "R --no-save"

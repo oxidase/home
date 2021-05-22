@@ -48,6 +48,7 @@ python
 import socket, os
 local_config = os.path.join(os.environ['HOME'], '.gdbinit.d', socket.gethostname())
 if os.path.exists(local_config):
+  print ("Loading {local_config}".format(local_config=local_config))
   gdb.execute('source {}'.format(local_config))
 end
 
@@ -59,3 +60,6 @@ skip -gfi /usr/include/c++/*
 #set follow-fork-mode child
 #set detach-on-fork off
 #set follow-exec-mode same
+
+set print static-members off
+set scheduler-locking on

@@ -139,9 +139,9 @@ Default MODIFIER is 'shift."
 (setq frame-title-format (list user-login-name " on " system-name " - %b - " invocation-name))
 
 (when (> emacs-major-version 22) (savehist-mode 1))
-(setenv "LANG" "en_US.UTF-8")
-(setenv "LC_ALL" "en_US.UTF-8")
-(setenv "LC_CTYPE" "en_US.UTF-8")
+;(setenv "LANG" "en_US.UTF-8")
+;(setenv "LC_ALL" "en_US.UTF-8")
+;(setenv "LC_CTYPE" "en_US.UTF-8")
 (set-face-attribute 'region nil :background "#b8d8ff")
 (menu-bar-enable-clipboard)
 (turn-off-auto-fill)
@@ -530,11 +530,16 @@ the editor to use."
             (replace-regexp-in-string "\\(.git\\|/+\\)$" "" ; remove trailing slashes or .git suffix
             (replace-regexp-in-string "://[^@]+@" "://" ; remove user name
             (replace-regexp-in-string "^git@github.\\([^:]+\\):" "https://github.\\1/" ; change protocol to https
-             (magit-get "remote" remote "url")))))
+            (replace-regexp-in-string "^git://sourceware.org/git/\\(.*+\\)" "https://sourceware.org/git/?p=\\1.git" ; change protocol to https
+            (magit-get "remote" remote "url"))))))
            (from (line-number-at-pos (if (and transient-mark-mode mark-active) (region-beginning) (point)))) ; or (format-mode-line "%l")
            (to (line-number-at-pos (if (and transient-mark-mode mark-active) (- (region-end) (if (= (current-column) 0) 1 0)) (point))))
            (lines (if (>= from to) (format "L%d" from) (format "L%d-L%d" from to)))
-           (gh-url (format "%s/blob/%s/%s#%s" remote-url (substring (magit-rev-parse ref) 0 8) (magit-file-relative-name) lines)))
+           (gh-url
+            (cond
+              ((cl-search "github" remote-url) (format "%s/blob/%s/%s#%s" remote-url (substring (or (magit-rev-verify ref) (magit-rev-parse "HEAD")) 0 8) (magit-file-relative-name) lines))
+              ((cl-search "sourceware.org" remote-url) (format "%s;a=blob;f=%s#l%d" remote-url (magit-file-relative-name) from))
+              (t remote-url))))
       (kill-new gh-url)
       (browse-url gh-url)))
 
@@ -856,9 +861,8 @@ the editor to use."
     ;; TAGS lookup
     (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
               (eq major-mode 'jam-mode) (eq major-mode 'gud-mode))
-      (local-set-key '[f3]     (lambda () (interactive) (find-tag (word-at-point))))
-      (local-set-key '[C-f3]   (lambda () (interactive) (find-tag nil t)))
-      (local-set-key '[M-f3]   'pop-tag-mark))
+      (local-set-key (kbd "M-/") 'xref-find-references)
+      (setq-local xref-prompt-for-identifier nil))
 
     (when (eq major-mode 'fortran-mode)
       (local-set-key "\C-c'" 'fortran-comment-region))
@@ -884,7 +888,7 @@ the editor to use."
       (gud-def gud-frame "frame" "\C-g" "Select and print a stack frame.")
 
       ;; debug keys
-      (local-set-key '[(super f1)]   'gud-until)
+      (local-set-key '[(super f11)]  'gud-until)
       (local-set-key '[f9]     'gud-set-clear)
       (local-set-key '[S-f9]   'gud-break)
       (local-set-key '[C-f9]   'gud-remove)
@@ -1743,3 +1747,20 @@ If ARG is given, then insert the result to current-buffer"
   (insert (shell-command-to-string "find . -executable -type f")))
 
 ;; }}}
+
+
+;; TODO
+(defun compile-goto-error (&optional event)
+  "Visit the source for the error message at point.
+Use this command in a compilation log buffer."
+  (interactive (list last-input-event))
+  (if event (posn-set-point (event-end event)))
+  (or (compilation-buffer-p (current-buffer))
+      (error "Not in a compilation buffer"))
+  (compilation--ensure-parse (point))
+  (print (get-text-property (point) 'compilation-directory))
+  (if (get-text-property (point) 'compilation-directory)
+      (dired-other-window
+       (car (get-text-property (point) 'compilation-directory)))
+    (setq compilation-current-error (point))
+    (next-error-internal)))
