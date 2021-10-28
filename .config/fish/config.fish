@@ -23,3 +23,8 @@ end
 bind --user \cq "emacsclient -n --eval (printf '(find-file-goto \"%s\" \"%s\")' (xclip -o) (pwd))"
 
 alias R "R --no-save"
+
+
+function urlsafe_b64encode_nopad
+    python3 -c "import sys,base64; print(base64.urlsafe_b64encode(bytes.fromhex(sys.argv[1])).rstrip(b'=').decode())" $argv[1]
+end

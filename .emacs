@@ -58,8 +58,8 @@
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 
 ;; Guarantee all packages are installed on start
-(defvar packages-list '(adoc-mode ag bitbake bm dired-single magit openwith bazel-mode geiser google-c-style docker docker-tramp elfeed
-                        ess yaml-mode fish-mode protobuf-mode fish-mode ob-html-chrome ob-http string-inflection back-button)
+(defvar packages-list '(adoc-mode ag bitbake bm dired-single magit openwith bazel-mode geiser google-c-style docker docker-tramp dockerfile-mode
+                        elfeed ess yaml-mode fish-mode protobuf-mode fish-mode ob-html-chrome ob-http string-inflection back-button debian-el)
 ;; (defvar packages-list '(async bm dired-single google-translate js2-mode
 ;;                         magit openwith qml-mode matlab-mode
 ;;                         helm sql-indent org gh-md
@@ -519,7 +519,7 @@ the editor to use."
 
   (defun gh-lines (ref)
     "Open the current line in GitHub"
-    (interactive (list (magit-read-other-branch-or-commit "Show line for")))
+    (interactive (list (magit-read-local-branch-or-ref "Show line for")))
     (let* ((remotes (magit-list-remotes))
            (remote (cond
                     ((null remotes) "origin")
@@ -545,7 +545,7 @@ the editor to use."
 
   (defun bb-lines (ref)
     "Open the current line in Bitbucket"
-    (interactive (list (magit-read-other-branch-or-commit "Show line for")))
+    (interactive (list (magit-read-local-branch-or-ref "Show line for")))
     (let* ((remotes (magit-list-remotes))
            (remote (cond
                     ((null remotes) "origin")
@@ -1025,6 +1025,7 @@ the editor to use."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Python mode
+(add-to-list 'magic-mode-alist '("^#!/usr/bin/env[^\n]*python[0-9.]*\n" . python-mode))
 (add-hook 'python-mode-hook (lambda ()
         (setq indent-tabs-mode nil)
         (setq tab-width 4)
@@ -1663,7 +1664,7 @@ the editor to use."
       (set-buffer standard-output)
       (mapcar (lambda (font) (insert font "\n"))
 	      (sort (x-list-fonts "*") 'string-lessp)))
-    (print-help-return-message)))
+    (help-print-return-message)))
 
 (defun clean-zotero-bib ()
   (interactive)
@@ -1672,6 +1673,22 @@ the editor to use."
   (replace-regexp "^.*annote[ \t\n]*=.*$" "" nil (point-min) (point-max))
   (replace-regexp "^.*doi[ \t\n]*=.*$" "" nil (point-min) (point-max))
   (delete-matching-lines "^[ \t\n]*$" (point-min) (point-max)))
+
+(defun htmlfontify-region ()
+  """HTML-fontify a region and open in a browser."""
+  (interactive)
+  (let* ((filename (make-temp-file (concat (buffer-name) "-") nil ".html"))
+         (regionp (region-active-p))
+         (beg (and regionp (region-beginning)))
+         (end (and regionp (region-end)))
+         (buf (current-buffer)))
+    (with-temp-buffer
+      (switch-to-buffer (current-buffer) nil t)
+      (insert-buffer-substring buf beg end)
+      (set-buffer (htmlfontify-buffer))
+      (write-region nil nil filename)
+      (kill-this-buffer)
+      (browse-url-of-file filename))))
 
 ;; }}}
 

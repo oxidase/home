@@ -1,5 +1,8 @@
 ## wget -N http://gcc.gnu.org/svn/gcc/trunk/libstdc++-v3/python/libstdcxx/v6/printers.py -P .gdbinit.d/python/libstdcxx/v6
 
+set breakpoint pending on
+
+
 #source ~/.gdbinit.d/python3.5
 
 python
