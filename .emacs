@@ -58,8 +58,9 @@
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 
 ;; Guarantee all packages are installed on start
-(defvar packages-list '(adoc-mode ag bitbake bm dired-single magit openwith bazel-mode geiser google-c-style docker docker-tramp dockerfile-mode
-                        elfeed ess yaml-mode fish-mode protobuf-mode fish-mode ob-html-chrome ob-http string-inflection back-button debian-el)
+(defvar packages-list '(adoc-mode ag arxiv-mode bitbake bm dired-single magit openwith bazel geiser google-c-style docker docker-tramp
+                        dockerfile-mode  elfeed ess yaml-mode fish-mode protobuf-mode fish-mode ob-html-chrome ob-http string-inflection
+                        back-button debian-el)
 ;; (defvar packages-list '(async bm dired-single google-translate js2-mode
 ;;                         magit openwith qml-mode matlab-mode
 ;;                         helm sql-indent org gh-md
@@ -519,7 +520,7 @@ the editor to use."
 
   (defun gh-lines (ref)
     "Open the current line in GitHub"
-    (interactive (list (magit-read-local-branch-or-ref "Show line for")))
+    (interactive (list (magit-read-starting-point "Show line for" nil (magit-get-current-branch))))
     (let* ((remotes (magit-list-remotes))
            (remote (cond
                     ((null remotes) "origin")
@@ -545,7 +546,7 @@ the editor to use."
 
   (defun bb-lines (ref)
     "Open the current line in Bitbucket"
-    (interactive (list (magit-read-local-branch-or-ref "Show line for")))
+    (interactive (list (magit-read-starting-point "Show line for" nil (magit-get-current-branch))))
     (let* ((remotes (magit-list-remotes))
            (remote (cond
                     ((null remotes) "origin")
@@ -618,6 +619,7 @@ the editor to use."
 (setq tramp-default-method "ssh")
 (setq tramp-debug-buffer t)
 (setq tramp-verbose 10)
+(setq tramp-histfile-override "/dev/null")
 
 (global-set-key "\C-c\C-t" 'tramp-cleanup-all-connections)
 
@@ -730,11 +732,14 @@ the editor to use."
   (require 'qml-mode)
   (add-hook 'qml-mode-hook (lambda () (modify-syntax-entry ?' "|"))))
 
-(when (package-dir "bazel-mode*")
-  (require 'bazel-mode)
-  (modify-syntax-entry ?_ "w" bazel-mode-syntax-table)
+(when (package-dir "bazel-*")
+  (require 'bazel)
   (add-to-list 'auto-mode-alist '("BUILD(.[^/]+)?$" . bazel-mode))
-  (add-to-list 'auto-mode-alist '("\\.BUILD$" . bazel-mode)))
+  (add-to-list 'auto-mode-alist '("\\.BUILD$" . bazel-mode))
+  (modify-syntax-entry ?_ "w" bazel-mode-syntax-table)
+  (modify-syntax-entry ?_ "w" bazel-build-mode-syntax-table)
+  (modify-syntax-entry ?_ "w" bazel-starlark-mode-syntax-table)
+  (modify-syntax-entry ?_ "w" bazel-workspace-mode-syntax-table))
 
 (when (package-dir "elf-mode*")
   (require 'elf-mode)
@@ -1450,7 +1455,15 @@ the editor to use."
       ((string-match ".*krasny.*" user-login-name)
        (cond
          ((not (and display (display-graphic-p))))
+         ((eq (display-mm-width display) 482)
+          (setq default-frame-alist '(
+             (top . 0) (left . 100) (width . 226) (fullscreen . fullheight)
+             (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
          ((eq (display-mm-width display) 508) ;; (x-display-pixel-width) (x-display-pixel-height)
+          (setq default-frame-alist '(
+             (top . 0) (left . 100) (width . 226) (fullscreen . fullheight)
+             (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
+         ((eq (display-mm-width display) 524)
           (setq default-frame-alist '(
              (top . 0) (left . 100) (width . 226) (fullscreen . fullheight)
              (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
@@ -1458,22 +1471,18 @@ the editor to use."
           (setq default-frame-alist '(
              (top . 0) (left . 100) (width . 242) (fullscreen . fullheight)
              (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
-         ((eq (display-mm-width display) 482)
-          (setq default-frame-alist '(
-             (top . 0) (left . 100) (width . 226) (fullscreen . fullheight)
-             (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
          ((eq (display-mm-width display) 677)
           (setq default-frame-alist '(
-             (top . 0) (left . 100) (width . 306) (fullscreen . fullheight)
-             (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
-         ((eq (display-mm-width display) 1524)
-          (setq default-frame-alist '(
-             (top . 0) (left . 200) (width . 330) (fullscreen . fullheight)
-             (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1"))))
+             (top . 0) (left . 100) (width . 222) (fullscreen . fullheight)
+             (font . "-*-Liberation Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1"))))
          ((eq (display-mm-width display) 1185)
           (setq default-frame-alist '(
              (top . 0) (left . 2000) (width . 306) (fullscreen . fullheight)
              (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
+         ((eq (display-mm-width display) 1524)
+          (setq default-frame-alist '(
+             (top . 0) (left . 200) (width . 330) (fullscreen . fullheight)
+             (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1"))))
          (t
           (setq default-frame-alist '(
              (top . 0) (left . 2000) (width . 306) (fullscreen . fullheight)

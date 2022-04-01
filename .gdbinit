@@ -12,7 +12,7 @@ print ('Using Python ' + ' '.join([sys.executable] + sys.version.split('\n')))
 os.environ['SHELL'] = '/bin/bash'
 
 
-libstdcxx = glob.glob(os.path.expanduser('~/.gdbinit.d/python/libstdcxx')) +glob.glob('/usr/share/gcc-*/python/libstdcxx')
+libstdcxx = glob.glob(os.path.expanduser('~/.gdbinit.d/python/libstdcxx')) +glob.glob('/usr/share/gcc*/python/libstdcxx')
 if len(libstdcxx) > 0 and os.path.isdir(libstdcxx[0]):
   libstdcxx_path = os.path.split(libstdcxx[0])[0]
   sys.path.append(libstdcxx_path)
@@ -65,4 +65,11 @@ skip -gfi /usr/include/c++/*
 #set follow-exec-mode same
 
 set print static-members off
-set scheduler-locking on
+# set scheduler-locking on
+
+
+define lsof
+python pid=re.search('process\s+(?P<pid>\d+)', gdb.execute('info proc', True, True))['pid']; print (os.system(f"lsof -p {pid}"))
+end
+
+# python os.system(f"lsof -p {os.getpid()}")
