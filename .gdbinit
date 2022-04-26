@@ -60,7 +60,7 @@ skip -gfi /usr/include/c++/*/*/*
 skip -gfi /usr/include/c++/*/*
 skip -gfi /usr/include/c++/*
 
-#set follow-fork-mode child
+set follow-fork-mode child
 #set detach-on-fork off
 #set follow-exec-mode same
 

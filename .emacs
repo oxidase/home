@@ -60,7 +60,7 @@
 ;; Guarantee all packages are installed on start
 (defvar packages-list '(adoc-mode ag arxiv-mode bitbake bm dired-single magit openwith bazel geiser google-c-style docker docker-tramp
                         dockerfile-mode  elfeed ess yaml-mode fish-mode protobuf-mode fish-mode ob-html-chrome ob-http string-inflection
-                        back-button debian-el)
+                        back-button debian-el use-package lsp-mode)
 ;; (defvar packages-list '(async bm dired-single google-translate js2-mode
 ;;                         magit openwith qml-mode matlab-mode
 ;;                         helm sql-indent org gh-md
@@ -999,7 +999,7 @@ the editor to use."
 
 (when (package-dir "ag*")
   (require 'ag)
-  (custom-set-variables '(ag-ignore-list '("TAGS" "bundle.js" "*.ipynb" "*.html")) '(ag-highlight-search t))
+  (custom-set-variables '(ag-ignore-list '("TAGS" "bundle.js" "*.ipynb" "*.html" "*/node_modules")) '(ag-highlight-search t))
   (global-set-key (kbd "<s-f3>") (lambda () (interactive) (ag/search (word-at-point) (ag/project-root default-directory)))))
 
 (when (package-dir "emojify*")
@@ -1455,15 +1455,11 @@ the editor to use."
       ((string-match ".*krasny.*" user-login-name)
        (cond
          ((not (and display (display-graphic-p))))
-         ((eq (display-mm-width display) 482)
+         ((eq (display-mm-width display) 482) ;; (x-display-pixel-width) (x-display-pixel-height)
           (setq default-frame-alist '(
              (top . 0) (left . 100) (width . 226) (fullscreen . fullheight)
              (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
-         ((eq (display-mm-width display) 508) ;; (x-display-pixel-width) (x-display-pixel-height)
-          (setq default-frame-alist '(
-             (top . 0) (left . 100) (width . 226) (fullscreen . fullheight)
-             (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
-         ((eq (display-mm-width display) 524)
+         ((and (< 508 (display-mm-width display)) (< (display-mm-width display) 524))
           (setq default-frame-alist '(
              (top . 0) (left . 100) (width . 226) (fullscreen . fullheight)
              (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
@@ -1497,7 +1493,9 @@ the editor to use."
 
 ;;{{{ Host specific
 
-(when (file-readable-p (concat custom-dir (system-name))) (load (concat custom-dir (system-name))))
+(if (file-readable-p (concat custom-dir (system-name)))
+    (load (concat custom-dir (system-name)))
+  (write-region ";; -*- mode: lisp -*-" nil (concat custom-dir (system-name))))
 
 ;;}}}
 
