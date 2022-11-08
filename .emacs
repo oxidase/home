@@ -52,7 +52,8 @@
       (quelpa-self-upgrade)))
 
 (require 'quelpa)
-(quelpa '(elf-mode :repo "oxidase/elf-mode" :fetcher github))
+(when (>= emacs-major-version 28)
+  (quelpa '(elf-mode :repo "oxidase/elf-mode" :fetcher github)))
 
 (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
@@ -139,7 +140,7 @@ Default MODIFIER is 'shift."
 
 (setq frame-title-format (list user-login-name " on " system-name " - %b - " invocation-name))
 
-(when (> emacs-major-version 22) (savehist-mode 1))
+(when (> emacs-major-version 22) (setq history-length 1000) (savehist-mode 1))
 ;(setenv "LANG" "en_US.UTF-8")
 ;(setenv "LC_ALL" "en_US.UTF-8")
 ;(setenv "LC_CTYPE" "en_US.UTF-8")
@@ -193,6 +194,7 @@ Default MODIFIER is 'shift."
 (if (not (assq 'user-size initial-frame-alist))      ;; Unless we've specified a number of lines, prevent the startup code from
     (setq tool-bar-originally-present nil))          ;; shrinking the frame because we got rid of the tool-bar.
 (when running-on-darwin
+  (setenv "PATH" (concat "/usr/local/bin:" (getenv "PATH")))
   (setq exec-path (append exec-path '("/usr/local/bin"))))
 ;; ediff
 (setq ediff-window-setup-function 'ediff-setup-windows-plain)
@@ -220,7 +222,7 @@ Default MODIFIER is 'shift."
 
 ;; ANSI colorization of a buffer
 (require 'ansi-color)
-(defun ansi-colors ()
+(defun ansi-color ()
   (interactive)
   (let ((inhibit-read-only t)
         (ansi-color-apply-face-function
@@ -514,6 +516,11 @@ the editor to use."
   (setq magit-last-seen-setup-instructions "1.4.0")
   (setq magit-save-repository-buffers nil)
   (custom-set-variables '(git-commit-summary-max-length 80))
+  (global-set-key "\C-cs" 'magit-status)
+  (global-set-key "\C-cb" 'magit-blame)
+  (global-set-key "\C-cl" 'magit-log-buffer-file)
+  (global-set-key "\C-cg" 'gh-lines)
+
   ;; in .dir-locals.el
   ;; ((json-mode . ((js-indent-level . 2)))
   ;;  (magit-refs-mode . ((eval . (remove-hook 'magit-refs-sections-hook 'magit-insert-remote-branches)))))
@@ -620,6 +627,7 @@ the editor to use."
 (setq tramp-debug-buffer t)
 (setq tramp-verbose 10)
 (setq tramp-histfile-override "/dev/null")
+(setq tramp-remote-process-environment (append tramp-remote-process-environment '("LC_ALL=C.UTF-8" "LANG=C.UTF-8")))
 
 (global-set-key "\C-c\C-t" 'tramp-cleanup-all-connections)
 
@@ -742,9 +750,7 @@ the editor to use."
   (modify-syntax-entry ?_ "w" bazel-workspace-mode-syntax-table))
 
 (when (package-dir "elf-mode*")
-  (require 'elf-mode)
-  ;(elf-setup-default)
-  )
+  (require 'elf-mode))
 
 (when (package-dir "string-inflection*")
   ;; cycle between snake case, camel case, etc.
@@ -784,6 +790,23 @@ the editor to use."
       cmd)
     command))
 
+(defun get-compile-command ()
+  (cond
+   ((eq major-mode 'c++-mode)
+    (cond
+     ((string-equal ext "nxc") "nbc %f -O=%n.rxe; nxt_push %n.rxe")
+     ((string-equal ext "cu") "nvcc -O0 -g %f -o %n")
+     (t "g++ -Wall -O0 -g %f -o %n")))
+   ((eq major-mode 'fortran-mode) "g77 -g %f -o %n")
+   ((eq major-mode 'python-mode) "python3 %f")
+   ((eq major-mode 'haskell-mode) "ghc %f -o %n")
+   ((eq major-mode 'qt-pro-mode) "qmake && make")
+   ((eq major-mode 'makefile-gmake-mode) "make")
+   ((eq major-mode 'jam-mode) "bjam -d2")
+   ((eq major-mode 'go-mode) "go build -v && go test -v && go vet")
+   (t "make")))
+
+
 (defun gud-set-clear () (interactive)
   (message "gud-set-clear")
   (let ((buf (current-buffer))
@@ -817,24 +840,6 @@ the editor to use."
       (c-toggle-auto-newline -1)                           ;; Turn off auto-newline feature
       (defun c-font-lock-invalid-string () t)              ;; Turn off invalid string highlight
       (c-set-offset 'substatement-open 0)                  ;; project brace indent style
-
-      ;; compiler command, depends on the major-mode
-      (make-variable-buffer-local 'compile-command)
-      (setq compile-command
-       (get-shell-command
-         (cond
-          ((eq major-mode 'c++-mode)
-           (cond
-            ((string-equal ext "nxc") "nbc %f -O=%n.rxe; nxt_push %n.rxe")
-            ((string-equal ext "cu") "nvcc -O0 -g %f -o %n")
-            (t "g++ -Wall -O0 -g %f -o %n")))
-          ((eq major-mode 'fortran-mode) "g77 -g %f -o %n")
-          ((eq major-mode 'haskell-mode) "ghc %f -o %n")
-          ((eq major-mode 'qt-pro-mode) "qmake && make")
-          ((eq major-mode 'makefile-gmake-mode) "make")
-          ((eq major-mode 'jam-mode) "bjam -d2")
-          ((eq major-mode 'go-mode) "go build -v && go test -v && go vet")
-          (t "make"))))
 
       ;; run command, allow only commands in that starts with "./"
       (make-variable-buffer-local 'run-command)
@@ -879,10 +884,16 @@ the editor to use."
       (setq show-trailing-whitespace t)
       (local-set-key [C-S-mouse-1] (lambda (event) (interactive "e") (posn-set-point (elt event 1)) (find-tag (word-at-point))))
       ;; compile keys
-      (local-set-key "\C-c\C-c" (lambda () (interactive)
-                                  (if (fboundp 'compile-local)
-                                      (compile-local (get-shell-command compile-command))
-                                      (compile (get-shell-command compile-command))))))
+      (local-set-key "\C-c\C-c" (lambda (command)
+                                  (interactive (list (read-string "Compile command: "
+                                                                  (cond
+                                                                   ((and (default-boundp 'compile-command) (not (string= compile-command (eval (car (get 'compile-command 'standard-value)))))) compile-command)
+                                                                   ((fboundp 'get-compile-command-local) (get-shell-command (get-compile-command-local compile-command)))
+                                                                   (t (get-shell-command (get-compile-command)))))))
+                                  (unless (default-boundp 'compile-command)
+                                    (make-variable-buffer-local 'compile-command))
+                                  (setq-default compile-command command)
+                                  (compile command))))
 
     (when (and (not running-on-windows)
                (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
@@ -999,7 +1010,7 @@ the editor to use."
 
 (when (package-dir "ag*")
   (require 'ag)
-  (custom-set-variables '(ag-ignore-list '("TAGS" "bundle.js" "*.ipynb" "*.html" "*/node_modules")) '(ag-highlight-search t))
+  (custom-set-variables '(ag-ignore-list '("TAGS" "*.bin" "bundle.js" "*.ipynb" "*.html" "*node_modules*")) '(ag-highlight-search t))
   (global-set-key (kbd "<s-f3>") (lambda () (interactive) (ag/search (word-at-point) (ag/project-root default-directory)))))
 
 (when (package-dir "emojify*")
@@ -1323,8 +1334,7 @@ the editor to use."
          ("\\.c$" . c++-mode)
          ("\\.cxx$" . c++-mode)
          ("\\.moc$" . c++-mode)
-         ("\\.cu$" . c++-mode)
-         ("\\.cuh$" . c++-mode)
+         ("\\.cu[lh]?$" . c++-mode)
          ("\\.C$" . c++-mode)
          ("\\.H$" . c++-mode)
          ("\\.nxc$" . c++-mode)
@@ -1336,7 +1346,7 @@ the editor to use."
          ("\\.y$" . c-mode)
          ("\\.glsl$" . c++-mode)
          ("\\.pyi?$" . python-mode)
-         ("\\.py.j2$" . python-mode)
+         ("\\.py.\\(j2\\|tpl\\)$" . python-mode)
          ("\\.css$" . css-mode)
          ("\\.Xdefaults$" . xrdb-mode)
          ("\\.Xenvironment$" . xrdb-mode)
@@ -1405,7 +1415,7 @@ the editor to use."
  ;; Darwin specific settings
  (running-on-darwin
   (setq default-frame-alist '(
-                              (top . 0) (left . 100) (width . 242) (fullscreen . fullheight)
+                              (top . 0) (left . 100) (width . 232) (fullscreen . fullheight)
                               ))
   )
 
@@ -1455,17 +1465,17 @@ the editor to use."
       ((string-match ".*krasny.*" user-login-name)
        (cond
          ((not (and display (display-graphic-p))))
-         ((eq (display-mm-width display) 482) ;; (x-display-pixel-width) (x-display-pixel-height)
+         ((eq (display-mm-width display) 494) ;; (x-display-pixel-width) (x-display-pixel-height)
           (setq default-frame-alist '(
-             (top . 0) (left . 100) (width . 226) (fullscreen . fullheight)
+             (top . 0) (left . 00) (width . 110) (fullscreen . fullheight)
              (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
          ((and (< 508 (display-mm-width display)) (< (display-mm-width display) 524))
           (setq default-frame-alist '(
-             (top . 0) (left . 100) (width . 226) (fullscreen . fullheight)
+             (top . 0) (left . 00) (width . 226) (fullscreen . fullheight)
              (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
          ((eq (display-mm-width display) 542)
           (setq default-frame-alist '(
-             (top . 0) (left . 100) (width . 242) (fullscreen . fullheight)
+             (top . 0) (left . 00) (width . 242) (fullscreen . fullheight)
              (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
          ((eq (display-mm-width display) 677)
           (setq default-frame-alist '(
@@ -1788,3 +1798,10 @@ Use this command in a compilation log buffer."
        (car (get-text-property (point) 'compilation-directory)))
     (setq compilation-current-error (point))
     (next-error-internal)))
+
+(defun reverse-region (beg end)
+ "Reverse characters between BEG and END."
+ (interactive "r")
+ (let ((region (buffer-substring beg end)))
+   (delete-region beg end)
+   (insert (nreverse region))))
