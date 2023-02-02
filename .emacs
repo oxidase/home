@@ -194,7 +194,7 @@ Default MODIFIER is 'shift."
 (if (not (assq 'user-size initial-frame-alist))      ;; Unless we've specified a number of lines, prevent the startup code from
     (setq tool-bar-originally-present nil))          ;; shrinking the frame because we got rid of the tool-bar.
 (when running-on-darwin
-  (setenv "PATH" (concat "/usr/local/bin:" (getenv "PATH")))
+  (setenv "PATH" (concat "/usr/local/bin:/opt/homebrew/bin:" (getenv "PATH")))
   (setq exec-path (append exec-path '("/usr/local/bin"))))
 ;; ediff
 (setq ediff-window-setup-function 'ediff-setup-windows-plain)

@@ -1,11 +1,12 @@
 set fish_greeting
-set -x SHELL /usr/bin/fish
-source ~/.config/fish/conf.d/done.fish
-source ~/.config/fish/functions/fish_prompt.fish
-source ~/.config/fish/completions/bazel.fish
 if test -f ~/.config/fish/(hostname)
    source ~/.config/fish/(hostname)
 end
+source ~/.config/fish/conf.d/done.fish
+source ~/.config/fish/functions/fish_prompt.fish
+source ~/.config/fish/completions/bazel.fish
+set -x SHELL (which fish)
+
 
 function ll --description 'List contents of directory using long format'
     ls -la $argv
