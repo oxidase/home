@@ -53,7 +53,7 @@
 
 (require 'quelpa)
 (when (>= emacs-major-version 28)
-  (quelpa '(elf-mode :repo "oxidase/elf-mode" :fetcher github)))
+  (quelpa '(eff :repo "oxidase/eff" :fetcher github)))
 
 (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
@@ -285,9 +285,19 @@ Default MODIFIER is 'shift."
   (setq elfeed-feeds
         '("http://nullprogram.com/feed/"
           "http://arxiv.org/rss/cs.CV"
-          "http://arxiv.org/rss/cs.RO"
-          "http://arxiv.org/rss/cs.SY"
-          "http://arxiv.org/rss/eess.SP"
+          ;;"http://arxiv.org/rss/cs.RO"
+          ;;"http://arxiv.org/rss/cs.SY"
+          ;;"http://arxiv.org/rss/eess.SP"
+          "https://openai.com/blog/rss.xml"
+          "https://towardsdatascience.com/feed"
+          "https://news.mit.edu/rss/topic/artificial-intelligence2"
+          "https://bair.berkeley.edu/blog/feed.xml"
+          "https://machinelearning.apple.com/rss.xml"
+          "https://www.sciencedaily.com/rss/computers_math/artificial_intelligence.xml"
+          "https://www.deepmind.com/blog/rss.xml"
+          "https://ai2people.com/feed/"
+          "https://machinelearningmastery.com/blog/feed/"
+          "https://aws.amazon.com/blogs/machine-learning/feed/"
           "https://www.reddit.com/r/Cyberpunk/.rss"
           "https://www.reddit.com/r/cpp/.rss"
           "https://www.reddit.com/r/robotics/.rss"
@@ -301,7 +311,8 @@ Default MODIFIER is 'shift."
           "https://www.wired.com/feed/category/transportation/latest/rss"
           "https://www.wired.com/feed/category/ideas/latest/rss"
           "https://www.wired.com/feed/category/gear/latest/rss"
-          "https://habr.com/ru/rss/best/daily/?fl=ru"))
+          ;; "https://habr.com/ru/rss/best/daily/?fl=ru"
+          ))
 
   (defun elfeed-show-quick-url-note ()
     "Fastest way to capture entry link to org agenda from elfeed show mode"
@@ -445,7 +456,7 @@ Default MODIFIER is 'shift."
          (running-on-windows
           ("\\.\\(dll\\|pyd\\)\\'" "depends.exe" (file)))
          (running-on-darwin
-          '(("[^_]?\\.\\(ps\\|pdf\\|djvu\\|epub\\)\\'" "/System/Applications/Preview.app/Contents/MacOS/Preview" (file))
+          '(("[^_]?\\.\\(ps\\|pdf\\|djvu\\|epub\\|tif\\|jp2\\|mov\\)\\'" "open" (file))
             ("\\.\\(ai\\)\\'" "/Applications/Inkscape.app/Contents/MacOS/inkscape" (file))))
          )))
 
@@ -477,8 +488,9 @@ the editor to use."
 ;;; Shell mode
 (setq ansi-color-names-vector ["black" "red4" "green4" "yellow4" "blue3" "magenta4" "cyan4" "white"])
 (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
-(add-hook 'sh-mode-hook (lambda () (modify-syntax-entry ?_ "w" sh-mode-syntax-table)))
+(add-hook 'js-mode-hook (lambda () (modify-syntax-entry ?_ "w" js-mode-syntax-table)))
 (add-hook 'fish-mode-hook (lambda () (modify-syntax-entry ?_ "w" fish-mode-syntax-table)))
+(add-hook 'sh-mode-hook (lambda () (modify-syntax-entry ?_ "w" sh-mode-syntax-table)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Translator (google)
@@ -744,13 +756,14 @@ the editor to use."
   (require 'bazel)
   (add-to-list 'auto-mode-alist '("BUILD(.[^/]+)?$" . bazel-mode))
   (add-to-list 'auto-mode-alist '("\\.BUILD$" . bazel-mode))
+  (add-to-list 'auto-mode-alist '("WORKSPACE.bzlmod$" . bazel-workspace-mode))
   (modify-syntax-entry ?_ "w" bazel-mode-syntax-table)
   (modify-syntax-entry ?_ "w" bazel-build-mode-syntax-table)
   (modify-syntax-entry ?_ "w" bazel-starlark-mode-syntax-table)
   (modify-syntax-entry ?_ "w" bazel-workspace-mode-syntax-table))
 
-(when (package-dir "elf-mode*")
-  (require 'elf-mode))
+(when (package-dir "eff-mode*")
+  (require 'eff-mode))
 
 (when (package-dir "string-inflection*")
   ;; cycle between snake case, camel case, etc.
@@ -831,12 +844,10 @@ the editor to use."
 
 (setq development-mode-hook
   (function (lambda ()
-    (let* ((bname (buffer-name))
-           (fname (file-name-sans-extension bname))
-           (ext (file-name-extension bname)))
-      ;;(print (mapcar (lambda (x) (car x)) (buffer-local-variables)))
-      ;;(print (remove-if-not (lambda (x) (eq 'compile-command (car x))) (buffer-local-variables)))
-      ;;(ggtags-mode 1)
+    ;;(print (mapcar (lambda (x) (car x)) (buffer-local-variables)))
+    ;;(print (remove-if-not (lambda (x) (eq 'compile-command (car x))) (buffer-local-variables)))
+    ;;(ggtags-mode 1)
+    (unless (eq major-mode 'js-mode)
       (c-toggle-auto-newline -1)                           ;; Turn off auto-newline feature
       (defun c-font-lock-invalid-string () t)              ;; Turn off invalid string highlight
       (c-set-offset 'substatement-open 0)                  ;; project brace indent style
@@ -845,14 +856,14 @@ the editor to use."
       (make-variable-buffer-local 'run-command)
       (local-set-key '[S-f5]  (lambda () (interactive) (shell-command (get-shell-command run-command))))
       (setq run-command
-       (get-shell-command
-         (cond
-          ((eq major-mode 'python-mode) "python3 %f")
-          ((eq major-mode 'qml-mode)
-           (local-set-key '[S-f5]  (lambda () (interactive) (save-window-excursion (shell-command run-command))))
-           "qmlscene %f &")
-          (running-on-windows "%n")
-          (t "./%n"))))
+            (get-shell-command
+             (cond
+               ((eq major-mode 'python-mode) "python3 %f")
+               ((eq major-mode 'qml-mode)
+                (local-set-key '[S-f5]  (lambda () (interactive) (save-window-excursion (shell-command run-command))))
+                "qmlscene %f &")
+               (running-on-windows "%n")
+               (t "./%n"))))
       (put 'run-command 'safe-local-variable 'run-command-safe-variable)
       (defun run-command-safe-variable (var) (or
              (string-match "^[ \t\n\r]*\\(qml\\(scene\\|viewer\\)\\|optirun\\)[ \t\n\r]*\./.+" var)
@@ -880,7 +891,7 @@ the editor to use."
     (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode) (eq major-mode 'compilation-mode)
               (eq major-mode 'jam-mode) (eq major-mode 'makefile-gmake-mode) (eq major-mode 'python-mode)
               (eq major-mode 'qt-pro-mode)  (eq major-mode 'go-mode) (eq major-mode 'haskell-mode)
-              (eq major-mode 'bazel-build-mode) (eq major-mode 'bazel-starlark-mode))
+              (eq major-mode 'bazel-build-mode) (eq major-mode 'bazel-starlark-mode) (eq major-mode 'js-mode))
       (setq show-trailing-whitespace t)
       (local-set-key [C-S-mouse-1] (lambda (event) (interactive "e") (posn-set-point (elt event 1)) (find-tag (word-at-point))))
       ;; compile keys
@@ -1117,7 +1128,7 @@ the editor to use."
 ;; set hooks
 (loop for mode in '(c-mode-hook c++-mode-hook fortran-mode-hook jam-mode-hook go-mode-hook
                     qt-pro-mode-hook gud-mode-hook qml-mode-hook python-mode-hook haskell-mode-hook
-                    bazel-build-mode-hook bazel-starlark-mode-hook)
+                    bazel-build-mode-hook bazel-starlark-mode-hook js-mode-hook)
       do (add-hook mode development-mode-hook))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1329,22 +1340,12 @@ the editor to use."
          ("\\.el\\(.gz\\)?$" . lisp-mode)
          ("\\.tikz$" . LaTeX-mode)
          ("\\.tex$" . LaTeX-mode)
-         ("\\.ipp" . c++-mode)
-         ("\\.h$" . c++-mode)
-         ("\\.c$" . c++-mode)
-         ("\\.cxx$" . c++-mode)
-         ("\\.moc$" . c++-mode)
-         ("\\.cu[lh]?$" . c++-mode)
-         ("\\.C$" . c++-mode)
-         ("\\.H$" . c++-mode)
-         ("\\.nxc$" . c++-mode)
+         ("\\.\\(ipp\\|c\\|i\\|h\\|cc\\|cxx\\|moc\\|cul\\|cuh\\|C\\|H\\|nxc\\|glsl\\|mm\\)$" . c++-mode)
          ("\\.pr[oif]$" . qt-pro-mode)
          ("\\.dps$" . pascal-mode)
          ("\\.qml\\(types\\)?$" . qml-mode)
          ("\\.pro$" . text-mode)
-         ("\\.l$" . c-mode)
-         ("\\.y$" . c-mode)
-         ("\\.glsl$" . c++-mode)
+         ("\\.[ly]$" . c-mode)
          ("\\.pyi?$" . python-mode)
          ("\\.py.\\(j2\\|tpl\\)$" . python-mode)
          ("\\.css$" . css-mode)
@@ -1354,7 +1355,7 @@ the editor to use."
          ("*.\\.ad$" . xrdb-mode)
          ("\\.fetchmailrc$" . fetchmail-mode)
          ("\\.osm$" . web-mode)
-         ("\\.xml$" . web-mode)
+         ("\\.xml$" . xml-mode)
          ("\\.launch$" . web-mode)
          ("\\.xsl$" . web-mode)
          ("\\.tei$" . web-mode)
@@ -1372,10 +1373,7 @@ the editor to use."
          ("\\.ds\\'" . java-mode)
          ("Jamfile.v2" . jam-mode)
          ("\\.jam$" . jam-mode)
-         ("\\.mc" . m4-mode)
-         ("\\.m4" . m4-mode)
-         ("\.i$" . c++-mode)
-         ("\.cc$" . c++-mode)
+         ("\\.m[4c]$" . m4-mode)
          ("\.ebuild$" . ebuild-mode)
          ("\.gradle$" . gradle-mode)
          ("CMakeLists\\.txt\\'" . cmake-mode)
@@ -1383,6 +1381,8 @@ the editor to use."
          ("[Mm]akefile\\.inc$" . makefile-mode)
          ("\.go$" . go-mode)
          ("swdd.*\\.txt$" . doc-mode)
+         ("\\.[jt]s$" . js-mode)
+         ("poetry.lock$" . conf-toml-mode)
          ) auto-mode-alist))
 
 ;;}}}
@@ -1415,7 +1415,7 @@ the editor to use."
  ;; Darwin specific settings
  (running-on-darwin
   (setq default-frame-alist '(
-                              (top . 0) (left . 100) (width . 232) (fullscreen . fullheight)
+                              (top . 0) (left . 100) (width . 230) (fullscreen . fullheight)
                               ))
   )
 
@@ -1706,6 +1706,28 @@ the editor to use."
       (write-region nil nil filename)
       (kill-this-buffer)
       (browse-url-of-file filename))))
+
+(defun markdown-html-filter (buffer)
+  """
+M-x httpd-start RET
+M-x impatient-mode RET
+M-x imp-set-user-filter RET markdown-html RET
+M-x browse-url-default-macosx-browser RET http://localhost:8080/imp RET
+"""
+  (princ
+   (with-current-buffer buffer
+     (format "<!DOCTYPE html><html><title>Impatient Markdown!</title><xmp theme=\"united\" style=\"display:none;\"> %s  </xmp><script src=\"http://ndossougbe.github.io/strapdown/dist/strapdown.js\"></script></html>" (buffer-substring-no-properties (point-min) (point-max))))
+   (current-buffer)))
+
+(defun visit-markdown-html ()
+  """Visit markdown buffers in a browser."""
+  (interactive)
+  (require 'simple-httpd)
+  (setq httpd-port 8191)
+  (httpd-start)
+  (impatient-mode)
+  (imp-set-user-filter 'markdown-html-filter)
+  (browse-url-default-macosx-browser (format "http://localhost:%d/imp" httpd-port)))
 
 ;; }}}
 
