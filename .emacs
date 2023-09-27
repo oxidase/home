@@ -305,12 +305,12 @@ Default MODIFIER is 'shift."
           "https://www.reddit.com/r/Driverless/.rss"
           "https://xkcd.com/rss.xml"
           "https://hnrss.org/newest"
-          "https://www.wired.com/feed/rss"
-          "https://www.wired.com/feed/category/science/latest/rss"
-          "https://www.wired.com/feed/category/security/latest/rss"
-          "https://www.wired.com/feed/category/transportation/latest/rss"
-          "https://www.wired.com/feed/category/ideas/latest/rss"
-          "https://www.wired.com/feed/category/gear/latest/rss"
+          ;; "https://www.wired.com/feed/rss"
+          ;; "https://www.wired.com/feed/category/science/latest/rss"
+          ;; "https://www.wired.com/feed/category/security/latest/rss"
+          ;; "https://www.wired.com/feed/category/transportation/latest/rss"
+          ;; "https://www.wired.com/feed/category/ideas/latest/rss"
+          ;; "https://www.wired.com/feed/category/gear/latest/rss"
           ;; "https://habr.com/ru/rss/best/daily/?fl=ru"
           ))
 
@@ -1227,32 +1227,55 @@ the editor to use."
 (when (or (package-dir "org-*") (fboundp 'org-mode))
   (require 'org)
   (require 'ob-core)
+  (require 'org-agenda)
+  (require 'org-tempo)
   (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
   (org-defkey org-mode-map [(control return)] 'mini-calc)
   (org-babel-do-load-languages 'org-babel-load-languages
                                '((http . t) (html-chrome . t) (python . t) (C . t) (haskell . t) (sqlite  . t) (maxima . t)
                                  (latex . t) (plantuml . t) (dot . t) (ruby . t) (R . t) (gnuplot . t) (scheme . t)))
   (add-hook 'org-babel-after-execute-hook (lambda () (condition-case nil (org-display-inline-images) (error nil))))
-  (setq org-babel-results-keyword "results")                           ;; Make babel results blocks lowercase
-  (setq org-confirm-babel-evaluate nil)                                ;; Do not prompt to confirm evaluation
-  (setq org-babel-python-command "python3")
   (add-hook 'scheme-mode-hook 'geiser-mode)
-  (setq geiser-default-implementation 'guile)
-  (setq org-log-done 'time)
-  (plist-put org-format-latex-options :scale 1.5)
-  (setq org-src-fontify-natively t)
+  (add-hook 'org-mode-hook '(lambda () (local-set-key (kbd "<H-tab>") 'pcomplete)))
+
+  (global-set-key "\C-ca" 'org-agenda)
+  (global-set-key "\C-cc" 'org-capture)
+
+
   (custom-set-faces
    '(org-block ((t (:background "#F8F8FF"))))
    '(org-block-begin-line ((t (:underline "#A7A6AA" :foreground "#008ED1" :background "#EAEAFF"))))
    '(org-block-end-line ((t (:overline "#A7A6AA" :foreground "#008ED1" :background "#EAEAFF")))))
-  (setq org-support-shift-select 'always)
-  (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/plantuml.jar"))
+
+  (custom-set-variables
+   '(org-edit-src-content-indentation 0)                            ;; Don't ident in source blocks
+   '(org-src-preserve-indentation nil)
+   '(org-src-fontify-natively t)
+   '(org-babel-results-keyword "results")                           ;; Make babel results blocks lowercase
+   '(org-confirm-babel-evaluate nil)                                ;; Do not prompt to confirm evaluation
+   '(org-babel-python-command "python3")
+   '(geiser-default-implementation 'guile)
+   '(org-log-done 'time)
+   '(org-support-shift-select 'always)
+   '(org-plantuml-jar-path (expand-file-name "~/.emacs.d/plantuml.jar"))
+
+   '(org-format-latex-options
+     '(:foreground default
+       :background default
+       :scale 2
+       :html-foreground "Black"
+       :html-background "Transparent"
+       :html-scale 1.0
+       :matchers ("begin" "$1" "$" "$$" "\\(" "\\[")))
+
+   '(org-directory "~/share/org")
+   '(org-tag-alist '(("BIO" . ?b) ("COMP" . ?c) ("EMACS" . ?e) ("LOC" . ?l)))
+   '(org-capture-templates '(("n" "note" entry (file+datetree "~/notes/notes.org") "* %?\nEntered on %U\n  %i"))))
+
+  (add-to-list 'org-structure-template-alist '("p" . "src python :results output"))
+
   ;(add-to-list 'org-src-lang-modes (quote ("plantuml" . fundamental-mode))) ;; Use fundamental mode when editing plantuml blocks with C-c '
-  (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
-  (add-hook 'org-mode-hook '(lambda () (local-set-key (kbd "<H-tab>") 'pcomplete)))
-  (setq org-format-latex-options '(:foreground default :background default
-      :scale 2 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0
-      :matchers ("begin" "$1" "$" "$$" "\\(" "\\[")))
+
 
   (defun org-babel-kill-session ()
     "Kill session for current code block."
@@ -1270,13 +1293,7 @@ the editor to use."
   ;;         (and ad-return-value
   ;;                (not (eq (org-element-type (org-element-at-point)) 'src-block)))))
 
-  (require 'org-agenda)
-  (setq org-directory "~/share/org")
-  (global-set-key "\C-ca" 'org-agenda)
-  (setq org-tag-alist '(("BIO" . ?b) ("COMP" . ?c) ("EMACS" . ?e) ("LOC" . ?l)))
-  (global-set-key "\C-cc" 'org-capture)
-  (setq org-capture-templates '(("n" "note" entry (file+datetree "~/notes/notes.org") "* %?\nEntered on %U\n  %i")))
- )
+  (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MMM mode
