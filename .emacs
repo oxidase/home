@@ -59,7 +59,7 @@
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 
 ;; Guarantee all packages are installed on start
-(defvar packages-list '(adoc-mode ag arxiv-mode bitbake bm dired-single magit openwith bazel geiser google-c-style docker docker-tramp
+(defvar packages-list '(adoc-mode ag arxiv-mode bitbake bm dired-single magit openwith bazel geiser google-c-style docker
                         dockerfile-mode  elfeed ess yaml-mode fish-mode protobuf-mode fish-mode ob-html-chrome ob-http string-inflection
                         back-button debian-el use-package lsp-mode)
 ;; (defvar packages-list '(async bm dired-single google-translate js2-mode
@@ -646,14 +646,11 @@ the editor to use."
 (when (package-dir "magit-tramp*")
   (require 'magit-tramp))
 
-(when (package-dir "docker-tramp*")
-  (require 'docker-tramp))
-
 (when (package-dir "protobuf-mode*")
   (require 'protobuf-mode))
 
 (when (package-dir "docker-*")
-  (require 'docker-tramp))
+  (require 'docker))
 
 (when (package-dir "twittering-mode-*")
   (require 'twittering-mode))
