@@ -888,7 +888,8 @@ the editor to use."
     (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode) (eq major-mode 'compilation-mode)
               (eq major-mode 'jam-mode) (eq major-mode 'makefile-gmake-mode) (eq major-mode 'python-mode)
               (eq major-mode 'qt-pro-mode)  (eq major-mode 'go-mode) (eq major-mode 'haskell-mode)
-              (eq major-mode 'bazel-build-mode) (eq major-mode 'bazel-starlark-mode) (eq major-mode 'js-mode))
+              (eq major-mode 'bazel-build-mode) (eq major-mode 'bazel-starlark-mode) (eq major-mode 'js-mode)
+              (eq major-mode 'objc-mode))
       (setq show-trailing-whitespace t)
       (local-set-key [C-S-mouse-1] (lambda (event) (interactive "e") (posn-set-point (elt event 1)) (find-tag (word-at-point))))
       ;; compile keys
@@ -906,7 +907,7 @@ the editor to use."
     (when (and (not running-on-windows)
                (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
                    (eq major-mode 'gud-mode) (eq major-mode 'python-mode)
-                   (eq major-mode 'go-mode)))
+                   (eq major-mode 'go-mode) (eq major-mode 'objc-mode)))
       ;; (string-match "\\*gud-\\(.+\\)\\*" (buffer-name gud-comint-buffer))
       ;; debug functions
       (gud-def gud-frame "frame" "\C-g" "Select and print a stack frame.")
@@ -1125,7 +1126,7 @@ the editor to use."
 ;; set hooks
 (loop for mode in '(c-mode-hook c++-mode-hook fortran-mode-hook jam-mode-hook go-mode-hook
                     qt-pro-mode-hook gud-mode-hook qml-mode-hook python-mode-hook haskell-mode-hook
-                    bazel-build-mode-hook bazel-starlark-mode-hook js-mode-hook)
+                    bazel-build-mode-hook bazel-starlark-mode-hook js-mode-hook objc-mode-hook)
       do (add-hook mode development-mode-hook))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1354,7 +1355,8 @@ the editor to use."
          ("\\.el\\(.gz\\)?$" . lisp-mode)
          ("\\.tikz$" . LaTeX-mode)
          ("\\.tex$" . LaTeX-mode)
-         ("\\.\\(ipp\\|c\\|i\\|h\\|cc\\|cxx\\|moc\\|cul\\|cuh\\|C\\|H\\|nxc\\|glsl\\|mm\\)$" . c++-mode)
+         ("\\.\\(ipp\\|c\\|i\\|h\\|cc\\|cxx\\|moc\\|cul\\|cuh\\|C\\|H\\|nxc\\|glsl\\)$" . c++-mode)
+         ("\\.\\(mm\\)$" . objc-mode)
          ("\\.pr[oif]$" . qt-pro-mode)
          ("\\.dps$" . pascal-mode)
          ("\\.qml\\(types\\)?$" . qml-mode)
