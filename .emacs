@@ -585,6 +585,15 @@ the editor to use."
       (kill-new gh-url)
       (browse-url gh-url)))
 
+  ;; Add magit process buffer ANSI colorization
+  (defun magit-color-buffer (proc &rest args)
+    (interactive)
+    (with-current-buffer (process-buffer proc)
+      (read-only-mode -1)
+      (ansi-color-apply-on-region (point-min) (point-max))
+      (read-only-mode 1)))
+  (advice-add 'magit-process-filter :after #'magit-color-buffer)
+
   ;; Some specific function to show/edit branch descriptions
   (defun magit-show-description ()
     "Print descriptions"
