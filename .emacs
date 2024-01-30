@@ -61,7 +61,7 @@
 ;; Guarantee all packages are installed on start
 (defvar packages-list '(adoc-mode ag arxiv-mode bitbake bm dired-single magit openwith bazel geiser google-c-style docker
                         dockerfile-mode  elfeed ess yaml-mode fish-mode protobuf-mode fish-mode ob-html-chrome ob-http string-inflection
-                        back-button debian-el use-package lsp-mode)
+                        back-button debian-el use-package lsp-mode web-mode)
 ;; (defvar packages-list '(async bm dired-single google-translate js2-mode
 ;;                         magit openwith qml-mode matlab-mode
 ;;                         helm sql-indent org gh-md
@@ -768,8 +768,8 @@ the editor to use."
   (modify-syntax-entry ?_ "w" bazel-starlark-mode-syntax-table)
   (modify-syntax-entry ?_ "w" bazel-workspace-mode-syntax-table))
 
-(when (package-dir "eff-mode*")
-  (require 'eff-mode))
+(when (package-dir "eff-*")
+  (require 'eff))
 
 (when (package-dir "string-inflection*")
   ;; cycle between snake case, camel case, etc.
@@ -877,10 +877,11 @@ the editor to use."
 
     ;; settings depending on the mode
     (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
-              (eq major-mode 'jam-mode))
+              (eq major-mode 'jam-mode) (eq major-mode 'objc-mode))
       (setq flyspell-prog-text-faces '(font-lock-comment-face font-lock-doc-face))
       (flyspell-prog-mode)
       (modify-syntax-entry ?_ "w" c++-mode-syntax-table)
+      (modify-syntax-entry ?_ "w" objc-mode-syntax-table)
       (local-set-key '[C-f8]   'flyspell-buffer)
       ;; other settings
       (setq indent-tabs-mode nil))
@@ -1311,15 +1312,7 @@ the editor to use."
 
 (when (package-dir "/web-mode*")
   (require 'web-mode)
-	(setq web-mode-markup-indent-offset 2)
-  (add-to-list 'auto-mode-alist '("\\.phtml\\'" . web-mode))
-  (add-to-list 'auto-mode-alist '("\\.tpl\\.php\\'" . web-mode))
-  (add-to-list 'auto-mode-alist '("\\.[gj]sp\\'" . web-mode))
-  (add-to-list 'auto-mode-alist '("\\.as[cp]x\\'" . web-mode))
-  (add-to-list 'auto-mode-alist '("\\.erb\\'" . web-mode))
-  (add-to-list 'auto-mode-alist '("\\.mustache\\'" . web-mode))
-  (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
-  (add-to-list 'auto-mode-alist '("\\.tmpl\\'" . web-mode)))
+	(setq web-mode-markup-indent-offset 2))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C-[S]-Tab cycle buffer
@@ -1380,10 +1373,19 @@ the editor to use."
          ("*.\\.ad$" . xrdb-mode)
          ("\\.fetchmailrc$" . fetchmail-mode)
          ("\\.osm$" . web-mode)
-         ("\\.xml$" . xml-mode)
+         ("\\.phtml$" . web-mode)
+         ("\\.tpl\\.php$" . web-mode)
+         ("\\.[gj]sp$" . web-mode)
+         ("\\.as[cp]x$" . web-mode)
+         ("\\.erb$" . web-mode)
+         ("\\.mustache$" . web-mode)
+         ("\\.html?$" . web-mode)
+         ("\\.tsx$" . web-mode)
+         ("\\.tmpl$" . web-mode)
          ("\\.launch$" . web-mode)
          ("\\.xsl$" . web-mode)
          ("\\.tei$" . web-mode)
+         ("\\.xml$" . xml-mode)
          ("\\.php$" . php-mode)
          ("\\.dcl$" . dtd-mode)
          ("\\.dec$" . dtd-mode)

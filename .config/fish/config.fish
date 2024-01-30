@@ -1,6 +1,7 @@
 set fish_greeting
-if test -f ~/.config/fish/(hostname)
-   source ~/.config/fish/(hostname)
+set -l hostfile (hostname -s)
+if test -f ~/.config/fish/$hostfile
+   source ~/.config/fish/$hostfile
 end
 source ~/.config/fish/conf.d/done.fish
 source ~/.config/fish/functions/fish_prompt.fish
