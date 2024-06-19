@@ -60,20 +60,8 @@
 
 ;; Guarantee all packages are installed on start
 (defvar packages-list '(adoc-mode ag arxiv-mode bitbake bm dired-single magit openwith bazel geiser google-c-style docker
-                        dockerfile-mode  elfeed ess yaml-mode fish-mode protobuf-mode fish-mode ob-html-chrome ob-http string-inflection
-                        back-button debian-el use-package lsp-mode web-mode)
-;; (defvar packages-list '(async bm dired-single google-translate js2-mode
-;;                         magit openwith qml-mode matlab-mode
-;;                         helm sql-indent org gh-md
-;;                         ess feature-mode
-;;                         web-mode htmlize markdown-mode markdown-mode+ markdown-preview-mode
-;;                         ag emojify
-;;                         jade-mode lua-mode
-;;                         yarn-mode docker docker-tramp dash
-;;                         gnuplot gnuplot-mode protobuf-mode
-;;                         haskell-mode intero
-;;                         go-mode lsp-mode bazel-mode
-;;                         ffmpeg-player somafm volume elfeed fish-mode)
+                        dockerfile-mode  elfeed ess yaml-mode fish-mode protobuf-mode ob-html-chrome ob-http string-inflection
+                        back-button debian-el use-package lsp-mode rainbow-mode web-mode)
   "List of packages needs to be installed at launch")
 (defun has-package-not-installed ()
   (unless package--initialized
@@ -488,7 +476,6 @@ the editor to use."
 ;;; Shell mode
 (setq ansi-color-names-vector ["black" "red4" "green4" "yellow4" "blue3" "magenta4" "cyan4" "white"])
 (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
-(add-hook 'js-mode-hook (lambda () (modify-syntax-entry ?_ "w" js-mode-syntax-table)))
 (add-hook 'fish-mode-hook (lambda () (modify-syntax-entry ?_ "w" fish-mode-syntax-table)))
 (add-hook 'sh-mode-hook (lambda () (modify-syntax-entry ?_ "w" sh-mode-syntax-table)))
 
@@ -730,14 +717,7 @@ the editor to use."
   (message "Aspell not found."))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Javascript mode
-(when (package-dir "js2-mode*")
-  (load-library "js2-mode")
-  (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
-  (add-to-list 'interpreter-mode-alist '("node" . js2-mode))
-  (modify-syntax-entry ?_ "w" js2-mode-syntax-table)
-  (add-hook 'js2-mode-hook (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace))))
-
+;; Other modes
 (add-hook 'json-mode-hook (lambda () (setq tab-width 2)))
 (setq auto-mode-alist (append auto-mode-alist '(("\\.json$" . json-mode) ("\\.geojson$" . json-mode) ("\\.manifest$" . json-mode))))
 
@@ -809,22 +789,70 @@ the editor to use."
       cmd)
     command))
 
-(defun get-compile-command ()
-  (cond
-   ((eq major-mode 'c++-mode)
-    (cond
-     ((string-equal ext "nxc") "nbc %f -O=%n.rxe; nxt_push %n.rxe")
-     ((string-equal ext "cu") "nvcc -O0 -g %f -o %n")
-     (t "g++ -Wall -O0 -g %f -o %n")))
-   ((eq major-mode 'fortran-mode) "g77 -g %f -o %n")
-   ((eq major-mode 'python-mode) "python3 %f")
-   ((eq major-mode 'haskell-mode) "ghc %f -o %n")
-   ((eq major-mode 'qt-pro-mode) "qmake && make")
-   ((eq major-mode 'makefile-gmake-mode) "make")
-   ((eq major-mode 'jam-mode) "bjam -d2")
-   ((eq major-mode 'go-mode) "go build -v && go test -v && go vet")
-   (t "make")))
+(defun get-bazel-root (dir)
+  (or (vc-find-root dir "WORKSPACE") (vc-find-root dir "MODULE.bazel")))
 
+(defun get-compile-command ()
+  (let* ((bufname (file-name-nondirectory (buffer-file-name)))
+         (extension (file-name-extension bufname))
+         (dir (expand-file-name default-directory))
+         (bazel-root (get-bazel-root dir)))
+    (cond
+      (bazel-root (format "bazel test //%s..." (substring dir (length (expand-file-name bazel-root)))))
+      ((eq major-mode 'c++-mode)
+       (cond
+         ((string-equal extension "nxc") "nbc %f -O=%n.rxe; nxt_push %n.rxe")
+         ((string-equal extension "cu") "nvcc -O0 -g %f -o %n")
+         (t "g++ -std=c++20 -Wall -O0 -g %f -o %n")))
+      ((eq major-mode 'fortran-mode) "g77 -g %f -o %n")
+      ((eq major-mode 'python-mode) "python3 %f")
+      ((eq major-mode 'haskell-mode) "ghc %f -o %n")
+      ((eq major-mode 'qt-pro-mode) "qmake && make")
+      ((eq major-mode 'makefile-gmake-mode) "make")
+      ((eq major-mode 'jam-mode) "bjam -d2")
+      ((eq major-mode 'go-mode) "go build -v && go test -v && go vet")
+      ((eq major-mode 'web-mode) "yarn test")
+      (t "make -k "))))
+
+
+(defun do-compile (command)
+  ;; Get compile command and cached it for next invocations
+  (interactive (list (if compiled-once compile-command (read-string "Compile command: " compile-command))))
+  (setq-local compiled-once t)
+  (setq-local compile-command command)
+
+  ;; Get compile directory, modify default-directory, compile, and restore default-directory
+  (let* ((saved-default-directory default-directory)
+         (bazel (string-match-p "^\s*bazel" command))
+         (default-directory
+          (or
+           (when bazel (vc-find-root default-directory "WORKSPACE"))
+           (when bazel (vc-find-root default-directory "MODULE.bazel"))
+           (when (boundp 'ag/project-root) (ag/project-root default-directory))
+           default-directory)))
+    (compile command)
+    (setq default-directory saved-default-directory)))
+
+(defun do-run(command)
+  ;; Get run command and cached it for next invocations
+  (interactive (list (if run-once run-command (read-string "Run command: " run-command))))
+  (setq-local run-once t)
+  (setq-local run-command command)
+
+  (let*
+      ((buffer-name "*std output*")
+       (output-buffer (or (get-buffer buffer-name) (generate-new-buffer buffer-name)))
+       (shell-command (get-shell-command command))
+       (output-window (async-shell-command shell-command output-buffer))
+       (proc (get-buffer-process output-buffer)))
+    (if (process-live-p proc)
+        (set-process-sentinel
+         proc #'(lambda (process signal)
+                  (when (memq (process-status process) '(exit signal))
+                    (message "Process %d exited with code %d" (process-id process) (process-exit-status process))))))
+    (other-window 1)
+    (switch-to-buffer output-buffer)
+    (other-window 1)))
 
 (defun gud-set-clear () (interactive)
   (message "gud-set-clear")
@@ -848,95 +876,81 @@ the editor to use."
         (gud-refresh)
       (progn  (split-window-vertically) (other-window 1) (switch-to-buffer gud-comint-buffer) (other-window 1)))))
 
-(setq development-mode-hook
-  (function (lambda ()
-    ;;(print (mapcar (lambda (x) (car x)) (buffer-local-variables)))
-    ;;(print (remove-if-not (lambda (x) (eq 'compile-command (car x))) (buffer-local-variables)))
-    ;;(ggtags-mode 1)
-    (unless (eq major-mode 'js-mode)
-      (c-toggle-auto-newline -1)                           ;; Turn off auto-newline feature
-      (defun c-font-lock-invalid-string () t)              ;; Turn off invalid string highlight
-      (c-set-offset 'substatement-open 0)                  ;; project brace indent style
+(defun development-mode-hook ()
+  ;;(print (mapcar (lambda (x) (car x)) (buffer-local-variables)))
+  ;;(print (remove-if-not (lambda (x) (eq 'compile-command (car x))) (buffer-local-variables)))
+  ;;(ggtags-mode 1)
 
-      ;; run command, allow only commands in that starts with "./"
-      (make-variable-buffer-local 'run-command)
-      (local-set-key '[S-f5]  (lambda () (interactive) (shell-command (get-shell-command run-command))))
-      (setq run-command
-            (get-shell-command
-             (cond
-               ((eq major-mode 'python-mode) "python3 %f")
-               ((eq major-mode 'qml-mode)
-                (local-set-key '[S-f5]  (lambda () (interactive) (save-window-excursion (shell-command run-command))))
-                "qmlscene %f &")
-               (running-on-windows "%n")
-               (t "./%n"))))
-      (put 'run-command 'safe-local-variable 'run-command-safe-variable)
-      (defun run-command-safe-variable (var) (or
-             (string-match "^[ \t\n\r]*\\(qml\\(scene\\|viewer\\)\\|optirun\\)[ \t\n\r]*\./.+" var)
-             (string-match "/usr/bin/curl.+" var))))
+  (setq show-trailing-whitespace t)
+  (defun c-font-lock-invalid-string () t)              ;; Turn off invalid string highlight
+  (c-toggle-auto-newline -1)                           ;; Turn off auto-newline feature
+  (c-set-offset 'substatement-open 0)                  ;; Project brace indent style
+
+  ;; Compile command
+  (set (make-local-variable 'compiled-once) nil)
+  (set 'compile-command (get-shell-command (get-compile-command)))
+  (local-set-key "\C-c\C-c" 'do-compile)
+
+  ;; Run command, allow only commands in that starts with "./"
+  (set (make-local-variable 'run-once) nil)
+  (set
+   (make-local-variable 'run-command)
+   (get-shell-command
+    (cond
+     ((eq major-mode 'python-mode) "python3 %f")
+     ((eq major-mode 'qml-mode)"qmlscene %f &")
+     (running-on-windows "%n")
+       (t "./%n"))))
+  (put 'run-command 'safe-local-variable 'run-command-safe-variable)
+  (defun run-command-safe-variable (var)
+    (or
+     (string-match "^[ \t\n\r]*\\(qml\\(scene\\|viewer\\)\\|optirun\\)[ \t\n\r]*\./.+" var)
+       (string-match "/usr/bin/curl.+" var)))
+  (local-set-key "\C-c\C-v" 'do-run)
 
     ;; settings depending on the mode
-    (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
-              (eq major-mode 'jam-mode) (eq major-mode 'objc-mode))
-      (setq flyspell-prog-text-faces '(font-lock-comment-face font-lock-doc-face))
-      (flyspell-prog-mode)
-      (modify-syntax-entry ?_ "w" c++-mode-syntax-table)
-      (modify-syntax-entry ?_ "w" objc-mode-syntax-table)
-      (local-set-key '[C-f8]   'flyspell-buffer)
-      ;; other settings
-      (setq indent-tabs-mode nil))
+  (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
+            (eq major-mode 'jam-mode) (eq major-mode 'objc-mode))
+    (setq flyspell-prog-text-faces '(font-lock-comment-face font-lock-doc-face))
+    (flyspell-prog-mode)
+    (local-set-key '[C-f8]   'flyspell-buffer)
+    ;; other settings
+    (setq indent-tabs-mode nil))
 
-    ;; TAGS lookup
-    (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
-              (eq major-mode 'jam-mode) (eq major-mode 'gud-mode))
-      (local-set-key (kbd "M-/") 'xref-find-references)
-      (setq-local xref-prompt-for-identifier nil))
+  ;; TAGS lookup
+  (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
+            (eq major-mode 'jam-mode) (eq major-mode 'gud-mode))
+    (local-set-key (kbd "M-/") 'xref-find-references)
+    (setq-local xref-prompt-for-identifier nil))
 
-    (when (eq major-mode 'fortran-mode)
-      (local-set-key "\C-c'" 'fortran-comment-region))
+  (when (eq major-mode 'fortran-mode)
+    (local-set-key "\C-c'" 'fortran-comment-region))
 
-    (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode) (eq major-mode 'compilation-mode)
-              (eq major-mode 'jam-mode) (eq major-mode 'makefile-gmake-mode) (eq major-mode 'python-mode)
-              (eq major-mode 'qt-pro-mode)  (eq major-mode 'go-mode) (eq major-mode 'haskell-mode)
-              (eq major-mode 'bazel-build-mode) (eq major-mode 'bazel-starlark-mode) (eq major-mode 'js-mode)
-              (eq major-mode 'objc-mode))
-      (setq show-trailing-whitespace t)
-      (local-set-key [C-S-mouse-1] (lambda (event) (interactive "e") (posn-set-point (elt event 1)) (find-tag (word-at-point))))
-      ;; compile keys
-      (local-set-key "\C-c\C-c" (lambda (command)
-                                  (interactive (list (read-string "Compile command: "
-                                                                  (cond
-                                                                   ((and (default-boundp 'compile-command) (not (string= compile-command (eval (car (get 'compile-command 'standard-value)))))) compile-command)
-                                                                   ((fboundp 'get-compile-command-local) (get-shell-command (get-compile-command-local compile-command)))
-                                                                   (t (get-shell-command (get-compile-command)))))))
-                                  (unless (default-boundp 'compile-command)
-                                    (make-variable-buffer-local 'compile-command))
-                                  (setq-default compile-command command)
-                                  (compile command))))
+  (when (and (not running-on-windows)
+             (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
+                 (eq major-mode 'gud-mode) (eq major-mode 'python-mode)
+                 (eq major-mode 'go-mode) (eq major-mode 'objc-mode)))
+    ;; (string-match "\\*gud-\\(.+\\)\\*" (buffer-name gud-comint-buffer))
+    ;; debug functions
+    (gud-def gud-frame "frame" "\C-g" "Select and print a stack frame.")
 
-    (when (and (not running-on-windows)
-               (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
-                   (eq major-mode 'gud-mode) (eq major-mode 'python-mode)
-                   (eq major-mode 'go-mode) (eq major-mode 'objc-mode)))
-      ;; (string-match "\\*gud-\\(.+\\)\\*" (buffer-name gud-comint-buffer))
-      ;; debug functions
-      (gud-def gud-frame "frame" "\C-g" "Select and print a stack frame.")
-
-      ;; debug keys
-      (local-set-key '[(super f11)]  'gud-until)
-      (local-set-key '[f9]     'gud-set-clear)
-      (local-set-key '[S-f9]   'gud-break)
-      (local-set-key '[C-f9]   'gud-remove)
-      (local-set-key '[f10]    'gud-next)
-      (local-set-key '[f11]    'gud-step)
-      (local-set-key '[f12]    'gud-finish))
+    ;; debug keys
+    (local-set-key '[(super f11)]  'gud-until)
+    (local-set-key '[f9]     'gud-set-clear)
+    (local-set-key '[S-f9]   'gud-break)
+    (local-set-key '[C-f9]   'gud-remove)
+    (local-set-key '[f10]    'gud-next)
+    (local-set-key '[f11]    'gud-step)
+    (local-set-key '[f12]    'gud-finish))
 
     ;; auto complete
-    (when (and (boundp 'ac-sources) (listp ac-sources))
-      (add-to-list 'ac-sources 'ac-source-semantic-raw))
-    )))
+  (when (and (boundp 'ac-sources) (listp ac-sources))
+    (add-to-list 'ac-sources 'ac-source-semantic-raw))
+  )
 (modify-syntax-entry ?_ "w" c++-mode-syntax-table)
 (modify-syntax-entry ?_ "w" java-mode-syntax-table)
+(modify-syntax-entry ?_ "w" objc-mode-syntax-table)
+
 
 (add-hook 'c++-mode-hook
       '(lambda()
@@ -1136,8 +1150,9 @@ the editor to use."
 ;; set hooks
 (loop for mode in '(c-mode-hook c++-mode-hook fortran-mode-hook jam-mode-hook go-mode-hook
                     qt-pro-mode-hook gud-mode-hook qml-mode-hook python-mode-hook haskell-mode-hook
-                    bazel-build-mode-hook bazel-starlark-mode-hook js-mode-hook objc-mode-hook)
-      do (add-hook mode development-mode-hook))
+                    bazel-build-mode-hook bazel-starlark-mode-hook bazel-module-mode-hook bazel-workspace-mode-hook
+                    js-mode-hook objc-mode-hook web-mode-hook json-mode)
+      do (add-hook mode 'development-mode-hook))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AucTeX
@@ -1244,7 +1259,9 @@ the editor to use."
                                  (latex . t) (plantuml . t) (dot . t) (ruby . t) (R . t) (gnuplot . t) (scheme . t)))
   (add-hook 'org-babel-after-execute-hook (lambda () (condition-case nil (org-display-inline-images) (error nil))))
   (add-hook 'scheme-mode-hook 'geiser-mode)
-  (add-hook 'org-mode-hook '(lambda () (local-set-key (kbd "<H-tab>") 'pcomplete)))
+  (add-hook 'org-mode-hook '(lambda ()
+                             ;(when (fboundp 'electric-indent-mode) (electric-indent-mode -1))
+                             (local-set-key (kbd "<H-tab>") 'pcomplete)))
 
   (global-set-key "\C-ca" 'org-agenda)
   (global-set-key "\C-cc" 'org-capture)
@@ -1281,6 +1298,8 @@ the editor to use."
    '(org-capture-templates '(("n" "note" entry (file+datetree "~/notes/notes.org") "* %?\nEntered on %U\n  %i"))))
 
   (add-to-list 'org-structure-template-alist '("p" . "src python :results output"))
+  (add-to-list 'org-structure-template-alist '("pg" . "src sql :engine postgresql :dbuser postgres :dbhost localhost :dbport 5432"))
+  (add-to-list 'org-structure-template-alist '("sb" . "src sql :engine postgresql :dbuser postgres :dbpassword postgres :dbhost localhost :dbport 54322"))
 
   ;(add-to-list 'org-src-lang-modes (quote ("plantuml" . fundamental-mode))) ;; Use fundamental mode when editing plantuml blocks with C-c '
 
@@ -1312,7 +1331,15 @@ the editor to use."
 
 (when (package-dir "/web-mode*")
   (require 'web-mode)
+  (add-hook 'web-mode-hook
+            (lambda ()
+              (modify-syntax-entry ?_ "w" web-mode-syntax-table)
+              (local-set-key (kbd "C-c C-o") 'browse-url-of-buffer)))
+  ;; (add-to-list 'web-mode-comment-formats '("jsx" . "//"))
 	(setq web-mode-markup-indent-offset 2))
+
+;; (use-package rainbow-mode
+;;   :hook (web-mode emacs-lisp-mode lisp-mode))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C-[S]-Tab cycle buffer
@@ -1351,13 +1378,13 @@ the editor to use."
 ;;Changing .h to use automatic C++ formatting (instead of standard C)
 (setq auto-mode-alist
       (append
-       '((".emacs$" . lisp-mode)
+       '((".emacs$" . emacs-lisp-mode)
          ("\\.mdl$" . lisp-mode)
          ("\\.cg$" . lisp-mode)
          ("\\.el\\(.gz\\)?$" . lisp-mode)
          ("\\.tikz$" . LaTeX-mode)
          ("\\.tex$" . LaTeX-mode)
-         ("\\.\\(ipp\\|c\\|i\\|h\\|cc\\|cxx\\|moc\\|cul\\|cuh\\|C\\|H\\|nxc\\|glsl\\)$" . c++-mode)
+         ("\\.\\(ipp\\|c\\|i\\|h\\|cc\\|cxx\\|moc\\|cul\\|cuh\\|C\\|H\\|nxc\\|glsl\\|inl\\)$" . c++-mode)
          ("\\.\\(mm\\)$" . objc-mode)
          ("\\.pr[oif]$" . qt-pro-mode)
          ("\\.dps$" . pascal-mode)
@@ -1385,7 +1412,7 @@ the editor to use."
          ("\\.launch$" . web-mode)
          ("\\.xsl$" . web-mode)
          ("\\.tei$" . web-mode)
-         ("\\.xml$" . xml-mode)
+         ("\\.[kx]ml$" . text-mode)
          ("\\.php$" . php-mode)
          ("\\.dcl$" . dtd-mode)
          ("\\.dec$" . dtd-mode)
@@ -1408,7 +1435,7 @@ the editor to use."
          ("[Mm]akefile\\.inc$" . makefile-mode)
          ("\.go$" . go-mode)
          ("swdd.*\\.txt$" . doc-mode)
-         ("\\.[jt]s$" . js-mode)
+         ("\\.c?[jt]sx?$" . web-mode)
          ("poetry.lock$" . conf-toml-mode)
          ) auto-mode-alist))
 
@@ -1595,7 +1622,7 @@ the editor to use."
 (defun blink-paren-first-line ()
   (interactive)
   ;; if mode is c++ or lisp and
-  (when (and (member major-mode '(c++-mode lisp-mode qml-mode))
+  (when (and (member major-mode '(c++-mode lisp-mode emacs-lisp-mode qml-mode web-mode))
              (eq (syntax-class (syntax-after (1- (point)))) 5))
     ;; get corresponding opening parenthesis
     (let* ((open (condition-case () (scan-sexps (point) -1) (error nil)))
