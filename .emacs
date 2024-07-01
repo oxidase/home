@@ -59,7 +59,7 @@
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 
 ;; Guarantee all packages are installed on start
-(defvar packages-list '(adoc-mode ag arxiv-mode bitbake bm dired-single magit openwith bazel geiser google-c-style docker
+(defvar packages-list '(adoc-mode ag arxiv-mode bitbake bm dired-single magit gptel openwith bazel geiser google-c-style docker
                         dockerfile-mode  elfeed ess yaml-mode fish-mode protobuf-mode ob-html-chrome ob-http string-inflection
                         back-button debian-el use-package lsp-mode rainbow-mode web-mode)
   "List of packages needs to be installed at launch")
@@ -768,82 +768,64 @@ the editor to use."
 (require 'glsl-mode)
 
 (setq gud-tooltip-mode t)
-
 (setq compilation-ask-about-save nil)
-;; (setq compilation-window-height 10)
-
-(defun get-shell-command (command)
-  (if buffer-file-name
-    (let* ((cmd command)
-           (bufname (file-name-nondirectory (buffer-file-name)))
-           (filename (file-name-sans-extension bufname))
-           (extension (file-name-extension bufname))
-           (dirname (expand-file-name "."))
-           (tex (if (and (boundp 'TeX-master) (stringp TeX-master)) TeX-master bufname)))
-      (setf cmd (replace-regexp-in-string "%%" "%" cmd))
-      (setf cmd (replace-regexp-in-string "%f" bufname cmd))
-      (setf cmd (replace-regexp-in-string "%d" dirname cmd))
-      (setf cmd (replace-regexp-in-string "%n" filename cmd))
-      (setf cmd (replace-regexp-in-string "%e" extension cmd))
-      (setf cmd (replace-regexp-in-string "%t" tex cmd))
-      cmd)
-    command))
 
 (defun get-bazel-root (dir)
   (or (vc-find-root dir "WORKSPACE") (vc-find-root dir "MODULE.bazel")))
 
+(defun get-yarn-root (dir)
+  (when (member major-mode '(web-mode json-mode)) (vc-find-root dir "package.json")))
+
 (defun get-compile-command ()
-  (let* ((bufname (file-name-nondirectory (buffer-file-name)))
-         (extension (file-name-extension bufname))
+  (let* ((abs (buffer-file-name))
+         (name (file-name-nondirectory abs))
+         (stem (file-name-sans-extension name))
+         (ext (file-name-extension name))
          (dir (expand-file-name default-directory))
-         (bazel-root (get-bazel-root dir)))
+         (bazel-root (get-bazel-root dir))
+         (yarn-root (get-yarn-root dir)))
     (cond
       (bazel-root (format "bazel test //%s..." (substring dir (length (expand-file-name bazel-root)))))
       ((eq major-mode 'c++-mode)
        (cond
-         ((string-equal extension "nxc") "nbc %f -O=%n.rxe; nxt_push %n.rxe")
-         ((string-equal extension "cu") "nvcc -O0 -g %f -o %n")
-         (t "g++ -std=c++20 -Wall -O0 -g %f -o %n")))
-      ((eq major-mode 'fortran-mode) "g77 -g %f -o %n")
-      ((eq major-mode 'python-mode) "python3 %f")
-      ((eq major-mode 'haskell-mode) "ghc %f -o %n")
-      ((eq major-mode 'qt-pro-mode) "qmake && make")
+         ((string-equal ext "nxc") (format "nbc %s -O=%s.rxe; nxt_push %s.rxe" name stem stem))
+         ((string-equal ext "cu") (format "nvcc -O0 -g %s -o %s" name stem))
+         (t (format "g++ -std=c++20 -Wall -O0 -g %s -o %s" name stem))))
+      ((eq major-mode 'python-mode) (format "python3 %s" name))
+      ((eq major-mode 'haskell-mode) ("ghc %s -o %s" name stem))
       ((eq major-mode 'makefile-gmake-mode) "make")
-      ((eq major-mode 'jam-mode) "bjam -d2")
-      ((eq major-mode 'go-mode) "go build -v && go test -v && go vet")
-      ((eq major-mode 'web-mode) "yarn test")
+      (yarn-root
+       (cond
+        ((string-match-p ".+[\\._]test$" stem)
+         (format "yarn test %s" (substring abs (length (expand-file-name yarn-root)))))
+         (t "yarn test")))
       (t "make -k "))))
-
 
 (defun do-compile (command)
   ;; Get compile command and cached it for next invocations
-  (interactive (list (if compiled-once compile-command (read-string "Compile command: " compile-command))))
-  (setq-local compiled-once t)
+  (interactive (list (if (< compiled-times 2) (read-string "Compile command: " compile-command) compile-command)))
+  (setq-local compiled-times (if (string= compile-command command) (1+ compiled-times) 0))
   (setq-local compile-command command)
 
   ;; Get compile directory, modify default-directory, compile, and restore default-directory
   (let* ((saved-default-directory default-directory)
          (bazel (string-match-p "^\s*bazel" command))
-         (default-directory
-          (or
-           (when bazel (vc-find-root default-directory "WORKSPACE"))
-           (when bazel (vc-find-root default-directory "MODULE.bazel"))
-           (when (boundp 'ag/project-root) (ag/project-root default-directory))
-           default-directory)))
+         (yarn-root (get-yarn-root default-directory))
+         (project-root (and (fboundp 'ag/project-root) (ag/project-root default-directory)))
+         (default-directory (or (and bazel (get-bazel-root default-directory)) yarn-root default-directory)))
     (compile command)
     (setq default-directory saved-default-directory)))
 
 (defun do-run(command)
   ;; Get run command and cached it for next invocations
-  (interactive (list (if run-once run-command (read-string "Run command: " run-command))))
-  (setq-local run-once t)
+  (interactive (list (if (< run-times 2) (read-string "Run command: " run-command) run-command)))
+  (setq-local run-times (if (string= run-command command) (1+ run-times) 0))
   (setq-local run-command command)
 
   (let*
       ((buffer-name "*std output*")
        (output-buffer (or (get-buffer buffer-name) (generate-new-buffer buffer-name)))
-       (shell-command (get-shell-command command))
-       (output-window (async-shell-command shell-command output-buffer))
+       (output-window (async-shell-command command output-buffer))
        (proc (get-buffer-process output-buffer)))
     (if (process-live-p proc)
         (set-process-sentinel
@@ -887,20 +869,17 @@ the editor to use."
   (c-set-offset 'substatement-open 0)                  ;; Project brace indent style
 
   ;; Compile command
-  (set (make-local-variable 'compiled-once) nil)
-  (set 'compile-command (get-shell-command (get-compile-command)))
+  (set (make-local-variable 'compiled-times) 0)
+  (set 'compile-command (get-compile-command))
   (local-set-key "\C-c\C-c" 'do-compile)
 
   ;; Run command, allow only commands in that starts with "./"
-  (set (make-local-variable 'run-once) nil)
+  (set (make-local-variable 'run-times) 0)
   (set
    (make-local-variable 'run-command)
-   (get-shell-command
-    (cond
-     ((eq major-mode 'python-mode) "python3 %f")
-     ((eq major-mode 'qml-mode)"qmlscene %f &")
-     (running-on-windows "%n")
-       (t "./%n"))))
+   (cond
+    ((eq major-mode 'python-mode) (format "python3 %s" (file-name-nondirectory (buffer-file-name))))
+    (t (format "%s%s" (if running-on-windows "" "./") (file-name-base (buffer-file-name))))))
   (put 'run-command 'safe-local-variable 'run-command-safe-variable)
   (defun run-command-safe-variable (var)
     (or
@@ -1283,6 +1262,15 @@ the editor to use."
    '(org-log-done 'time)
    '(org-support-shift-select 'always)
    '(org-plantuml-jar-path (expand-file-name "~/.emacs.d/plantuml.jar"))
+   '(org-todo-keyword-faces '(("TODO" . "deep pink")
+                              ("DONE" . "sea green")
+                              ("IDEA" . "IndianRed2")
+                              ("INPROGRESS" . "DodgerBlue3")
+                              ("REPORT" . "blue")
+                              ("BUG" . "red")
+                              ("KNOWNCAUSE" . "purple")
+                              ("FIXED" . "SpringGreen3")
+                              ("CANCELED" . "grey")))
 
    '(org-format-latex-options
      '(:foreground default
@@ -1435,7 +1423,7 @@ the editor to use."
          ("[Mm]akefile\\.inc$" . makefile-mode)
          ("\.go$" . go-mode)
          ("swdd.*\\.txt$" . doc-mode)
-         ("\\.c?[jt]sx?$" . web-mode)
+         ("\\.[mc]?[jt]sx?$" . web-mode)
          ("poetry.lock$" . conf-toml-mode)
          ) auto-mode-alist))
 
@@ -1881,3 +1869,26 @@ Use this command in a compilation log buffer."
  (let ((region (buffer-substring beg end)))
    (delete-region beg end)
    (insert (nreverse region))))
+
+
+(defun insert-random-uuid()
+  (interactive)
+  (let ((xstr (md5 (format "%s%s%s%s%s%s%s%s%s%s"
+                              (user-uid)
+                              (emacs-pid)
+                              (system-name)
+                              (user-full-name)
+                              (current-time)
+                              (emacs-uptime)
+                              (garbage-collect)
+                              (buffer-string)
+                              (random)
+                              (recent-keys)))))
+      (insert (format "%s-%s-4%s-%s%s-%s"
+                      (substring xstr 0 8)
+                      (substring xstr 8 12)
+                      (substring xstr 13 16)
+                      (format "%x" (+ 8 (random 4)))
+                      (substring xstr 17 20)
+                      (substring xstr 20 32))))
+    )
