@@ -59,16 +59,19 @@
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 
 ;; Guarantee all packages are installed on start
-(defvar packages-list '(adoc-mode ag arxiv-mode bitbake bm dired-single magit gptel openwith bazel geiser google-c-style docker
-                        dockerfile-mode  elfeed ess yaml-mode fish-mode protobuf-mode ob-html-chrome ob-http string-inflection
-                        back-button debian-el use-package lsp-mode rainbow-mode web-mode)
+(defvar packages-list
+  '(adoc-mode ag arxiv-mode back-button bazel bitbake bm debian-el dired-single docker
+              dockerfile-mode elfeed ess fish-mode geiser google-c-style gptel impatient-mode lsp-mode magit
+              ob-html-chrome ob-http ob-mermaid openwith ox-reveal
+              protobuf-mode rainbow-mode simple-httpd string-inflection use-package web-mode yaml-mode)
   "List of packages needs to be installed at launch")
+
 (defun has-package-not-installed ()
   (unless package--initialized
     (package-initialize))
-  (loop for p in packages-list
-         when (not (package-installed-p p)) do (return t)
-         finally (return nil)))
+  (cl-loop for p in packages-list
+         when (not (package-installed-p p)) do (cl-return t)
+         finally (cl-return nil)))
 (when (has-package-not-installed)
   ;; Check for new packages (package versions)
   (message "%s" "Get latest versions of all packages...")
@@ -78,6 +81,44 @@
   (dolist (p packages-list)
     (when (not (package-installed-p p))
       (package-install p))))
+
+;; }}}
+
+;; {{{ straight packages
+
+;; Install straight.el
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 6))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage)
+  (straight-use-package 'use-package))
+
+(use-package lean4-mode
+  :straight (lean4-mode
+	     :type git
+	     :host github
+	     :repo "leanprover/lean4-mode"
+	     :files ("*.el" "data"))
+  ;; to defer loading the package until required
+  :commands (lean4-mode))
+
+(use-package dap-mode
+  :straight (dap-mode
+	     :type git
+	     :host github
+	     :repo "oxidase/dap-mode"
+       :no-byte-compile t
+	     :files ("*.el" "icons"))
+  ;; to defer loading the package until required
+  :commands (dap-mode))
 
 ;; }}}
 
@@ -100,8 +141,8 @@
 (global-set-key "\C-c;" 'comment-region)
 (global-set-key "\C-c'" 'uncomment-region)
 (global-set-key [C-f4] (lambda () (interactive) (kill-buffer (current-buffer))))
-(global-set-key [(mouse-4)] '(lambda () (interactive) (scroll-down (/ (window-height) 2))))
-(global-set-key [(mouse-5)] '(lambda () (interactive) (scroll-up   (/ (window-height) 2))))
+(global-set-key [(mouse-4)] #'(lambda () (interactive) (scroll-down (/ (window-height) 2))))
+(global-set-key [(mouse-5)] #'(lambda () (interactive) (scroll-up   (/ (window-height) 2))))
 (global-set-key "\C-x\C-g" 'recentf-open-files)
 
 ;; windmove modifier+<> keys
@@ -182,8 +223,8 @@ Default MODIFIER is 'shift."
 (if (not (assq 'user-size initial-frame-alist))      ;; Unless we've specified a number of lines, prevent the startup code from
     (setq tool-bar-originally-present nil))          ;; shrinking the frame because we got rid of the tool-bar.
 (when running-on-darwin
-  (setenv "PATH" (concat "/usr/local/bin:/opt/homebrew/bin:" (getenv "PATH")))
-  (setq exec-path (append exec-path '("/usr/local/bin"))))
+  (setq exec-path (append exec-path '("/usr/local/bin" "/opt/homebrew/bin")))
+    (setenv "PATH" (string-join exec-path ":")))
 ;; ediff
 (setq ediff-window-setup-function 'ediff-setup-windows-plain)
 (setq ediff-split-window-function 'split-window-horizontally)
@@ -192,7 +233,7 @@ Default MODIFIER is 'shift."
         ad-do-it))
 
 (add-hook 'comint-exec-hook                          ;; Don't ask about killing process buffers on exit
-          (lambda () (set-process-query-on-exit-flag (get-buffer-process (current-buffer)) nil)))
+          #'(lambda () (set-process-query-on-exit-flag (get-buffer-process (current-buffer)) nil)))
 
 ;; Place Backup Files in Specific Directory
 (setq make-backup-files t)                           ;; Enable backup files.
@@ -400,7 +441,7 @@ Default MODIFIER is 'shift."
     (setq mouse-1-click-follows-link 200)
     ;; TODO: add call stack
     (add-hook 'before-change-major-mode-hook
-              '(lambda () (when (eq major-mode 'dired-mode)
+              #'(lambda () (when (eq major-mode 'dired-mode)
                             (make-local-variable 'dired-stack)
                             (setq dired-stack '('hello)))))
     ;; global stack works, but local stack can not be saved
@@ -442,9 +483,9 @@ Default MODIFIER is 'shift."
             ("\\.\\(svg\\)\\'" "eog" (file))
             ("\\.\\(?:mpe?g\\|avi\\|wmv\\|mp4\\)\\'" "smplayer" (file))))
          (running-on-windows
-          ("\\.\\(dll\\|pyd\\)\\'" "depends.exe" (file)))
+          '("\\.\\(dll\\|pyd\\)\\'" "depends.exe" (file)))
          (running-on-darwin
-          '(("[^_]?\\.\\(ps\\|pdf\\|djvu\\|epub\\|tif\\|jp2\\|mov\\)\\'" "open" (file))
+          '(("\\.\\(ps\\|pdf\\|djvu\\docx?\\|epub\\|tif\\|jp2\\|mov\\|drawio\\|pptx?\\|rtf\\|xlsx?\\)$" "open" (file))
             ("\\.\\(ai\\)\\'" "/Applications/Inkscape.app/Contents/MacOS/inkscape" (file))))
          )))
 
@@ -672,34 +713,6 @@ the editor to use."
 (setq auto-mode-alist (cons '("\\.po[tx]?\\'\\|\\.po\\." . po-mode) auto-mode-alist))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Subversion mode
-(require 'psvn)
-(setf svn-status-hide-unmodified t)
-(defadvice svn-status-commit (after modify-default-commit-message activate)
-  "Insert an svn message template"
-  (insert "\n\nReviewers: \nFindings: \nRisk: medium\nKlocwork: ok\nJira key is NDSAL-\n"))
-
-(defun get-svn-parent-directory (dir)
-  (cond
-   ((or (not dir) (string= (file-name-directory (directory-file-name dir)) dir))
-    nil)
-   ((file-accessible-directory-p (concat (file-name-as-directory dir) ".svn"))
-    dir)
-   (t
-    (get-svn-parent-directory (file-name-directory (directory-file-name dir))))))
-
-(defun insert-svn-info-message()
-  (interactive)
-  (let* ((dir (get-svn-parent-directory (buffer-file-name)))
-        (info (shell-command-to-string (concat "svn info " dir)))
-        (root (if (string-match "^Repository Root: \\([^ ]+\\)$" info) (match-string 1 info) "unknown"))
-        (fullurl (if (string-match "^URL: \\([^ ]+\\)$" info) (match-string 1 info) "unknown"))
-        (url (concat "^" (substring fullurl (length root))))
-        (rev (if (string-match "^Revision: \\([0-9]+\\)$" info) (match-string 1 info) "unknown"))
-        (head (format "Merge with %s rev %s" url rev)))
-    (insert (format "%s\n\n%s" head info))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; setup spell checker
 (when running-on-windows
   (add-to-list 'exec-path "C:/Program Files (x86)/Aspell/bin/"))
@@ -740,8 +753,8 @@ the editor to use."
 
 (when (package-dir "bazel-*")
   (require 'bazel)
-  (add-to-list 'auto-mode-alist '("BUILD(.[^/]+)?$" . bazel-mode))
-  (add-to-list 'auto-mode-alist '("\\.BUILD$" . bazel-mode))
+  (add-to-list 'auto-mode-alist '("BUILD\\(\\.[^/]+\\)?$" . bazel-build-mode))
+  (add-to-list 'auto-mode-alist '("\\.BUILD$" . bazel-build-mode))
   (add-to-list 'auto-mode-alist '("WORKSPACE.bzlmod$" . bazel-workspace-mode))
   (modify-syntax-entry ?_ "w" bazel-mode-syntax-table)
   (modify-syntax-entry ?_ "w" bazel-build-mode-syntax-table)
@@ -769,6 +782,7 @@ the editor to use."
 
 (setq gud-tooltip-mode t)
 (setq compilation-ask-about-save nil)
+(setq gdb-debuginfod-enable-setting t)
 
 (defun get-bazel-root (dir)
   (or (vc-find-root dir "WORKSPACE") (vc-find-root dir "MODULE.bazel")))
@@ -776,8 +790,11 @@ the editor to use."
 (defun get-yarn-root (dir)
   (when (member major-mode '(web-mode json-mode)) (vc-find-root dir "package.json")))
 
+(defun get-buffer-file-name()
+  (or (buffer-file-name) (concat "*" (symbol-name major-mode) "*")))
+
 (defun get-compile-command ()
-  (let* ((abs (buffer-file-name))
+  (let* ((abs (get-buffer-file-name))
          (name (file-name-nondirectory abs))
          (stem (file-name-sans-extension name))
          (ext (file-name-extension name))
@@ -790,6 +807,7 @@ the editor to use."
        (cond
          ((string-equal ext "nxc") (format "nbc %s -O=%s.rxe; nxt_push %s.rxe" name stem stem))
          ((string-equal ext "cu") (format "nvcc -O0 -g %s -o %s" name stem))
+         ((string-equal ext "c") (format "gcc -Wall -O0 -g %s -o %s" name stem))
          (t (format "g++ -std=c++20 -Wall -O0 -g %s -o %s" name stem))))
       ((eq major-mode 'python-mode) (format "python3 %s" name))
       ((eq major-mode 'haskell-mode) ("ghc %s -o %s" name stem))
@@ -864,28 +882,30 @@ the editor to use."
   ;;(ggtags-mode 1)
 
   (setq show-trailing-whitespace t)
-  (defun c-font-lock-invalid-string () t)              ;; Turn off invalid string highlight
-  (c-toggle-auto-newline -1)                           ;; Turn off auto-newline feature
-  (c-set-offset 'substatement-open 0)                  ;; Project brace indent style
+  (unless (eq major-mode 'js-mode)
+    (defun c-font-lock-invalid-string () t)              ;; Turn off invalid string highlight
+    (c-toggle-auto-newline -1)                           ;; Turn off auto-newline feature
+    (c-set-offset 'substatement-open 0))                 ;; Project brace indent style
 
-  ;; Compile command
-  (set (make-local-variable 'compiled-times) 0)
-  (set 'compile-command (get-compile-command))
-  (local-set-key "\C-c\C-c" 'do-compile)
+  (unless (eq major-mode 'gud-mode)
+    ;; Compile command
+    (set (make-local-variable 'compiled-times) 0)
+    (set 'compile-command (get-compile-command))
+    (local-set-key "\C-c\C-c" 'do-compile)
 
-  ;; Run command, allow only commands in that starts with "./"
-  (set (make-local-variable 'run-times) 0)
-  (set
-   (make-local-variable 'run-command)
-   (cond
-    ((eq major-mode 'python-mode) (format "python3 %s" (file-name-nondirectory (buffer-file-name))))
-    (t (format "%s%s" (if running-on-windows "" "./") (file-name-base (buffer-file-name))))))
-  (put 'run-command 'safe-local-variable 'run-command-safe-variable)
-  (defun run-command-safe-variable (var)
-    (or
-     (string-match "^[ \t\n\r]*\\(qml\\(scene\\|viewer\\)\\|optirun\\)[ \t\n\r]*\./.+" var)
+    ;; Run command, allow only commands in that starts with "./"
+    (set (make-local-variable 'run-times) 0)
+    (set
+     (make-local-variable 'run-command)
+     (cond
+      ((eq major-mode 'python-mode) (format "python3 %s" (file-name-nondirectory (get-buffer-file-name))))
+      (t (format "%s%s" (if running-on-windows "" "./") (file-name-base (get-buffer-file-name))))))
+    (put 'run-command 'safe-local-variable 'run-command-safe-variable)
+    (defun run-command-safe-variable (var)
+      (or
+       (string-match "^[ \t\n\r]*\\(qml\\(scene\\|viewer\\)\\|optirun\\)[ \t\n\r]*\./.+" var)
        (string-match "/usr/bin/curl.+" var)))
-  (local-set-key "\C-c\C-v" 'do-run)
+    (local-set-key "\C-c\C-v" 'do-run))
 
     ;; settings depending on the mode
   (when (or (eq major-mode 'c++-mode) (eq major-mode 'fortran-mode)
@@ -932,7 +952,7 @@ the editor to use."
 
 
 (add-hook 'c++-mode-hook
-      '(lambda()
+      #'(lambda()
         (font-lock-add-keywords
          nil '(;; complete some fundamental keywords
            ("\\<\\(void\\|unsigned\\|signed\\|char\\|short\\|bool\\|int\\|long\\|float\\|double\\)\\>" . font-lock-keyword-face)
@@ -958,7 +978,7 @@ the editor to use."
 
 ;; set context-dependent tabulation widths
 (add-hook 'c++-mode-hook
-  '(lambda ()
+  #'(lambda ()
      (when buffer-file-name
        (cond
         ((or (string-match "^/usr/include/c++" buffer-file-name)
@@ -1023,7 +1043,14 @@ the editor to use."
 (when (package-dir "ag*")
   (require 'ag)
   (custom-set-variables '(ag-ignore-list '("TAGS" "*.bin" "bundle.js" "*.ipynb" "*.html" "*node_modules*")) '(ag-highlight-search t))
-  (global-set-key (kbd "<s-f3>") (lambda () (interactive) (ag/search (word-at-point) (ag/project-root default-directory)))))
+  (global-set-key (kbd "<s-f3>") (lambda () (interactive) (ag/search (word-at-point) (ag/project-root default-directory))))
+
+  ;; use ag-project-root in local variables of polyrepos
+  (advice-add 'ag/project-root :around (lambda (orig file-path)
+                                         (if (boundp 'ag-project-root)
+                                             ag-project-root
+                                           (funcall orig file-path)))))
+
 
 (when (package-dir "emojify*")
   (require 'emojify)
@@ -1059,6 +1086,10 @@ the editor to use."
         (setq tab-width 4)
         (setq python-indent-offset 4)
         (modify-syntax-entry ?_ "w" python-mode-syntax-table)))
+
+(defun python-comint-filter (output)
+  (replace-regexp-in-string "__PYTHON_EL_eval.+\n" "" output))
+(add-to-list 'comint-preoutput-filter-functions #'python-comint-filter)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Haskel mode
@@ -1120,17 +1151,17 @@ the editor to use."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Go
 (add-hook 'go-mode-hook
-  '(lambda()
+  #'(lambda()
      (add-hook 'before-save-hook 'gofmt-before-save)
      (local-set-key '[f3]   'godef-jump)
      (local-set-key '[M-f3] 'pop-tag-mark)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; set hooks
-(loop for mode in '(c-mode-hook c++-mode-hook fortran-mode-hook jam-mode-hook go-mode-hook
+(cl-loop for mode in '(c-mode-hook c++-mode-hook fortran-mode-hook jam-mode-hook go-mode-hook
                     qt-pro-mode-hook gud-mode-hook qml-mode-hook python-mode-hook haskell-mode-hook
                     bazel-build-mode-hook bazel-starlark-mode-hook bazel-module-mode-hook bazel-workspace-mode-hook
-                    js-mode-hook objc-mode-hook web-mode-hook json-mode)
+                    js-mode-hook objc-mode-hook web-mode-hook json-mode makefile-mode-hook makefile-bsdmake-mode-hook)
       do (add-hook mode 'development-mode-hook))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1222,7 +1253,7 @@ the editor to use."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Text mode
-(add-hook 'text-mode-hook '(lambda () (turn-off-auto-fill) (setq fill-column 100)))
+(add-hook 'text-mode-hook #'(lambda () (turn-off-auto-fill) (setq fill-column 100)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Org mode
@@ -1231,14 +1262,15 @@ the editor to use."
   (require 'ob-core)
   (require 'org-agenda)
   (require 'org-tempo)
+  (require 'ox-reveal)
   (org-defkey org-mode-map [(control tab)] 'cyclebuffer-forward)
   (org-defkey org-mode-map [(control return)] 'mini-calc)
   (org-babel-do-load-languages 'org-babel-load-languages
                                '((http . t) (html-chrome . t) (python . t) (C . t) (haskell . t) (sqlite  . t) (maxima . t)
-                                 (latex . t) (plantuml . t) (dot . t) (ruby . t) (R . t) (gnuplot . t) (scheme . t)))
+                                 (latex . t) (plantuml . t) (dot . t) (ruby . t) (R . t) (gnuplot . t) (scheme . t) (mermaid . t)))
   (add-hook 'org-babel-after-execute-hook (lambda () (condition-case nil (org-display-inline-images) (error nil))))
   (add-hook 'scheme-mode-hook 'geiser-mode)
-  (add-hook 'org-mode-hook '(lambda ()
+  (add-hook 'org-mode-hook #'(lambda ()
                              ;(when (fboundp 'electric-indent-mode) (electric-indent-mode -1))
                              (local-set-key (kbd "<H-tab>") 'pcomplete)))
 
@@ -1281,16 +1313,28 @@ the editor to use."
        :html-scale 1.0
        :matchers ("begin" "$1" "$" "$$" "\\(" "\\[")))
 
+   '(org-reveal-mathjax-url "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js")
+
+   '(org-reveal-external-plugins
+     '((CopyCode . "https://cdn.jsdelivr.net/npm/reveal.js-copycode@1.2.0/plugin/copycode/copycode.js")
+       (Clipboard . "https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js")
+       (RevealMath.KaTeX . "%splugin/math/math.js")
+       (RevealMath.MathJax2 . "%splugin/math/math.js")
+       (RevealMath.MathJax3 . "%splugin/math/math.js")))
+
+
    '(org-directory "~/share/org")
    '(org-tag-alist '(("BIO" . ?b) ("COMP" . ?c) ("EMACS" . ?e) ("LOC" . ?l)))
    '(org-capture-templates '(("n" "note" entry (file+datetree "~/notes/notes.org") "* %?\nEntered on %U\n  %i"))))
 
   (add-to-list 'org-structure-template-alist '("p" . "src python :results output"))
+  (add-to-list 'org-structure-template-alist '("m" . "src mermaid :file _.png"))
   (add-to-list 'org-structure-template-alist '("pg" . "src sql :engine postgresql :dbuser postgres :dbhost localhost :dbport 5432"))
   (add-to-list 'org-structure-template-alist '("sb" . "src sql :engine postgresql :dbuser postgres :dbpassword postgres :dbhost localhost :dbport 54322"))
 
-  ;(add-to-list 'org-src-lang-modes (quote ("plantuml" . fundamental-mode))) ;; Use fundamental mode when editing plantuml blocks with C-c '
+  (setq ob-mermaid-cli-path (or (executable-find "mmdc") (progn (message ".emacs: no mermaid CLI mmdc found in exec paths") nil)))
 
+  ;(add-to-list 'org-src-lang-modes (quote ("plantuml" . fundamental-mode))) ;; Use fundamental mode when editing plantuml blocks with C-c '
 
   (defun org-babel-kill-session ()
     "Kill session for current code block."
@@ -1369,7 +1413,7 @@ the editor to use."
        '((".emacs$" . emacs-lisp-mode)
          ("\\.mdl$" . lisp-mode)
          ("\\.cg$" . lisp-mode)
-         ("\\.el\\(.gz\\)?$" . lisp-mode)
+         ("\\.el\\(.gz\\)?$" . emacs-lisp-mode)
          ("\\.tikz$" . LaTeX-mode)
          ("\\.tex$" . LaTeX-mode)
          ("\\.\\(ipp\\|c\\|i\\|h\\|cc\\|cxx\\|moc\\|cul\\|cuh\\|C\\|H\\|nxc\\|glsl\\|inl\\)$" . c++-mode)
@@ -1420,7 +1464,7 @@ the editor to use."
          ("\.gradle$" . gradle-mode)
          ("CMakeLists\\.txt\\'" . cmake-mode)
          ("\\.cmake\\'" . cmake-mode)
-         ("[Mm]akefile\\.inc$" . makefile-mode)
+         ("[Mm]akefile\\..+$" . makefile-mode)
          ("\.go$" . go-mode)
          ("swdd.*\\.txt$" . doc-mode)
          ("\\.[mc]?[jt]sx?$" . web-mode)
@@ -1430,116 +1474,122 @@ the editor to use."
 ;;}}}
 
 ;;{{{ OS specific
-
-(cond
- (running-on-windows
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;; NT Emacs specific settings
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  (prefer-coding-system 'utf-8)
-  (when (package-dir "w32-browser*")
-    (require 'w32-browser)
-    (define-key dired-mode-map (kbd "<M-return>") 'dired-w32explore))
-
+(let* ((display (car (x-display-list))))
   (cond
-    ;;
-   ((string-match "^miha" user-login-name)
-     (setq default-frame-alist '((top . 0) (left . 200) (width . 168) (fullscreen . fullheight)
-                                (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-16-*-*-*-m-0-iso8859-1")))
-     (setenv "PATH" (concat "C:\\MinGW\\bin;" (getenv "PATH")))
-     (remove-hook 'after-init-hook 'w32-check-shell-configuration)
-     (setq shell-command-switch "/c")
-     ;(setq shell-file-name "c:/Windows/System32/cmd.exe")
-     ;(setq w32-quote-process-args nil)
-     (setq org-babel-sqlite3-command "D:\\tools\\sqlite3.exe")
-     )))
+   (running-on-windows
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; NT Emacs specific settings
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    (prefer-coding-system 'utf-8)
+    (when (package-dir "w32-browser*")
+      (require 'w32-browser)
+      (define-key dired-mode-map (kbd "<M-return>") 'dired-w32explore))
 
- ;; Darwin specific settings
- (running-on-darwin
-  (setq default-frame-alist '(
-                              (top . 0) (left . 100) (width . 230) (fullscreen . fullheight)
-                              ))
-  )
-
- (running-on-gnu/linux
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;; Unix specific settings
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  (prefer-coding-system 'utf-8)
-  (global-set-key [S-delete] 'clipboard-kill-region)
-  (global-set-key [S-insert] 'clipboard-yank)
-  (global-set-key [C-insert] 'clipboard-kill-ring-save)
-  (define-key global-map [(control delete)]  'kill-region)
-
-  ;; host specific
-  (let* ((display (car (x-display-list))))
     (cond
-      ;;
-      ((string-match "^miha-.*" system-name)
-       (setq default-frame-alist '(
-          (top . 0) (left . 200) (width . 216) (fullscreen . fullheight)
-          (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
-          ;;(font . "-*-Inconsolata-*-*-*-*-18-*-*-*-m-0-iso10646-1")
-       ))
+     ;;
+     ((string-match "^miha" user-login-name)
+      (setq default-frame-alist '((top . 0) (left . 200) (width . 168) (fullscreen . fullheight)
+                                  (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-16-*-*-*-m-0-iso8859-1")))
+      (setenv "PATH" (concat "C:\\MinGW\\bin;" (getenv "PATH")))
+      (remove-hook 'after-init-hook 'w32-check-shell-configuration)
+      (setq shell-command-switch "/c")
+                                        ;(setq shell-file-name "c:/Windows/System32/cmd.exe")
+                                        ;(setq w32-quote-process-args nil)
+      (setq org-babel-sqlite3-command "D:\\tools\\sqlite3.exe")
+      )))
 
-       ;; erc settings
-       (require 'erc)
-       (setq erc-join-buffer 'bury)
-       (add-hook 'erc-after-connect '(lambda (server nick)(cond ((string-match "oftc\\.net" server) (erc-join-channel "#osrm")))))
-       ;; erc logging
-       (setq erc-log-channels-directory (concat custom-dir "erc/logs"))
-       (setq erc-save-buffer-on-part t)
-       (defadvice save-buffers-kill-emacs (before save-logs (arg) activate)
-         (save-some-buffers t (lambda () (when (eq major-mode 'erc-mode)) t)))
-       (erc :server "irc.oftc.net" :port 6667)
-       (set-process-query-on-exit-flag (get-process "erc-irc.oftc.net-6667") nil))
-      ;; erc connect on timer
-      ;; (run-with-timer 0 300 (lambda ()
-      ;;   (unless (erc-server-buffer-live-p) (erc :server "irc.oftc.net" :port 6667)
-      ;; (set-process-query-on-exit-flag (get-process "erc-irc.oftc.net-6667") nil)))))
+   ;; Darwin specific settings
+   (running-on-darwin
+    (global-set-key [home] 'move-beginning-of-line)
+    (global-set-key [end] 'move-end-of-line)
+    (global-set-key [C-help] 'clipboard-kill-ring-save)
+    (global-set-key [S-help] 'clipboard-yank)
+    (global-set-key [C-help] 'clipboard-kill-ring-save)
+    (global-set-key [S-delete] 'clipboard-kill-region)
+    (define-key global-map [(control delete)] 'kill-region)
+    (setq default-frame-alist
+          (cond
+           ((eq (display-mm-width display) 417) '((top . 0) (left . 100) (width . 198) (fullscreen . fullheight)))
+           (t  '((top . 0) (left . 100) (width . 230) (fullscreen . fullheight))))))
 
-      ((string-match "VirtualBox" system-name)
-       (setq default-frame-alist `(
-          (top . 0) (left . 120) (width . 224) (fullscreen . fullheight)
-          (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
+   (running-on-gnu/linux
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; Unix specific settings
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    (prefer-coding-system 'utf-8)
+    (global-set-key [S-delete] 'clipboard-kill-region)
+    (global-set-key [S-insert] 'clipboard-yank)
+    (global-set-key [C-insert] 'clipboard-kill-ring-save)
+    (define-key global-map [(control delete)]  'kill-region)
+
+    ;; host specific
+    (cond
+     ;;
+     ((string-match "^miha-.*" system-name)
+      (setq default-frame-alist '(
+                                  (top . 0) (left . 200) (width . 216) (fullscreen . fullheight)
+                                  (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
+                                  ;;(font . "-*-Inconsolata-*-*-*-*-18-*-*-*-m-0-iso10646-1")
+                                  ))
+
+      ;; erc settings
+      (require 'erc)
+      (setq erc-join-buffer 'bury)
+      (add-hook 'erc-after-connect '(lambda (server nick)(cond ((string-match "oftc\\.net" server) (erc-join-channel "#osrm")))))
+      ;; erc logging
+      (setq erc-log-channels-directory (concat custom-dir "erc/logs"))
+      (setq erc-save-buffer-on-part t)
+      (defadvice save-buffers-kill-emacs (before save-logs (arg) activate)
+        (save-some-buffers t (lambda () (when (eq major-mode 'erc-mode)) t)))
+      (erc :server "irc.oftc.net" :port 6667)
+      (set-process-query-on-exit-flag (get-process "erc-irc.oftc.net-6667") nil))
+     ;; erc connect on timer
+     ;; (run-with-timer 0 300 (lambda ()
+     ;;   (unless (erc-server-buffer-live-p) (erc :server "irc.oftc.net" :port 6667)
+     ;; (set-process-query-on-exit-flag (get-process "erc-irc.oftc.net-6667") nil)))))
+
+     ((string-match "VirtualBox" system-name)
+      (setq default-frame-alist `(
+             (top . 0) (left . 120) (width . 224) (fullscreen . fullheight)
+             (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
           )))
-      ;;
-      ((string-match ".*krasny.*" user-login-name)
-       (cond
-         ((not (and display (display-graphic-p))))
-         ((eq (display-mm-width display) 494) ;; (x-display-pixel-width) (x-display-pixel-height)
-          (setq default-frame-alist '(
+     ;;
+     ((string-match ".*krasny.*" user-login-name)
+      (cond
+       ((not (and display (display-graphic-p))))
+       ((eq (display-mm-width display) 494) ;; (x-display-pixel-width) (x-display-pixel-height)
+        (setq default-frame-alist '(
              (top . 0) (left . 00) (width . 110) (fullscreen . fullheight)
              (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
-         ((and (< 508 (display-mm-width display)) (< (display-mm-width display) 524))
-          (setq default-frame-alist '(
+       ((and (< 508 (display-mm-width display)) (< (display-mm-width display) 524))
+        (setq default-frame-alist '(
              (top . 0) (left . 00) (width . 226) (fullscreen . fullheight)
              (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
-         ((eq (display-mm-width display) 542)
-          (setq default-frame-alist '(
+       ((eq (display-mm-width display) 542)
+        (setq default-frame-alist '(
              (top . 0) (left . 00) (width . 242) (fullscreen . fullheight)
              (font . "-*-Liberation Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
-         ((eq (display-mm-width display) 677)
-          (setq default-frame-alist '(
+       ((eq (display-mm-width display) 677)
+        (setq default-frame-alist '(
              (top . 0) (left . 100) (width . 222) (fullscreen . fullheight)
              (font . "-*-Liberation Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1"))))
-         ((eq (display-mm-width display) 1185)
-          (setq default-frame-alist '(
+       ((eq (display-mm-width display) 1185)
+        (setq default-frame-alist '(
              (top . 0) (left . 2000) (width . 306) (fullscreen . fullheight)
              (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
-         ((eq (display-mm-width display) 1524)
-          (setq default-frame-alist '(
+       ((eq (display-mm-width display) 1524)
+        (setq default-frame-alist '(
              (top . 0) (left . 200) (width . 330) (fullscreen . fullheight)
              (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-18-*-*-*-m-0-iso10646-1"))))
-         (t
-          (setq default-frame-alist '(
+       (t
+        (setq default-frame-alist '(
              (top . 0) (left . 2000) (width . 306) (fullscreen . fullheight)
              (font . "-*-DejaVu Sans Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))))
-         )))))
+         ))))
      ;;
     (t (message (format "unknown host name %s" system-name)))
 
- (t (message "unknown OS")))
+ (t (message "unknown OS"))))
 
 ;;}}}
 
@@ -1621,7 +1671,7 @@ the editor to use."
           (setq eol (line-end-position))
           (setq non-space (save-excursion (save-restriction (save-match-data (re-search-forward  "[^ \t\r\n]" nil t) (point)))))
           (setq sol (if (< non-space eol) (line-beginning-position)
-                (save-excursion (save-restriction (save-match-data (goto-char (1- open)) (re-search-backward  "[^ \t\r\n]" nil t) (print (point)) (line-beginning-position))))))
+                (save-excursion (save-restriction (save-match-data (goto-char (1- open)) (re-search-backward  "[^ \t\r\n]" nil t) (line-beginning-position))))))
           (setq a (buffer-substring  sol open) b (buffer-substring  open (1+ open)) c (buffer-substring  (1+ open) eol)))
         (setq a (replace-regexp-in-string "[\n]+\\s-*" " " a)) ;; remove internal newlines
         (setq msg (concat a b c))
@@ -1710,7 +1760,7 @@ the editor to use."
   (let () ; (n (count-occurrences "%" arg_format)))
     (switch-to-buffer "*ASCII*") (fundamental-mode)
     (erase-buffer)
-    (loop
+    (cl-loop
      for i from arg_from to arg_to
      do (insert (format arg_format  i i i i i i)))
     (beginning-of-buffer)))
@@ -1838,7 +1888,7 @@ If ARG is given, then insert the result to current-buffer"
 
 (defun insert-random-int-values ()
   (interactive)
-  (insert (apply #'concatenate 'string (loop for i from 0 to (% (abs (random)) 20) collect (format "%d, " (% (random) 100))))))
+  (insert (apply #'concatenate 'string (cl-loop for i from 0 to (% (abs (random)) 20) collect (format "%d, " (% (random) 100))))))
 
 (defun insert-subdir-executable ()
   (interactive)
@@ -1856,7 +1906,6 @@ Use this command in a compilation log buffer."
   (or (compilation-buffer-p (current-buffer))
       (error "Not in a compilation buffer"))
   (compilation--ensure-parse (point))
-  (print (get-text-property (point) 'compilation-directory))
   (if (get-text-property (point) 'compilation-directory)
       (dired-other-window
        (car (get-text-property (point) 'compilation-directory)))
@@ -1892,3 +1941,46 @@ Use this command in a compilation log buffer."
                       (substring xstr 17 20)
                       (substring xstr 20 32))))
     )
+
+
+;; TODO DAP debugger
+(when nil
+  (require 'dap-lldb)
+  (setq dap-lldb-debugged-program-function #'(lambda () ))
+  (defun dap-lldb--populate-start-file-args (conf)
+    "Populate CONF with the required arguments."
+    (print conf)
+                                        ;(interactive (list (if (< run-times 2) (read-string "Run command: " run-command) run-command)))
+                                        ;(setq-local run-times (if (string= run-command command) (1+ run-times) 0))
+                                        ;(setq-local run-command command)
+
+    (-> conf
+        (dap--put-if-absent :dap-server-path dap-lldb-debug-program)
+        (dap--put-if-absent :type "lldb-vscode")
+        (dap--put-if-absent :cwd default-directory)
+        (dap--put-if-absent :program  (expand-file-name (read-file-name "Select file to debug: " (buffer-file-name))))
+      (dap--put-if-absent :name "LLDB Debug")))
+
+  (dap-register-debug-template "LLDB"
+                               (list :type "lldb-vscode"
+                                     :cwd nil
+                                     :request "launch"
+                                     :program nil
+                                     :stopOnEntry t
+                                     :name "LLDB::Run"))
+
+  ;; (dap-register-debug-template "LLDB"
+  ;;                              (list :type "lldb-vscode"
+  ;;                                    :request "launch"
+  ;;                                    :name "LLDB::Run"
+  ;;                                    :stopAtEntry "main"
+  ;;                                    :lldbmipath (locate-file "lldb-mi" exec-path)
+  ;;                                    :cwd "/Users/michael/tmp"
+  ;;                                    :debugger_args nil
+  ;;                                    :env nil
+  ;;                                    :target nil))
+  (dap-ui-mode 1)
+  (dap-tooltip-mode 1)
+  (tooltip-mode 1)
+  (dap-ui-controls-mode 1)
+  (setq dap-print-io 1))

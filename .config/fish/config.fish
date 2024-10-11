@@ -43,3 +43,20 @@ end
 function jwt-decode
   echo $argv[1] | jq -R 'split(".") |.[0:2] | map(@base64d) | map(fromjson)'
 end
+
+function clear-env-vars
+    for var in (set -x | grep -vE '^(__fish|_.*|SHLVL|TERM|PWD|HOME|USER|fish|_) ')
+        set -e (echo $var | cut -d' ' -f1)
+    end
+end
+
+if test "$TERM" = "dumb"
+  # Set fish prompt for incoming tramp connections
+  set -l SHELL /bin/sh
+  function fish_prompt
+    echo "\$ "
+  end
+  function fish_right_prompt; end
+  function fish_greeting; end
+  function fish_title; end
+end
