@@ -179,7 +179,7 @@ Default MODIFIER is 'shift."
 (setq fill-column 120)
 (setq split-width-threshold 200)
 (recentf-mode 1)                                     ;; Recent files in menu
-(setq recentf-max-menu-items 125)
+(setq recentf-max-saved-items nil)
 (delete-selection-mode 1)                            ;; hitting delete will delete the highlighted region
 (setq undo-limit 20000000)
 (setq revert-without-query '(".*"))
@@ -577,17 +577,19 @@ the editor to use."
            (remote-url
             (replace-regexp-in-string "\\(.git\\|/+\\)$" "" ; remove trailing slashes or .git suffix
             (replace-regexp-in-string "://[^@]+@" "://" ; remove user name
+            (replace-regexp-in-string "^git@\\(.*\\):\\(.*\\)\\.git$" "https://\\1/\\2" ; most general case
             (replace-regexp-in-string "^git@github.\\([^:]+\\):" "https://github.\\1/" ; change protocol to https
             (replace-regexp-in-string "^git://sourceware.org/git/\\(.*+\\)" "https://sourceware.org/git/?p=\\1.git" ; change protocol to https
-            (magit-get "remote" remote "url"))))))
+            (magit-get "remote" remote "url")))))))
            (from (line-number-at-pos (if (and transient-mark-mode mark-active) (region-beginning) (point)))) ; or (format-mode-line "%l")
            (to (line-number-at-pos (if (and transient-mark-mode mark-active) (- (region-end) (if (= (current-column) 0) 1 0)) (point))))
            (lines (if (>= from to) (format "L%d" from) (format "L%d-L%d" from to)))
            (gh-url
             (cond
-              ((cl-search "github" remote-url) (format "%s/blob/%s/%s#%s" remote-url (substring (or (magit-rev-verify ref) (magit-rev-parse "HEAD")) 0 8) (magit-file-relative-name) lines))
-              ((cl-search "sourceware.org" remote-url) (format "%s;a=blob;f=%s#l%d" remote-url (magit-file-relative-name) from))
-              (t remote-url))))
+             ((cl-search "gitlab" remote-url) (format "%s/-/blob/%s/%s?#%s" remote-url (substring (or (magit-rev-verify ref) (magit-rev-parse "HEAD")) 0 8) (magit-file-relative-name) lines))
+             ((cl-search "github" remote-url) (format "%s/blob/%s/%s#%s" remote-url (substring (or (magit-rev-verify ref) (magit-rev-parse "HEAD")) 0 8) (magit-file-relative-name) lines))
+             ((cl-search "sourceware.org" remote-url) (format "%s;a=blob;f=%s#l%d" remote-url (magit-file-relative-name) from))
+             (t remote-url))))
       (kill-new gh-url)
       (browse-url gh-url)))
 
@@ -731,7 +733,7 @@ the editor to use."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Other modes
-(add-hook 'json-mode-hook (lambda () (setq tab-width 2)))
+(add-hook 'js-json-mode-hook (lambda () (setq js-indent-level 2)))
 (setq auto-mode-alist (append auto-mode-alist '(("\\.json$" . json-mode) ("\\.geojson$" . json-mode) ("\\.manifest$" . json-mode))))
 
 
@@ -745,7 +747,22 @@ the editor to use."
   (add-to-list 'auto-mode-alist '("\\.jade\\'" . jade-mode)))
 
 (when (package-dir "bitbake*")
-  (require 'bitbake))
+  (require 'bitbake)
+  (require 'polymode)
+  (require 'poly-lock)
+  (define-innermode poly-bitbake-root-innermode
+    :mode nil
+    :fallback-mode 'host
+    :head-mode 'host
+    :tail-mode 'host)
+  (define-innermode poly-bitbake-python-innermode poly-bitbake-root-innermode
+    "Displayed python { } innermode."
+    :mode 'python-mode
+    :head-matcher "^python"
+    :tail-matcher "^}$"
+    :head-mode 'host
+    :tail-mode 'host
+    :allow-nested nil))
 
 (when (package-dir "qml-mode*")
   (require 'qml-mode)
