@@ -120,6 +120,17 @@
   ;; to defer loading the package until required
   :commands (dap-mode))
 
+
+(use-package systemd
+  :straight (systemd-mode
+	     :type git
+	     :host github
+	     :repo "holomorph/systemd-mode"
+       :no-byte-compile t
+	     :files ("*.el" "*.txt"))
+  ;; to defer loading the package until required
+  :commands (systemd-mode))
+
 ;; }}}
 
 ;;{{{ Customization
@@ -222,9 +233,6 @@ Default MODIFIER is 'shift."
 (setq tags-case-fold-search nil)
 (if (not (assq 'user-size initial-frame-alist))      ;; Unless we've specified a number of lines, prevent the startup code from
     (setq tool-bar-originally-present nil))          ;; shrinking the frame because we got rid of the tool-bar.
-(when running-on-darwin
-  (setq exec-path (append exec-path '("/usr/local/bin" "/opt/homebrew/bin")))
-    (setenv "PATH" (string-join exec-path ":")))
 ;; ediff
 (setq ediff-window-setup-function 'ediff-setup-windows-plain)
 (setq ediff-split-window-function 'split-window-horizontally)
@@ -519,6 +527,13 @@ the editor to use."
 (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
 (add-hook 'fish-mode-hook (lambda () (modify-syntax-entry ?_ "w" fish-mode-syntax-table)))
 (add-hook 'sh-mode-hook (lambda () (modify-syntax-entry ?_ "w" sh-mode-syntax-table)))
+
+;; Extend execution paths with fish paths
+(let*
+    ((fish-path (split-string (shell-command-to-string "/opt/homebrew/bin/fish -c 'printf \"%s\\n\" $PATH' 2>/dev/null") "\n"))
+     (full-path (append fish-path (cl-remove-if (lambda (item) (member item fish-path)) exec-path))))
+  (setenv "PATH" (string-join full-path ":"))
+  (setq exec-path full-path))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Translator (google)
@@ -828,7 +843,7 @@ the editor to use."
          (t (format "g++ -std=c++20 -Wall -O0 -g %s -o %s" name stem))))
       ((eq major-mode 'python-mode) (format "python3 %s" name))
       ((eq major-mode 'haskell-mode) ("ghc %s -o %s" name stem))
-      ((eq major-mode 'makefile-gmake-mode) "make")
+      ((member major-mode '(makefile-gmake-mode makefile-bsdmake-mode)) "make")
       (yarn-root
        (cond
         ((string-match-p ".+[\\._]test$" stem)
@@ -1179,7 +1194,9 @@ the editor to use."
                     qt-pro-mode-hook gud-mode-hook qml-mode-hook python-mode-hook haskell-mode-hook
                     bazel-build-mode-hook bazel-starlark-mode-hook bazel-module-mode-hook bazel-workspace-mode-hook
                     js-mode-hook objc-mode-hook web-mode-hook json-mode makefile-mode-hook makefile-bsdmake-mode-hook)
-      do (add-hook mode 'development-mode-hook))
+         do (add-hook mode 'development-mode-hook))
+
+(add-hook 'makefile-mode-hook (lambda () (setq indent-tabs-mode t)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AucTeX
