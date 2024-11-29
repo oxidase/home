@@ -257,6 +257,28 @@ Default MODIFIER is 'shift."
   "Prevent annoying \"Active processes exist\" query when you quit Emacs."
   (cl-flet ((process-list ())) ad-do-it))
 
+
+;; Replace some template literals in compilation output
+(defun replace-char-type-literals (start end)
+  (save-excursion
+    (goto-char start)
+    (previous-line)
+    (narrow-to-region (point) (point-max))
+    (while (re-search-forward "sc::string_constant<\\([^,]+\\)\\(\\(, ([^)]+)[0-9]+\\)+\\)>" nil t)
+      (progn
+        (let* ((sc (save-match-data
+                     (condition-case err
+                         (let* ((match (match-string 0))
+                                (type (match-string 1))
+                                (ordinals (split-string (match-string 2) (format ", (%s)" type)))
+                                (characters (mapcar (lambda (num) (let ((x (string-to-number num))) (if (> x 0) (string x) ""))) ordinals)))
+                           (format  "\"%s\"_sc" (apply #'concat characters)))
+                       (error
+                        (progn (message "error occurred in replace-char-type-literals: %s\n  %s" (error-message-string err) match) nil))))))
+        (when sc
+          (replace-match sc t)
+          (put-text-property (match-beginning 0) (match-end 0) 'font-lock-face `(:background  ,(face-attribute 'lazy-highlight :background)))))))))
+
 ;; ANSI colorization of a buffer
 (require 'ansi-color)
 (defun ansi-color ()
@@ -267,9 +289,21 @@ Default MODIFIER is 'shift."
            (when face
              (put-text-property beg end 'face face)))))
     (ansi-color-apply-on-region (point-min) (point-max))))
-(setq ansi-color-drop-regexp "\\[\\([ABCDsuK]\\|[12][JK]\\|=[0-9]+[hI]\\|[0-9;]*[HfGg]\\|\\?[0-9]+[hl]\\)")
-(add-hook 'compilation-filter-hook (lambda () (ignore-errors (when (eq major-mode 'compilation-mode)
-      (ansi-color-apply-on-region compilation-filter-start (point-max))))))
+
+(add-hook
+ 'compilation-filter-hook
+ (lambda ()
+   (ignore-errors
+     (when (eq major-mode 'compilation-mode)
+       (replace-char-type-literals compilation-filter-start (point-max))
+       (ansi-color-apply-on-region compilation-filter-start (point-max))))))
+
+(add-hook
+ 'compilation-filter-hook
+ (lambda ()
+   (ignore-errors
+     (when (eq major-mode 'compilation-mode)
+))))
 
 
 ;; calendar settings
@@ -410,9 +444,10 @@ Default MODIFIER is 'shift."
                                  (setq dired-actual-switches dired-listing-switches)
                                  (revert-buffer)))
 (define-key dired-mode-map "z" (lambda () (interactive)
-                                 (let ((name (or (dired-get-filename nil t) default-directory)))
-                                   (kill-new name)
-                                   (x-set-selection nil name))))
+                                 (let* ((name (or (dired-get-filename nil t) default-directory))
+                                        (localname (or (file-remote-p name 'localname) name)))
+                                   (kill-new localname)
+                                   (x-set-selection nil localname))))
 
 ;; additional faces
 (defface dired-compressed-file
@@ -1978,20 +2013,21 @@ Use this command in a compilation log buffer."
 
 
 ;; TODO DAP debugger
-(when nil
+(when t
   (require 'dap-lldb)
   (setq dap-lldb-debugged-program-function #'(lambda () ))
   (defun dap-lldb--populate-start-file-args (conf)
     "Populate CONF with the required arguments."
     (print conf)
+    (message "Expanded default directory %s %s" (expand-file-name default-directory) (plist-get conf :cwd))
                                         ;(interactive (list (if (< run-times 2) (read-string "Run command: " run-command) run-command)))
                                         ;(setq-local run-times (if (string= run-command command) (1+ run-times) 0))
                                         ;(setq-local run-command command)
 
+    (plist-put conf :cwd (expand-file-name default-directory))
     (-> conf
         (dap--put-if-absent :dap-server-path dap-lldb-debug-program)
         (dap--put-if-absent :type "lldb-vscode")
-        (dap--put-if-absent :cwd default-directory)
         (dap--put-if-absent :program  (expand-file-name (read-file-name "Select file to debug: " (buffer-file-name))))
       (dap--put-if-absent :name "LLDB Debug")))
 
@@ -2018,3 +2054,4 @@ Use this command in a compilation log buffer."
   (tooltip-mode 1)
   (dap-ui-controls-mode 1)
   (setq dap-print-io 1))
+
