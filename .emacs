@@ -797,22 +797,26 @@ the editor to use."
   (add-to-list 'auto-mode-alist '("\\.jade\\'" . jade-mode)))
 
 (when (package-dir "bitbake*")
-  (require 'bitbake)
+  (require 'bitbake))
+
+(when (package-dir "polymode*")
   (require 'polymode)
   (require 'poly-lock)
-  (define-innermode poly-bitbake-root-innermode
-    :mode nil
-    :fallback-mode 'host
-    :head-mode 'host
-    :tail-mode 'host)
-  (define-innermode poly-bitbake-python-innermode poly-bitbake-root-innermode
-    "Displayed python { } innermode."
-    :mode 'python-mode
-    :head-matcher "^python"
-    :tail-matcher "^}$"
-    :head-mode 'host
-    :tail-mode 'host
-    :allow-nested nil))
+
+  (when (package-dir "bitbake*")
+    (define-innermode poly-bitbake-root-innermode
+                      :mode nil
+                      :fallback-mode 'host
+                      :head-mode 'host
+                      :tail-mode 'host)
+    (define-innermode poly-bitbake-python-innermode poly-bitbake-root-innermode
+                      "Displayed python { } innermode."
+                      :mode 'python-mode
+                      :head-matcher "^python"
+                      :tail-matcher "^}$"
+                      :head-mode 'host
+                      :tail-mode 'host
+                      :allow-nested nil)))
 
 (when (package-dir "qml-mode*")
   (require 'qml-mode)
