@@ -60,3 +60,13 @@ if test "$TERM" = "dumb"
   function fish_greeting; end
   function fish_title; end
 end
+
+
+function set_python_executable --on-event fish_postexec
+  if string match -qr '\bpoetry\b.*\benv\b.*\buse\b' $argv[1]
+    set -l python (poetry env info --executable)
+    alias python="$python"
+    alias python3="$python"
+    echo " 🧶 🐍 ➡️ $python"
+  end
+end
