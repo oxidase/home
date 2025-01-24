@@ -21,9 +21,10 @@
 
 (defun package-dir (name)
   (let* ((dir1 (file-expand-wildcards (concat custom-dir name)))
-         (dir2 (file-expand-wildcards (concat custom-dir "quelpa/**/" name)))
-         (dir3 (file-expand-wildcards (concat custom-dir "elpa/" name)))
-         (dirs (remove-if-not #'file-accessible-directory-p (append dir1 dir2 dir3)))
+         (dir2 (file-expand-wildcards (concat custom-dir "straight/repos/" name)))
+         (dir3 (file-expand-wildcards (concat custom-dir "quelpa/**/" name)))
+         (dir4 (file-expand-wildcards (concat custom-dir "elpa/" name)))
+         (dirs (remove-if-not #'file-accessible-directory-p (append dir1 dir2 dir3 dir4)))
          (dirp (car dirs)))
     (message "Checking for %s pacakge: %s" name (if dirp dirp "not found"))
     (when dirp (add-to-list 'load-path dirp))
@@ -611,6 +612,10 @@ the editor to use."
   (global-set-key "\C-cl" 'magit-log-buffer-file)
   (global-set-key "\C-cg" 'gh-lines)
 
+  (let ((current-args (get 'magit-log-mode 'magit-log-default-arguments)))
+    (put 'magit-log-mode 'magit-log-default-arguments
+         (append current-args '("--no-merges"))))
+
   ;; in .dir-locals.el
   ;; ((json-mode . ((js-indent-level . 2)))
   ;;  (magit-refs-mode . ((eval . (remove-hook 'magit-refs-sections-hook 'magit-insert-remote-branches)))))
@@ -876,6 +881,7 @@ the editor to use."
          ((string-equal ext "cu") (format "nvcc -O0 -g %s -o %s" name stem))
          ((string-equal ext "c") (format "gcc -Wall -O0 -g %s -o %s" name stem))
          (t (format "g++ -std=c++20 -Wall -O0 -g %s -o %s" name stem))))
+      ((eq major-mode 'cmake-mode) "cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug && cmake --build build --target install -j4")
       ((eq major-mode 'python-mode) (format "python3 %s" name))
       ((eq major-mode 'haskell-mode) ("ghc %s -o %s" name stem))
       ((member major-mode '(makefile-gmake-mode makefile-bsdmake-mode)) "make")
@@ -1132,10 +1138,15 @@ the editor to use."
 (defun fmq-compilation-finish (buffer status)
   (let ((time (time-convert (time-subtract (current-time) (buffer-local-value 'compile-starts-at buffer)) 'integer)))
     (when (> time 20)
-      (call-process "notify-send" nil nil nil
-                    "-i" "emacs"
-                    (format "%s %s" status (car (buffer-local-value 'compilation-arguments buffer)))
-                    (format "in %s %ds" (buffer-local-value 'compilation-directory buffer) time)))))
+      (cond
+       (running-on-gnu/linux
+        (call-process "notify-send" nil nil nil
+                      "-i" "emacs"
+                      (format "%s %s" status (car (buffer-local-value 'compilation-arguments buffer)))
+                      (format "in %s %ds" (buffer-local-value 'compilation-directory buffer) time)))
+       (running-on-darwin
+        (call-process "osascript" nil nil nil "-e" (format "display notification \"%s %s\" with title \"emacs\"" status (car (buffer-local-value 'compilation-arguments buffer)))))
+      ))))
 
 (setq compilation-process-setup-function
       (lambda () (make-local-variable 'compile-starts-at)
@@ -1225,10 +1236,10 @@ the editor to use."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; set hooks
-(cl-loop for mode in '(c-mode-hook c++-mode-hook fortran-mode-hook jam-mode-hook go-mode-hook
+(cl-loop for mode in '(c-mode-hook c++-mode-hook cmake-mode-hook fortran-mode-hook jam-mode-hook go-mode-hook
                     qt-pro-mode-hook gud-mode-hook qml-mode-hook python-mode-hook haskell-mode-hook
                     bazel-build-mode-hook bazel-starlark-mode-hook bazel-module-mode-hook bazel-workspace-mode-hook
-                    js-mode-hook objc-mode-hook web-mode-hook json-mode makefile-mode-hook makefile-bsdmake-mode-hook)
+                    js-mode-hook objc-mode-hook web-mode-hook json-mode makefile-mode-hook makefile-bsdmake-mode-hook )
          do (add-hook mode 'development-mode-hook))
 
 (add-hook 'makefile-mode-hook (lambda () (setq indent-tabs-mode t)))

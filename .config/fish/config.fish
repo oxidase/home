@@ -1,4 +1,13 @@
 set fish_greeting
+
+switch (uname)
+  case Darwin
+    set -x PYTHONPYCACHEPREFIX (getconf DARWIN_USER_CACHE_DIR)/python_pycache
+  case Linux
+    set -x PYTHONPYCACHEPREFIX /home/$USER/.cache/python_pycache
+  case '*'
+end
+
 set -l hostfile (hostname -s)
 if test -f ~/.config/fish/$hostfile
    source ~/.config/fish/$hostfile
@@ -64,9 +73,16 @@ end
 
 function set_python_executable --on-event fish_postexec
   if string match -qr '\bpoetry\b.*\benv\b.*\buse\b' $argv[1]
-    set -l python (poetry env info --executable)
-    alias python="$python"
-    alias python3="$python"
+    set -l venv (poetry config virtualenvs.path)
+    set -l python (dirname (poetry env info --executable))
+    set -l filtered (for item in $fish_user_paths
+      if string match -qvr "^$venv.*" $item
+        echo $item
+      end
+    end)
+    set -g fish_user_paths $python $filtered
     echo " 🧶 🐍 ➡️ $python"
   end
 end
+
+alias zlib "python3 -c 'import sys,zlib; sys.stdout.buffer.write(zlib.decompress(sys.stdin.buffer.read()))'"
