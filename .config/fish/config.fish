@@ -2,7 +2,7 @@ set fish_greeting
 
 switch (uname)
   case Darwin
-    set -x PYTHONPYCACHEPREFIX (getconf DARWIN_USER_CACHE_DIR)/python_pycache
+    set -x PYTHONPYCACHEPREFIX (path normalize (getconf DARWIN_USER_CACHE_DIR)/pycache)
   case Linux
     set -x PYTHONPYCACHEPREFIX /home/$USER/.cache/python_pycache
   case '*'
@@ -80,7 +80,7 @@ function set_python_executable --on-event fish_postexec
         echo $item
       end
     end)
-    set -g fish_user_paths $python $filtered
+    #set -g fish_user_paths $python $filtered
     echo " 🧶 🐍 ➡️ $python"
   end
 end

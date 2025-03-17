@@ -28,6 +28,13 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Setup packages
+(defun set-standard-toplevel-value (var val)
+  "Set standard value and customize value if it is not yet set."
+  (put var 'standard-value `(,val))
+  (unless (get var 'saved-value)
+    (set-default-toplevel-value var val)))
+
+
 (require 'dired)
 (defvar dired-sort-map (make-sparse-keymap))
 (define-key dired-mode-map "s" dired-sort-map)
@@ -162,6 +169,15 @@
   (openwith-mode t))
 
 
+(unload-feature 'eldoc t)
+(setq custom-delayed-init-variables '())
+(defvar global-eldoc-mode nil)
+(use-package eldoc :ensure t)
+(use-package elfeed :ensure t
+  :bind (("C-x w" . 'elfeed)))
+(use-package sqlite3 :ensure t
+  :config
+  (require 'sqlite3))
 (use-package web-mode :ensure t)
 (use-package fish-mode :ensure t)
 (use-package yaml-mode :ensure t)
@@ -187,7 +203,11 @@
    ((member major-mode '(lisp-mode emacs-lisp-mode))
     (helpful-at-point))
    ((member major-mode '(c-mode c++-mode))
-    (browse-url (format "https://duckduckgo.com/?q=%s+site%3Acppreference.com" (downcase (current-word)))))
+    (if (not (eldoc-print-current-symbol-info))
+        (eldoc-doc-buffer t)
+      (browse-url (format "https://duckduckgo.com/?q=%s+site%%3Acppreference.com" (downcase (current-word))))))
+   ((member major-mode '(python-mode))
+    (browse-url (format "https://docs.python.org/3/search.html?q=%s" (downcase (current-word)))))
    (t (when (> (length (current-word)) 1) (woman (current-word))))))
 
 
@@ -207,13 +227,6 @@
     (when (called-interactively-p 'interactive)
       (message res))
      (or res kv)))
-
-
-(defun set-standard-toplevel-value (var val)
-  "Set standard value and customize value if it is not yet set."
-  (put var 'standard-value `(,val))
-  (unless (get var 'saved-value)
-    (set-default-toplevel-value var val)))
 
 
 (defvar cyclebuffer-buffer-list nil "List of all buffers; updated every time a new set of cyclebuffer commands are started.")
@@ -382,7 +395,18 @@ If ARG is given, then insert the result to current-buffer"
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Development hooks
+;; Development mode hooks
+(use-package eglot :ensure t)
+(use-package dap-mode
+  :defer
+  :custom
+  (dap-auto-configure-mode t "Automatically configure dap.")
+  (dap-auto-configure-features '(sessions locals breakpoints expressions tooltip)  "Remove the button panel in the top.")
+  :config
+  ;;; dap for c++
+  (require 'dap-lldb))
+
+
 (defun get-bazel-root (dir)
   (or (vc-find-root dir "WORKSPACE") (vc-find-root dir "MODULE.bazel")))
 
@@ -461,6 +485,9 @@ If ARG is given, then insert the result to current-buffer"
    (add-hook
     (intern (concat (symbol-name mode) "-hook"))
     (lambda ()
+      ;;
+      (eglot-ensure)
+
       ;; Update syntax table
       (modify-syntax-entry ?_ "w" (symbol-value (intern (concat (symbol-name mode) "-syntax-table"))))
 
@@ -577,6 +604,9 @@ If ARG is given, then insert the result to current-buffer"
        (replace-char-type-literals compilation-filter-start (point-max))
        (ansi-color-apply-on-region compilation-filter-start (point-max))))))
 
+;; Set development environemnt variables
+(setenv "PYTHONPYCACHEPREFIX" (expand-file-name "~/.cache/pycache"))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global minor modes
@@ -592,11 +622,17 @@ If ARG is given, then insert the result to current-buffer"
 (put 'upcase-region 'disabled nil)       ;; allow conversion of a region to upper case.
 (put 'downcase-region 'disabled nil)     ;; allow conversion of a region to lower case.
 
+(add-to-list
+ 'auto-mode-alist
+ '("poetry.lock" . conf-toml-mode))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global hooks
 (add-hook 'before-save-hook              ;; delete trailing workspaces on save
           'delete-trailing-whitespace)   ;; to remove (remove-hook 'before-save-hook 'delete-trailing-whitespace)
+
+(add-hook 'eglot-managed-mode-hook
+          (lambda () (flymake-mode -1)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global key bindings
@@ -613,6 +649,8 @@ If ARG is given, then insert the result to current-buffer"
 	("C-`" ispell-word)
         ("C-x C-f" find-file-goto)
         ("C-<return>" mini-calc)
+        ("C-S-s" isearch-forward-regexp)
+        ("C-S-r" isearch-backward-regexp)
 	;; Clipboard
 	("C-<help>" clipboard-kill-ring-save)
 	("S-<help>" clipboard-yank)
@@ -670,12 +708,15 @@ If ARG is given, then insert the result to current-buffer"
         (confirm-kill-processes nil)
 	(undo-limit 24000000)
 	(ispell-program-name "aspell")
-	(revert-without-query (".*"))
 	(ispell-check-comments t)
+	(revert-without-query (".*"))
 	(read-buffer-completion-ignore-case t)
         (js-indent-level 2)
         (css-indent-offset 2)
 	(scroll-error-top-bottom t)))
+
+(add-to-list 'ispell-skip-region-alist '("[\\@]req\\([[:space:]]+[[:word:]+]\\)?[[:space:]]*{" . "}"))
+(add-to-list 'ispell-skip-region-alist '("sha256:[[:xdigit:]]*" . "[^[:xdigit:]]"))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
