@@ -1,6 +1,6 @@
 ;; -*- lexical-binding: t -*-
 ;; Bootstrap elpaca mode
-(let ((boostrap-hash "32c533034925812679cddc4b2c8d874fa42299b99b06df87508d9c5d23e5ae29")
+(let ((boostrap-hash "1de28698b9619644ac6df45d64083334b77470b34c0b7e0557e6711d14800298")
       (bootstrap-file (expand-file-name "elpaca/installer.el" user-emacs-directory)))
   (unless (file-exists-p bootstrap-file)
     (let ((bootstrap-dir (file-name-directory bootstrap-file))
@@ -97,6 +97,7 @@
 (use-package org
   :ensure t
   :init
+  :bind* (("C-<return>" . mini-calc))
   :config
   (custom-set-faces
    '(org-block ((t (:background "#F8F8FF"))))
@@ -110,6 +111,7 @@
    '(org-babel-results-keyword "results")                           ;; Make babel results blocks lowercase
    '(org-confirm-babel-evaluate nil)                                ;; Do not prompt to confirm evaluation
    '(org-babel-python-command "python3")
+   '(org-babel-default-header-args:cpp '((:flags . "-std=c++20")))
    '(org-log-done 'time)
    '(org-support-shift-select 'always)
    '(org-todo-keyword-faces '(("TODO" . "deep pink")
@@ -169,10 +171,7 @@
   (openwith-mode t))
 
 
-(unload-feature 'eldoc t)
-(setq custom-delayed-init-variables '())
-(defvar global-eldoc-mode nil)
-(use-package eldoc :ensure t)
+(use-package eldoc :defer t)
 (use-package elfeed :ensure t
   :bind (("C-x w" . 'elfeed)))
 (use-package sqlite3 :ensure t
@@ -192,7 +191,10 @@
          ("C-h v" . 'helpful-variable)
          ("C-h c" . 'helpful-command)
          ("C-h k" . 'helpful-key)))
-
+(use-package bitbake :ensure t)
+(use-package cmm-mode
+  :ensure t (:host github :repo "oxidase/cmm-mode" :main "cmm-mode.el") ; :branch "main"
+  :config)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utility Functions
@@ -396,16 +398,13 @@ If ARG is given, then insert the result to current-buffer"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Development mode hooks
-(use-package eglot :ensure t)
-(use-package dap-mode
-  :defer
-  :custom
-  (dap-auto-configure-mode t "Automatically configure dap.")
-  (dap-auto-configure-features '(sessions locals breakpoints expressions tooltip)  "Remove the button panel in the top.")
+(use-package eglot
+  :defer t
   :config
-  ;;; dap for c++
-  (require 'dap-lldb))
-
+  (custom-set-variables
+   '(eglot-code-action-indications '(eldoc-hint mode-line))
+   '(eglot-ignored-server-capabilities '(:inlayHintProvider))
+   '(eglot-stay-out-of '("flymake"))))
 
 (defun get-bazel-root (dir)
   (or (vc-find-root dir "WORKSPACE") (vc-find-root dir "MODULE.bazel")))
@@ -480,48 +479,173 @@ If ARG is given, then insert the result to current-buffer"
     (other-window 1)))
 
 
-(mapc
- (lambda (mode)
-   (add-hook
-    (intern (concat (symbol-name mode) "-hook"))
-    (lambda ()
-      ;;
-      (eglot-ensure)
+(define-minor-mode development-mode
+  "A mode for development to running sessions"
+  :init-value nil
+  :lighter " Dev"
+  :keymap (define-keymap
+    "C-c C-c" #'do-compile
+    "C-c C-v" #'do-run)
 
-      ;; Update syntax table
-      (modify-syntax-entry ?_ "w" (symbol-value (intern (concat (symbol-name mode) "-syntax-table"))))
+  ;; Update syntax table
+  (modify-syntax-entry ?_ "w" (syntax-table))
 
-      ;; Set buffer local variables
-      (setq-local show-trailing-whitespace t)
+  ;; Set buffer local variables
+  (setq-local show-trailing-whitespace t)
 
-      ;; Compile command
-      (set (make-local-variable 'compiled-times) 0)
-      (set 'compile-command (get-compile-command))
+  ;; Compile command
+  (set (make-local-variable 'compiled-times) 0)
+  (set 'compile-command (get-compile-command))
 
-      ;; Run command, allow only commands in that starts with "./"
-      (set (make-local-variable 'run-times) 0)
-      (set
-       (make-local-variable 'run-command)
-       (cond
-        ((eq major-mode 'python-mode) (format "python3 %s" (file-name-nondirectory (get-buffer-file-name))))
-        (t (format "./%s" (file-name-base (get-buffer-file-name))))))
-      (put 'run-command 'safe-local-variable 'run-command-safe-variable)
-      (defun run-command-safe-variable (var)
-        (or
-         (string-match "^[ \t\n\r]*\\(qml\\(scene\\|viewer\\)\\|optirun\\)[ \t\n\r]*\./.+" var)
-         (string-match "/usr/bin/curl.+" var)))
+  ;; Run command, allow only commands in that starts with "./"
+  (set (make-local-variable 'run-times) 0)
+  (set
+   (make-local-variable 'run-command)
+   (cond
+    ((eq major-mode 'python-mode) (format "python3 %s" (file-name-nondirectory (get-buffer-file-name))))
+    (t (format "./%s" (file-name-base (get-buffer-file-name))))))
+  (put 'run-command 'safe-local-variable 'run-command-safe-variable)
+  (defun run-command-safe-variable (var)
+    (or
+     (string-match "^[ \t\n\r]*\\(qml\\(scene\\|viewer\\)\\|optirun\\)[ \t\n\r]*\./.+" var)
+     (string-match "/usr/bin/curl.+" var)))
 
-      ;; Local key maps
-      (keymap-local-set "C-c C-c" 'do-compile)
-      (keymap-local-set "C-c C-v" 'do-run))))
+  ;; Enable LSP
+  (eglot-ensure))
 
- ;; Development modes list
- '(c-mode c++-mode objc-mode python-mode fortran-mode haskell-mode
-          fish-mode sh-mode yaml-mode conf-toml-mode go-mode
-          js-mode typescript-mode json-mode web-mode
-          cmake-mode makefile-mode makefile-bsdmake-mode dockerfile-mode
-          bazel-build-mode bazel-starlark-mode bazel-module-mode bazel-workspace-mode))
 
+(setq development-modes '(asm-mode c-mode c++-mode ld-script-mode objc-mode python-mode fortran-mode
+   fish-mode sh-mode yaml-mode conf-toml-mode go-mode haskell-mode
+   js-mode typescript-mode json-mode web-mode
+   cmake-mode makefile-mode makefile-bsdmake-mode dockerfile-mode
+   bazel-build-mode bazel-starlark-mode bazel-module-mode bazel-workspace-mode))
+
+(mapc (lambda (mode) (add-hook (intern (concat (symbol-name mode) "-hook")) 'development-mode)) development-modes)
+
+
+(use-package dap-mode
+  :ensure t
+  :custom
+  (dap-print-io nil)
+  (dap-inhibit-io nil)
+  (dap-auto-configure-mode t "Automatically configure dap.")
+  (dap-auto-configure-features '(sessions expressions tooltip))
+
+  :config
+  (require 'dap-lldb)
+  (setq dap-lldb-debug-program '("/opt/homebrew/opt/llvm/bin/lldb-dap" . ("/opt/homebrew/opt/llvm/bin/lldb-dap")))
+  (setq dap-output-buffer-filter '("stdout" "stderr" "console"))
+
+  (add-to-list 'savehist-additional-variables 'dap-lldb-mi-target-platform-history)
+  (defun get-target-platform () (read-from-minibuffer "Select target for debug: " nil nil nil 'dap-lldb-mi-target-platform-history))
+  (defun dap-gdb-lldb--populate-lldb-mi (conf)
+    "Populate CONF with the required arguments."
+    (plist-put conf :target (let ((target (plist-get conf :target))) (cond ((functionp target) (funcall target)) (t target))))
+    (plist-put conf :executable (let ((exec (plist-get conf :executable))) (cond ((functionp exec) (funcall exec)) (t exec))))
+    (plist-put conf :extra_commands (let ((cmds (plist-get conf :extra_commands))) (cond ((functionp cmds) (funcall cmds)) (t cmds))))
+    (-> conf
+        (dap--put-if-absent :type "lldb-mi")
+        (dap--put-if-absent :name "LLDB Remote")
+        (dap--put-if-absent :cwd (expand-file-name default-directory))
+        (dap--put-if-absent :lldbmipath (expand-file-name "~/foss/lldb-mi/src/lldb-mi"))
+        (dap--put-if-absent :dap-server-path `("node" ,(expand-file-name "~/foss/code-debug/out/src/lldb.js"))) ; to update: cd ~/foss/code-debug && npm run compile
+
+        (dap--put-if-absent :printCalls nil)
+        (dap--put-if-absent :showDevDebugOutput nil)
+
+        ;; This may become unnecessary once https://github.com/WebFreak001/code-debug/issues/344 is resolved.
+      (dap--put-if-absent :valuesFormatting "prettyPrinters")))
+  (dap-register-debug-provider "lldb-mi" 'dap-gdb-lldb--populate-lldb-mi)
+  (dap-register-debug-template
+   "lldb-server platform"
+   ;; target: connect+remote-linux://localhost:1234/main
+   ;; remote: lldb-server platform --log-channels gdb-remote all --listen *:1234 --gdbserver-port 1337
+   ;; lldb-mi: platform select ${platform:-remote-linux}
+   ;;          platform connect ${remote_host:-localhost:1234}
+   ;;          file-exec-and-symbols "${target:-main}
+   (list :type "lldb-mi"
+         :request "launch"
+         :target #'get-target-platform
+         :extra_commands '("b main") ; https://github.com/WebFreak001/code-debug/blob/eb9f5e4d/src/lldb.ts#L7
+         :cwd "/tmp"
+         :name "lldb-server platform remote"))
+  (dap-register-debug-template
+   "gdbserver"
+   ;; target: main
+   ;; remote: gdbserver :1234 main
+   ;; lldb-mi: file-exec-and-symbols main
+   ;;          interpreter-exec console "gdb-remote localhost:1234"
+   (list :type "lldb-mi"
+         :request "launch"
+         :target #'(lambda () (expand-file-name (read-file-name "Select local binary: ")))
+         :extra_commands #'(lambda () `(,(format "gdb-remote %s" (get-target-platform)) "b main")) ; code-debug/src/backend/mi2/mi2lldb.ts:45
+         :stopAtStart t
+         :stopAtEntry nil
+         :name "gdbserver remote"))
+
+  (advice-add 'delete-other-windows :around #'(lambda (func &rest args) (let ((ignore-window-parameters t)) (dap-ui-hide-many-windows) (apply func args))))
+
+  (defun dap-debug-or-show ()
+    (interactive)
+    (if (dap--cur-session) (dap-ui-show-many-windows) (call-interactively  'dap-debug)))
+
+  ;; https://emacs-lsp.github.io/dap-mode/page/how-to/#activate-minor-modes-when-stepping-through-code
+  (define-minor-mode +dap-running-session-mode
+    "A mode for adding keybindings to running sessions"
+    :init-value nil
+    :lighter " DAP"
+
+    (when (member major-mode development-modes)
+      (message "%s" (buffer-name) major-mode )
+      (read-only-mode 1)
+      (add-to-list 'minor-mode-overriding-map-alist
+                   (cons '+dap-running-session-mode
+
+(define-keymap
+      "b" #'dap-breakpoint-toggle
+      "B" #'dap-breakpoint-condition
+      "C-B" #'dap-breakpoint-hit-condition
+      "S-B" #'dap-breakpoint-log-message
+      "c" #'dap-continue
+      "d" #'dap-down-stack-frame
+      "D" #'dap-disconnect
+      "e" #'dap-eval
+      "E" #'dap-eval-thing-at-point
+      "S-e" #'dap-eval-region
+      "f" #'dap-step-out
+      "n" #'dap-next
+      "r" #'dap-restart-frame
+      "R" #'dap-debug-restart
+      "s" #'dap-step-in
+      "t" #'dap-switch-thread
+      "T" #'dap-stop-thread
+      "u" #'dap-up-stack-frame
+      "q" #'dap-delete-all-sessions)
+
+                         )))
+
+    ;; The following code adds to the dap-terminated-hook so that this minor mode will be deactivated when the debugger finishes
+    (when +dap-running-session-mode
+      (let ((session-at-creation (dap--cur-active-session-or-die)))
+        ;; DAP deactivation hook
+        (add-hook 'dap-terminated-hook
+                  (lambda (session)
+                    (when (eq session session-at-creation)
+                      (read-only-mode -1)
+                      (dap-ui-hide-many-windows)
+                      (+dap-running-session-mode -1)))))))
+
+  ;; Activate this minor mode when dap is initialized
+  (add-hook 'dap-session-created-hook '+dap-running-session-mode)
+  ;(add-hook 'dap-session-created-hook 'dap-ui-repl)
+
+  ;; Activate this minor mode when hitting a breakpoint in another file
+  (add-hook 'dap-stopped-hook '+dap-running-session-mode)
+
+  ;; Activate this minor mode when stepping into code in another file
+  (add-hook 'dap-stack-frame-changed-hook
+            (lambda (session) (when (and development-mode (dap--session-running session))
+                                (+dap-running-session-mode 1)))))
 
 ;; Set context-dependent tabulation widths
 (add-hook 'c++-mode-hook
@@ -622,17 +746,16 @@ If ARG is given, then insert the result to current-buffer"
 (put 'upcase-region 'disabled nil)       ;; allow conversion of a region to upper case.
 (put 'downcase-region 'disabled nil)     ;; allow conversion of a region to lower case.
 
-(add-to-list
- 'auto-mode-alist
- '("poetry.lock" . conf-toml-mode))
+(setq auto-mode-alist
+      (append
+       '(("poetry.lock" . conf-toml-mode)
+         ("\\.ldx$" . ld-script-mode))
+       auto-mode-alist))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global hooks
 (add-hook 'before-save-hook              ;; delete trailing workspaces on save
           'delete-trailing-whitespace)   ;; to remove (remove-hook 'before-save-hook 'delete-trailing-whitespace)
-
-(add-hook 'eglot-managed-mode-hook
-          (lambda () (flymake-mode -1)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global key bindings
@@ -649,8 +772,8 @@ If ARG is given, then insert the result to current-buffer"
 	("C-`" ispell-word)
         ("C-x C-f" find-file-goto)
         ("C-<return>" mini-calc)
-        ("C-S-s" isearch-forward-regexp)
-        ("C-S-r" isearch-backward-regexp)
+        ("S-s" isearch-forward-regexp)
+        ("S-r" isearch-backward-regexp)
 	;; Clipboard
 	("C-<help>" clipboard-kill-ring-save)
 	("S-<help>" clipboard-yank)
@@ -660,6 +783,7 @@ If ARG is given, then insert the result to current-buffer"
 	("<end>" move-end-of-line)
 	("C-<up>" scroll-down-command)
 	("C-<down>" scroll-up-command)
+	("M-`" dap-debug-or-show)
 	("M-?" goto-line)
 	("M-<left>" move-beginning-of-line)
    	("M-<right>" move-end-of-line)
@@ -692,7 +816,7 @@ If ARG is given, then insert the result to current-buffer"
         (backup-directory-alist ((".*/\\.git/.*")
                                  (".*" . ,(expand-file-name ".backups" user-emacs-directory))))
 	(initial-scratch-message nil)
-        (ring-bell-function 'ignore)
+        (ring-bell-function nil)
         (compilation-ask-about-save nil)
         (gud-tooltip-mode t)
         (gdb-debuginfod-enable-setting t)
@@ -707,12 +831,16 @@ If ARG is given, then insert the result to current-buffer"
 	(delete-old-versions t)
         (confirm-kill-processes nil)
 	(undo-limit 24000000)
+        (large-file-warning-threshold 200000000)
 	(ispell-program-name "aspell")
 	(ispell-check-comments t)
 	(revert-without-query (".*"))
 	(read-buffer-completion-ignore-case t)
         (js-indent-level 2)
         (css-indent-offset 2)
+        (fill-column 120)
+        (gud-highlight-current-line t)
+        (auto-save-visited-file-name t)
 	(scroll-error-top-bottom t)))
 
 (add-to-list 'ispell-skip-region-alist '("[\\@]req\\([[:space:]]+[[:word:]+]\\)?[[:space:]]*{" . "}"))
