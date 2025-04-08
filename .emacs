@@ -143,15 +143,6 @@
   (add-hook 'org-babel-after-execute-hook (lambda () (condition-case nil (org-display-inline-images) (error nil)))))
 
 
-(defun dired-open-file ()
-  "In dired, open the file named on this line."
-  (interactive)
-  (let* ((file (dired-get-filename nil t)))
-    (message "Opening %s..." file)
-    (call-process "gnome-open" nil 0 nil file)
-    (message "Opening %s done" file)))
-
-
 (use-package openwith
   :ensure t
   :config
@@ -171,6 +162,10 @@
   (openwith-mode t))
 
 
+
+(use-package bazel
+  :ensure t
+  :mode ("BUILD\\(\\.[^/]*\\)?\\'" . bazel-build-mode))
 (use-package eldoc :defer t)
 (use-package elfeed :ensure t
   :bind (("C-x w" . 'elfeed)))
@@ -192,8 +187,8 @@
          ("C-h c" . 'helpful-command)
          ("C-h k" . 'helpful-key)))
 (use-package bitbake :ensure t)
-(use-package cmm-mode
-  :ensure t (:host github :repo "oxidase/cmm-mode" :main "cmm-mode.el") ; :branch "main"
+(use-package comamo-mode
+  :ensure t (:host github :repo "oxidase/comamo-mode" :main "comamo-mode.el") ; :branch "main"
   :config)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -201,16 +196,23 @@
 (defun context-help ()
   """Show context help based in buffer mode."""
   (interactive)
-  (cond
-   ((member major-mode '(lisp-mode emacs-lisp-mode))
-    (helpful-at-point))
-   ((member major-mode '(c-mode c++-mode))
-    (if (not (eldoc-print-current-symbol-info))
-        (eldoc-doc-buffer t)
-      (browse-url (format "https://duckduckgo.com/?q=%s+site%%3Acppreference.com" (downcase (current-word))))))
-   ((member major-mode '(python-mode))
-    (browse-url (format "https://docs.python.org/3/search.html?q=%s" (downcase (current-word)))))
-   (t (when (> (length (current-word)) 1) (woman (current-word))))))
+  (let* ((language (and (derived-mode-p 'org-mode) (org-element-property :language (org-element-at-point)))))
+    (cond
+     ((or (member major-mode '(lisp-mode emacs-lisp-mode)) (member language '("elisp" "emacs-lisp")))
+      (helpful-at-point))
+     ((or (member major-mode '(c-mode c++-mode)) (member language '("c" "c++")))
+      (if (not (eldoc-print-current-symbol-info))
+          (eldoc-doc-buffer t)
+        (browse-url (format "https://duckduckgo.com/?q=%s+site%%3Acppreference.com" (downcase (current-word))))))
+     ((or (member major-mode '(python-mode))  (member language '("python")))
+      (browse-url (format "https://docs.python.org/3/search.html?q=%s" (downcase (current-word)))))
+     ((member major-mode '(cmake-mode))
+      (browse-url (format "https://cmake.org/cmake/help/latest/search.html?q=%s" (downcase (current-word)))))
+     ((member major-mode '(bazel-build-mode bazel-starlark-mode bazel-module-mode bazel-workspace-mode))
+      (browse-url (format "https://bazel.build/s/results?q=%s" (downcase (current-word)))))
+     ((member major-mode '(bitbake-mode))
+      (browse-url (format "https://docs.yoctoproject.org/search.html?q=%s" (downcase (current-word)))))
+     (t (when (> (length (current-word)) 1) (woman (current-word)))))))
 
 
 (defun format-variable-properties (var &optional as-string)
@@ -281,7 +283,7 @@
                   ((null remotes) "origin")
                   ((member "upstream" remotes) "upstream")
                   ((member "origin" remotes) "origin")
-                  ((t (car remotes)))))
+                  (t (car remotes))))
          (remote-url
           (replace-regexp-in-string "\\(.git\\|/+\\)$" "" ; remove trailing slashes or .git suffix
 	    (replace-regexp-in-string "://[^@]+@" "://" ; remove user name
@@ -511,7 +513,8 @@ If ARG is given, then insert the result to current-buffer"
      (string-match "/usr/bin/curl.+" var)))
 
   ;; Enable LSP
-  (eglot-ensure))
+  (unless (member major-mode '(bazel-build-mode bazel-starlark-mode bazel-module-mode bazel-workspace-mode))
+    (eglot-ensure)))
 
 
 (setq development-modes '(asm-mode c-mode c++-mode ld-script-mode objc-mode python-mode fortran-mode
@@ -522,130 +525,6 @@ If ARG is given, then insert the result to current-buffer"
 
 (mapc (lambda (mode) (add-hook (intern (concat (symbol-name mode) "-hook")) 'development-mode)) development-modes)
 
-
-(use-package dap-mode
-  :ensure t
-  :custom
-  (dap-print-io nil)
-  (dap-inhibit-io nil)
-  (dap-auto-configure-mode t "Automatically configure dap.")
-  (dap-auto-configure-features '(sessions expressions tooltip))
-
-  :config
-  (require 'dap-lldb)
-  (setq dap-lldb-debug-program '("/opt/homebrew/opt/llvm/bin/lldb-dap" . ("/opt/homebrew/opt/llvm/bin/lldb-dap")))
-  (setq dap-output-buffer-filter '("stdout" "stderr" "console"))
-
-  (add-to-list 'savehist-additional-variables 'dap-lldb-mi-target-platform-history)
-  (defun get-target-platform () (read-from-minibuffer "Select target for debug: " nil nil nil 'dap-lldb-mi-target-platform-history))
-  (defun dap-gdb-lldb--populate-lldb-mi (conf)
-    "Populate CONF with the required arguments."
-    (plist-put conf :target (let ((target (plist-get conf :target))) (cond ((functionp target) (funcall target)) (t target))))
-    (plist-put conf :executable (let ((exec (plist-get conf :executable))) (cond ((functionp exec) (funcall exec)) (t exec))))
-    (plist-put conf :extra_commands (let ((cmds (plist-get conf :extra_commands))) (cond ((functionp cmds) (funcall cmds)) (t cmds))))
-    (-> conf
-        (dap--put-if-absent :type "lldb-mi")
-        (dap--put-if-absent :name "LLDB Remote")
-        (dap--put-if-absent :cwd (expand-file-name default-directory))
-        (dap--put-if-absent :lldbmipath (expand-file-name "~/foss/lldb-mi/src/lldb-mi"))
-        (dap--put-if-absent :dap-server-path `("node" ,(expand-file-name "~/foss/code-debug/out/src/lldb.js"))) ; to update: cd ~/foss/code-debug && npm run compile
-
-        (dap--put-if-absent :printCalls nil)
-        (dap--put-if-absent :showDevDebugOutput nil)
-
-        ;; This may become unnecessary once https://github.com/WebFreak001/code-debug/issues/344 is resolved.
-      (dap--put-if-absent :valuesFormatting "prettyPrinters")))
-  (dap-register-debug-provider "lldb-mi" 'dap-gdb-lldb--populate-lldb-mi)
-  (dap-register-debug-template
-   "lldb-server platform"
-   ;; target: connect+remote-linux://localhost:1234/main
-   ;; remote: lldb-server platform --log-channels gdb-remote all --listen *:1234 --gdbserver-port 1337
-   ;; lldb-mi: platform select ${platform:-remote-linux}
-   ;;          platform connect ${remote_host:-localhost:1234}
-   ;;          file-exec-and-symbols "${target:-main}
-   (list :type "lldb-mi"
-         :request "launch"
-         :target #'get-target-platform
-         :extra_commands '("b main") ; https://github.com/WebFreak001/code-debug/blob/eb9f5e4d/src/lldb.ts#L7
-         :cwd "/tmp"
-         :name "lldb-server platform remote"))
-  (dap-register-debug-template
-   "gdbserver"
-   ;; target: main
-   ;; remote: gdbserver :1234 main
-   ;; lldb-mi: file-exec-and-symbols main
-   ;;          interpreter-exec console "gdb-remote localhost:1234"
-   (list :type "lldb-mi"
-         :request "launch"
-         :target #'(lambda () (expand-file-name (read-file-name "Select local binary: ")))
-         :extra_commands #'(lambda () `(,(format "gdb-remote %s" (get-target-platform)) "b main")) ; code-debug/src/backend/mi2/mi2lldb.ts:45
-         :stopAtStart t
-         :stopAtEntry nil
-         :name "gdbserver remote"))
-
-  (advice-add 'delete-other-windows :around #'(lambda (func &rest args) (let ((ignore-window-parameters t)) (dap-ui-hide-many-windows) (apply func args))))
-
-  (defun dap-debug-or-show ()
-    (interactive)
-    (if (dap--cur-session) (dap-ui-show-many-windows) (call-interactively  'dap-debug)))
-
-  ;; https://emacs-lsp.github.io/dap-mode/page/how-to/#activate-minor-modes-when-stepping-through-code
-  (define-minor-mode +dap-running-session-mode
-    "A mode for adding keybindings to running sessions"
-    :init-value nil
-    :lighter " DAP"
-
-    (when (member major-mode development-modes)
-      (message "%s" (buffer-name) major-mode )
-      (read-only-mode 1)
-      (add-to-list 'minor-mode-overriding-map-alist
-                   (cons '+dap-running-session-mode
-
-(define-keymap
-      "b" #'dap-breakpoint-toggle
-      "B" #'dap-breakpoint-condition
-      "C-B" #'dap-breakpoint-hit-condition
-      "S-B" #'dap-breakpoint-log-message
-      "c" #'dap-continue
-      "d" #'dap-down-stack-frame
-      "D" #'dap-disconnect
-      "e" #'dap-eval
-      "E" #'dap-eval-thing-at-point
-      "S-e" #'dap-eval-region
-      "f" #'dap-step-out
-      "n" #'dap-next
-      "r" #'dap-restart-frame
-      "R" #'dap-debug-restart
-      "s" #'dap-step-in
-      "t" #'dap-switch-thread
-      "T" #'dap-stop-thread
-      "u" #'dap-up-stack-frame
-      "q" #'dap-delete-all-sessions)
-
-                         )))
-
-    ;; The following code adds to the dap-terminated-hook so that this minor mode will be deactivated when the debugger finishes
-    (when +dap-running-session-mode
-      (let ((session-at-creation (dap--cur-active-session-or-die)))
-        ;; DAP deactivation hook
-        (add-hook 'dap-terminated-hook
-                  (lambda (session)
-                    (when (eq session session-at-creation)
-                      (read-only-mode -1)
-                      (dap-ui-hide-many-windows)
-                      (+dap-running-session-mode -1)))))))
-
-  ;; Activate this minor mode when dap is initialized
-  (add-hook 'dap-session-created-hook '+dap-running-session-mode)
-  ;(add-hook 'dap-session-created-hook 'dap-ui-repl)
-
-  ;; Activate this minor mode when hitting a breakpoint in another file
-  (add-hook 'dap-stopped-hook '+dap-running-session-mode)
-
-  ;; Activate this minor mode when stepping into code in another file
-  (add-hook 'dap-stack-frame-changed-hook
-            (lambda (session) (when (and development-mode (dap--session-running session))
-                                (+dap-running-session-mode 1)))))
 
 ;; Set context-dependent tabulation widths
 (add-hook 'c++-mode-hook
@@ -732,6 +611,113 @@ If ARG is given, then insert the result to current-buffer"
 (setenv "PYTHONPYCACHEPREFIX" (expand-file-name "~/.cache/pycache"))
 
 
+;; GUD settings
+(require 'gud)
+(defun gud-quit ()
+  "Quit GUD session, delete GUD process, close comint, and remove running session modes"
+  (interactive)
+  (delete-other-windows)
+  (when gud-comint-buffer
+    (when (get-buffer-process gud-comint-buffer)
+      (delete-process (get-buffer-process gud-comint-buffer)))
+    (kill-buffer gud-comint-buffer))
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when (bound-and-true-p +gud-running-session-mode)
+        (+gud-running-session-mode -1)))))
+
+(define-minor-mode +gud-running-session-mode
+  "A mode for adding keybindings to running sessions"
+  :init-value nil
+  :lighter " GUD"
+  :keymap (define-keymap
+      "b" #'gud-break
+      "B" #'gud-remove
+      "c" #'gud-cont
+      "d" #'gud-down
+      "f" #'gud-finish
+      "g" #'(lambda () (interactive) (gud-call "target variable"))
+      "h" #'gud-until
+      "i" #'gud-stepi
+      "j" #'gud-jump
+      "l" #'(lambda () (interactive) (gud-call "frame variable"))
+      "m" #'(lambda () (interactive) (gud-call "x/16i $pc-16"))
+      "n" #'gud-next
+      "o" #'gud-nexti
+      "p" #'gud-print
+      "r" #'gud-run
+      "s" #'gud-step
+      "t" #'gud-tbreak
+      "u" #'gud-up
+      "x" #'gud-pstar
+      "q" #'gud-quit)
+  (read-only-mode (if +gud-running-session-mode 1 -1)))
+
+
+(defun gud-source-map (path)
+  "Check if gud-lldb-directories contain some prefixes."
+  (seq-find
+   #'file-exists-p
+   (mapcar (lambda (rule) (replace-regexp-in-string (car rule) (cdr rule) path)) gud-lldb-source-map)))
+
+(advice-add 'gud-file-name :after-until #'gud-source-map)
+
+
+(defun gud-layout-filter (orig proc string)
+  "Set GUD windows layout as
+
+   +-----------------------------------+
+   | Source buffer                     |
+   |                                   |
+   |                                   |
+   |░░░░░░░░░▓░░░░░░░░░░░░░░░░░░░░░░░░░| file:line:column
+   |                                   |
+   |                                   |
+   |                                   |
+   |                                   |
+   +-----------------------------------+
+   | GUD buffer (I/O)                  | ⎫
+   |                                   | ⎬ comint-height
+   |                                   | ⎭
+   +-----------------------------------+"
+  ;;
+  (let* ((comint-height 16)
+         (comint-window (get-buffer-window gud-comint-buffer))
+         (was-in-comint-window (eq comint-window (selected-window)))
+         (result (funcall orig proc string))
+         (last-frame gud-last-last-frame)
+         (file (nth 0 last-frame))
+         (line (nth 1 last-frame))
+         (column (nth 2 last-frame)) buf)
+    (when (and file (stringp string) (not (string-empty-p string)))
+      (setq buf (gud-find-file file))
+      (with-current-buffer buf (+gud-running-session-mode 1))
+      (cond
+       (was-in-comint-window ;; and stay in the comint window
+        (delete-other-windows)
+        (set-window-buffer (split-window comint-window comint-height 'above) buf))
+       (t ;; was not in the comint window than switch to the current GUD file and stay in buffers window
+        (switch-to-buffer buf)
+        (delete-other-windows)
+        (set-window-buffer (split-window (selected-window) (- comint-height) 'below) gud-comint-buffer)
+        (goto-line line)
+        (move-to-column (1- column))
+        (when gud-highlight-current-line-overlay ;; add highlight line if overlay was created at GUD init
+          (move-overlay gud-highlight-current-line-overlay
+                        (line-beginning-position)
+                        (line-beginning-position 2)
+                        buf)))))
+    result))
+
+(advice-add 'gud-filter :around #'gud-layout-filter)
+
+(defun gud-layout-sentinel (proc event)
+  "Check comint sentinel and if process just finished quit debugging session"
+   (when (string= event "finished\n")
+     (gud-quit)))
+
+(advice-add 'gud-sentinel :after #'gud-layout-sentinel)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global minor modes
 (column-number-mode)
@@ -783,7 +769,6 @@ If ARG is given, then insert the result to current-buffer"
 	("<end>" move-end-of-line)
 	("C-<up>" scroll-down-command)
 	("C-<down>" scroll-up-command)
-	("M-`" dap-debug-or-show)
 	("M-?" goto-line)
 	("M-<left>" move-beginning-of-line)
    	("M-<right>" move-end-of-line)
@@ -840,7 +825,7 @@ If ARG is given, then insert the result to current-buffer"
         (css-indent-offset 2)
         (fill-column 120)
         (gud-highlight-current-line t)
-        (auto-save-visited-file-name t)
+        (tramp-auto-save-directory ,(expand-file-name ".tramp" user-emacs-directory))
 	(scroll-error-top-bottom t)))
 
 (add-to-list 'ispell-skip-region-alist '("[\\@]req\\([[:space:]]+[[:word:]+]\\)?[[:space:]]*{" . "}"))
@@ -851,7 +836,7 @@ If ARG is given, then insert the result to current-buffer"
 ;; System and user specific customized variables
 (setq custom-system-file (expand-file-name (format "%s/custom.%s.el" user-emacs-directory (system-name))))
 (unless (file-readable-p custom-system-file)
-  (write-region (format ";; -*- mode: lisp -*-\n;; (system-name) is %s" (system-name)) nil custom-system-file))
+  (write-region (format ";; -*- mode: emacs-lisp; lexical-binding: t -*-\n;; (system-name) is %s" (system-name)) nil custom-system-file))
 (load custom-system-file)
 (setq custom-file (expand-file-name (format "%s/custom.el" user-emacs-directory)))
 (when (file-readable-p custom-file)
