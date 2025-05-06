@@ -735,6 +735,7 @@ If ARG is given, then insert the result to current-buffer"
 (setq auto-mode-alist
       (append
        '(("poetry.lock" . conf-toml-mode)
+         ("\\.MODULE.bazel$" .  bazel-module-mode)
          ("\\.ldx$" . ld-script-mode))
        auto-mode-alist))
 
