@@ -1,5 +1,6 @@
 # https://medium.com/@fabioantunes/a-guide-for-fish-shell-completions-485ac04ac63c
-set -g bazel_commands analyze-profile aquery build canonicalize-flags clean coverage cquery dump fetch help info license mobile-install print_action query run shutdown sync test version
+set -g bazel_commands analyze-profile aquery build canonicalize-flags clean coverage cquery dump fetch help info license \
+             mobile-install mod print_action query run shutdown sync test vendor version
 
 for bin in bazel bazelisk ;
     complete -f -c $bin -n "not __fish_seen_subcommand_from $bazel_commands" -a analyze-profile -d 'Analyzes build profile data.'
@@ -21,6 +22,7 @@ for bin in bazel bazelisk ;
     complete -f -c $bin -n "not __fish_seen_subcommand_from $bazel_commands" -a shutdown -d 'Stops the bazel server.'
     complete -f -c $bin -n "not __fish_seen_subcommand_from $bazel_commands" -a sync -d 'Syncs all repositories specified in the workspace file'
     complete -f -c $bin -n "not __fish_seen_subcommand_from $bazel_commands" -a test -d 'Builds and runs the specified test targets.'
+    complete -f -c $bin -n "not __fish_seen_subcommand_from $bazel_commands" -a vendor -d 'Fetches external repositories into a folder specified by the flag --vendor_dir.'
     complete -f -c $bin -n "not __fish_seen_subcommand_from $bazel_commands" -a version -d 'Prints version information for bazel.'
 end
 
@@ -45,6 +47,7 @@ function __fish_bazel_target
         case '//*'
             set -l comp (string sub $target -s 3)
 
+            echo $comp
             set -l dirs (complete -C"nonexistentcommand $comp" | string match -vr '^bazel-' | string match -r '.*/$' | string replace -r '/$' '')
             for comp in $dirs
                 if test -e "$comp/BUILD" -o -e "$comp/BUILD.bazel"
@@ -87,11 +90,11 @@ end
 
 for bin in bazel bazelisk ;
     complete -f -c $bin -n "__fish_seen_subcommand_from help" -a (printf "%s\n" "$bazel_commands startup_options target-syntax info-keys")
-    complete -f -c $bin -n "__fish_seen_subcommand_from build; and not __fish_seen_subcommand_from (__fish_bazel_target build); and not contains -- -- (commandline -opc)" -a "(__fish_bazel_target build)"
-    complete -f -c $bin -n "__fish_seen_subcommand_from run; and not __fish_seen_subcommand_from (__fish_bazel_target run); and not contains -- -- (commandline -opc)" -a "(__fish_bazel_target run)"
-    complete -f -c $bin -n "__fish_seen_subcommand_from query; and not __fish_seen_subcommand_from (__fish_bazel_target test); and not contains -- -- (commandline -opc)" -a "(__fish_bazel_target query)"
-    complete -f -c $bin -n "__fish_seen_subcommand_from test; and not __fish_seen_subcommand_from (__fish_bazel_target test); and not contains -- -- (commandline -opc)" -a "(__fish_bazel_target test)"
     complete -f -c $bin -n "__fish_is_option" -a "(__fish_bazel_options)"
+    for command in build run test query aquery cquery ;
+        complete -f -c $bin -n "__fish_seen_subcommand_from $command; and not __fish_seen_subcommand_from (__fish_bazel_target $command); and not contains -- -- (commandline -opc)" \
+                            -a "(__fish_bazel_target $command)"
+    end
 end
 
 complete -c bz -w "bazel"

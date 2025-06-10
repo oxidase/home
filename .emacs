@@ -62,7 +62,7 @@
   :bind (("<s-f3>" . (lambda () (interactive) (ag/search (word-at-point) (ag/project-root default-directory)))))
   :config
   (custom-set-variables
-   '(ag-ignore-list '("TAGS" "*.bin" "bundle.js" "*.ipynb" "*.html" "*node_modules*"))
+   '(ag-ignore-list '("TAGS" "*.bin" "bundle.js" "*.ipynb" "*node_modules*"))
    '(ag-highlight-search t))
 
   ;; use ag-project-root in local variables of polyrepos
@@ -406,7 +406,12 @@ If ARG is given, then insert the result to current-buffer"
   (custom-set-variables
    '(eglot-code-action-indications '(eldoc-hint mode-line))
    '(eglot-ignored-server-capabilities '(:inlayHintProvider))
-   '(eglot-stay-out-of '("flymake"))))
+   '(eglot-stay-out-of '("flymake")))
+
+  ;; Remove eglot--post-self-insert-hook for current buffer after eglot starts
+  (add-hook 'eglot-managed-mode-hook
+            (lambda ()
+              (remove-hook 'post-self-insert-hook #'eglot--post-self-insert-hook t))))
 
 (defun get-bazel-root (dir)
   (or (vc-find-root dir "WORKSPACE") (vc-find-root dir "MODULE.bazel")))
@@ -609,6 +614,7 @@ If ARG is given, then insert the result to current-buffer"
 
 ;; Set development environemnt variables
 (setenv "PYTHONPYCACHEPREFIX" (expand-file-name "~/.cache/pycache"))
+(setenv "LC_COLLATE" "C")
 
 
 ;; GUD settings
@@ -691,22 +697,23 @@ If ARG is given, then insert the result to current-buffer"
          (column (nth 2 last-frame)) buf)
     (when (and file (stringp string) (not (string-empty-p string)))
       (setq buf (gud-find-file file))
-      (with-current-buffer buf (+gud-running-session-mode 1))
-      (cond
-       (was-in-comint-window ;; and stay in the comint window
-        (delete-other-windows)
-        (set-window-buffer (split-window comint-window comint-height 'above) buf))
-       (t ;; was not in the comint window than switch to the current GUD file and stay in buffers window
-        (switch-to-buffer buf)
-        (delete-other-windows)
-        (set-window-buffer (split-window (selected-window) (- comint-height) 'below) gud-comint-buffer)
-        (goto-line line)
-        (move-to-column (1- column))
-        (when gud-highlight-current-line-overlay ;; add highlight line if overlay was created at GUD init
-          (move-overlay gud-highlight-current-line-overlay
-                        (line-beginning-position)
-                        (line-beginning-position 2)
-                        buf)))))
+      (if (not buf) (message "gud-find-file: failed for %s" file)
+        (with-current-buffer buf (+gud-running-session-mode 1))
+        (cond
+         (was-in-comint-window ;; and stay in the comint window
+          (delete-other-windows)
+          (set-window-buffer (split-window comint-window comint-height 'above) buf))
+         (t ;; was not in the comint window than switch to the current GUD file and stay in buffers window
+          (switch-to-buffer buf)
+          (delete-other-windows)
+          (set-window-buffer (split-window (selected-window) (- comint-height) 'below) gud-comint-buffer)
+          (goto-line line)
+          (move-to-column (1- column))
+          (when gud-highlight-current-line-overlay ;; add highlight line if overlay was created at GUD init
+            (move-overlay gud-highlight-current-line-overlay
+                          (line-beginning-position)
+                          (line-beginning-position 2)
+                          buf))))))
     result))
 
 (advice-add 'gud-filter :around #'gud-layout-filter)
@@ -736,13 +743,17 @@ If ARG is given, then insert the result to current-buffer"
       (append
        '(("poetry.lock" . conf-toml-mode)
          ("\\.MODULE.bazel$" .  bazel-module-mode)
-         ("\\.ldx$" . ld-script-mode))
+         ("\\.ldx$" . ld-script-mode)
+         ("\\.inl$" . c++-mode))
        auto-mode-alist))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global hooks
 (add-hook 'before-save-hook              ;; delete trailing workspaces on save
-          'delete-trailing-whitespace)   ;; to remove (remove-hook 'before-save-hook 'delete-trailing-whitespace)
+          #'delete-trailing-whitespace)  ;; to remove (remove-hook 'before-save-hook 'delete-trailing-whitespace)
+
+(add-hook 'markdown-mode-hook
+          #'auto-fill-mode)              ;; always auto fill Markdown documents
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global key bindings
