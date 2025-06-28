@@ -68,7 +68,10 @@
   ;; use ag-project-root in local variables of polyrepos
   (advice-add 'ag/project-root :around (lambda (orig file-path)
                                          (if (boundp 'ag-project-root)
-                                             ag-project-root
+                                             (cond
+                                              ((vectorp ag-project-root)
+                                               (cdr (seq-find (lambda (pair) (string-match-p (car pair) file-path)) ag-project-root)))
+                                              (t ag-project-root))
                                            (funcall orig file-path)))))
 
 (use-package bm
@@ -190,6 +193,10 @@
 (use-package comamo-mode
   :ensure t (:host github :repo "oxidase/comamo-mode" :main "comamo-mode.el") ; :branch "main"
   :config)
+
+
+(use-package tramp
+  :config (add-to-list 'tramp-remote-path 'tramp-own-remote-path))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utility Functions
@@ -725,6 +732,15 @@ If ARG is given, then insert the result to current-buffer"
 
 (advice-add 'gud-sentinel :after #'gud-layout-sentinel)
 
+
+(defun make-work-directory-advice (dir-variable)
+  (lambda (orig &rest args)
+    (let ((default-directory (or (and (boundp dir-variable) (symbol-value dir-variable)) default-directory)))
+      (apply orig args))))
+
+(advice-add 'compile :around (make-work-directory-advice 'compile-work-directory))
+(advice-add 'lldb :around (make-work-directory-advice 'debug-work-directory))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global minor modes
 (column-number-mode)
@@ -744,6 +760,7 @@ If ARG is given, then insert the result to current-buffer"
        '(("poetry.lock" . conf-toml-mode)
          ("\\.MODULE.bazel$" .  bazel-module-mode)
          ("\\.ldx$" . ld-script-mode)
+         ("\\.[mc]js$" . js-mode)
          ("\\.inl$" . c++-mode))
        auto-mode-alist))
 
@@ -754,6 +771,11 @@ If ARG is given, then insert the result to current-buffer"
 
 (add-hook 'markdown-mode-hook
           #'auto-fill-mode)              ;; always auto fill Markdown documents
+
+(add-hook 'find-file-hook (lambda ()     ;; don't create auto save and backup files in remote buffers
+  (when (and buffer-file-name (file-remote-p buffer-file-name))
+    (setq-local auto-save-default nil)
+    (setq-local make-backup-files nil))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global key bindings
@@ -838,6 +860,7 @@ If ARG is given, then insert the result to current-buffer"
         (fill-column 120)
         (gud-highlight-current-line t)
         (tramp-auto-save-directory ,(expand-file-name ".tramp" user-emacs-directory))
+        (enable-remote-dir-locals t)
 	(scroll-error-top-bottom t)))
 
 (add-to-list 'ispell-skip-region-alist '("[\\@]req\\([[:space:]]+[[:word:]+]\\)?[[:space:]]*{" . "}"))
