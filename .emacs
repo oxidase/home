@@ -196,7 +196,16 @@
 
 
 (use-package tramp
-  :config (add-to-list 'tramp-remote-path 'tramp-own-remote-path))
+  :config (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+
+  (defun disable-lockfiles-for-tramp-in-docker ()
+    "Disable lockfiles for TRAMP Docker buffers only."
+    (when (and buffer-file-name (file-remote-p buffer-file-name)
+               (string=  "docker" (tramp-file-name-method (tramp-dissect-file-name buffer-file-name))))
+      (setq-local create-lockfiles nil)))
+
+  (add-hook 'find-file-hook #'disable-lockfiles-for-tramp-in-docker))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utility Functions
