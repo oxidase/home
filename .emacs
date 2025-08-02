@@ -198,6 +198,13 @@
 (use-package tramp
   :config (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
 
+  (setf (cdr (assoc "docker" tramp-methods))
+        '(;; base docker method
+          (tramp-login-program "docker")
+          (tramp-login-args (("exec" "-it") ("%h") ("/bin/bash")))
+          (tramp-remote-shell "/bin/bash")
+          (tramp-remote-shell-args ("-i" "-c"))))
+
   (defun disable-lockfiles-for-tramp-in-docker ()
     "Disable lockfiles for TRAMP Docker buffers only."
     (when (and buffer-file-name (file-remote-p buffer-file-name)
