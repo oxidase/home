@@ -1,6 +1,6 @@
 ;; -*- lexical-binding: t -*-
 ;; Bootstrap elpaca mode
-(let ((boostrap-hash "1de28698b9619644ac6df45d64083334b77470b34c0b7e0557e6711d14800298")
+(let ((boostrap-hash "e8ec845e44308589680b0ec6ee9a098d87ba5cc87eef06d24def5e1a9e4ffabe")
       (bootstrap-file (expand-file-name "elpaca/installer.el" user-emacs-directory)))
   (unless (file-exists-p bootstrap-file)
     (let ((bootstrap-dir (file-name-directory bootstrap-file))
@@ -36,6 +36,7 @@
 
 
 (require 'dired)
+(when (eq system-type 'darwin) (setq dired-use-ls-dired nil))
 (defvar dired-sort-map (make-sparse-keymap))
 (define-key dired-mode-map "s" dired-sort-map)
 (define-key dired-sort-map "s" (lambda () "sort by Size" (interactive) (dired-sort-other (concat dired-listing-switches "S"))))
@@ -421,6 +422,10 @@ If ARG is given, then insert the result to current-buffer"
 	(insert result)
       (message (format "Result: [%s] = %s" expr result)))))
 
+(defun remove-delete-trailing-whitespace-hook ()
+  "Remove delete-trailing-whitespace hook locally."
+  (interactive)
+  (remove-hook 'before-save-hook 'delete-trailing-whitespace t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Development mode hooks
@@ -774,7 +779,7 @@ If ARG is given, then insert the result to current-buffer"
 
 (setq auto-mode-alist
       (append
-       '(("poetry.lock" . conf-toml-mode)
+       '(("\\(poetry\\|uv\\).lock" . conf-toml-mode)
          ("\\.MODULE.bazel$" .  bazel-module-mode)
          ("\\.ldx$" . ld-script-mode)
          ("\\.[mc]js$" . js-mode)
@@ -784,7 +789,7 @@ If ARG is given, then insert the result to current-buffer"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global hooks
 (add-hook 'before-save-hook              ;; delete trailing workspaces on save
-          #'delete-trailing-whitespace)  ;; to remove (remove-hook 'before-save-hook 'delete-trailing-whitespace)
+          #'delete-trailing-whitespace)  ;; to remove (remove-delete-trailing-whitespace-hook)
 
 (add-hook 'markdown-mode-hook
           #'auto-fill-mode)              ;; always auto fill Markdown documents
