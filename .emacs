@@ -181,7 +181,17 @@
 (use-package yaml-mode :ensure t)
 (use-package cmake-mode :ensure t)
 (use-package jinja2-mode :ensure t)
-(use-package markdown-mode :ensure t)
+(use-package markdown-mode
+  :ensure t
+  :config
+
+  ;; (La)TeX style mathematical expressions
+  (defvar markdown-math-font-lock-keywords
+    '(("{math}`\\([^$]*?\\)`" 1 'font-lock-keyword-face)        ;; inline math $...$
+      ("\\$\\$\\([^$]*?\\)\\$\\$" 1 'font-lock-keyword-face) ;; display math $$...$$
+      ("\\$\\(.*?\\)\\$" 1 'font-lock-keyword-face))        ;; inline math $...$
+    "Font lock for LaTeX math in Markdown.")
+  (add-hook 'markdown-mode-hook (lambda () (font-lock-add-keywords nil markdown-math-font-lock-keywords))))
 (use-package typescript-mode :ensure t)
 (use-package dockerfile-mode :ensure t)
 (use-package flatbuffers-mode :ensure t)
