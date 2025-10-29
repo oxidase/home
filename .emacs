@@ -180,7 +180,33 @@
 (use-package fish-mode :ensure t)
 (use-package yaml-mode :ensure t)
 (use-package cmake-mode :ensure t)
-(use-package jinja2-mode :ensure t)
+(use-package jinja2-mode :ensure t
+  :config (modify-syntax-entry ?_ "w" jinja2-mode-syntax-table))
+(use-package polymode
+  :ensure t
+  :after yaml-mode jinja2-mode
+
+  :config ;; Define a polymode for Jinja2 + YAML
+  (define-hostmode poly-jinja2-yaml-hostmode
+    :mode 'yaml-mode)
+
+  (define-innermode poly-jinja2-yaml-innermode
+    :mode 'jinja2-mode
+    :head-matcher "{[%{#]"
+    :tail-matcher "[%}#]}"
+    :head-mode 'host
+    :tail-mode 'host)
+
+  (define-polymode poly-jinja2-yaml-mode
+    :hostmode 'poly-jinja2-yaml-hostmode
+    :innermodes '(poly-jinja2-yaml-innermode))
+
+  :config
+  (setq auto-mode-alist
+        (append
+         '(("\\.\\(ya?ml\\|ksy\\)\\.j2$" . poly-jinja2-yaml-mode))
+         auto-mode-alist)))
+
 (use-package markdown-mode
   :ensure t
   :config
