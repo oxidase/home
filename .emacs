@@ -176,6 +176,7 @@
 (use-package sqlite3 :ensure t
   :config
   (require 'sqlite3))
+(use-package lua-mode :ensure t)
 (use-package web-mode :ensure t)
 (use-package fish-mode :ensure t)
 (use-package yaml-mode :ensure t)
@@ -588,7 +589,7 @@ If ARG is given, then insert the result to current-buffer"
 
 
 (setq development-modes '(asm-mode c-mode c++-mode ld-script-mode objc-mode python-mode fortran-mode
-   fish-mode sh-mode yaml-mode conf-toml-mode go-mode haskell-mode
+   fish-mode sh-mode yaml-mode conf-toml-mode go-mode haskell-mode lua-mode
    js-mode typescript-mode json-mode web-mode
    cmake-mode makefile-mode makefile-bsdmake-mode dockerfile-mode
    bazel-build-mode bazel-starlark-mode bazel-module-mode bazel-workspace-mode))
@@ -817,6 +818,7 @@ If ARG is given, then insert the result to current-buffer"
       (append
        '(("\\(poetry\\|uv\\).lock" . conf-toml-mode)
          ("\\.MODULE.bazel$" .  bazel-module-mode)
+         ("\\.ksy$" . yaml-mode)
          ("\\.ldx$" . ld-script-mode)
          ("\\.[mc]js$" . js-mode)
          ("\\.inl$" . c++-mode))
