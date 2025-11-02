@@ -128,6 +128,24 @@
                               ("FIXED" . "SpringGreen3")
                               ("CANCELED" . "grey")))
 
+   '(org-format-latex-options
+     '(:foreground default
+       :background default
+       :scale 2
+       :html-foreground "Black"
+       :html-background "Transparent"
+       :html-scale 1.0
+       :matchers ("begin" "$1" "$" "$$" "\\(" "\\[")))
+
+   '(org-reveal-mathjax-url "https://cdn.jsdelivr.net/npm/mathjax")
+
+   '(org-reveal-external-plugins
+     '((CopyCode . "https://cdn.jsdelivr.net/npm/reveal.js-copycode")
+       (Clipboard . "https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js")
+       (RevealMath.KaTeX . "%splugin/math/math.js")
+       (RevealMath.MathJax2 . "%splugin/math/math.js")
+       (RevealMath.MathJax3 . "%splugin/math/math.js")))
+
    '(org-capture-templates
      '(("n" "note" entry (file+datetree "~/notes/notes.org") "* %?\nEntered on %U\n  %i"))))
 
