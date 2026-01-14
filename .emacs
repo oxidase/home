@@ -17,6 +17,7 @@
   (elpaca elpaca-use-package
     (elpaca-use-package-mode)))
 
+(add-to-list 'load-path "~/.emacs.d/lisp/")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Extend execution paths with fish paths
@@ -197,6 +198,7 @@
 (use-package lua-mode :ensure t)
 (use-package web-mode :ensure t)
 (use-package fish-mode :ensure t)
+(use-package rust-mode :ensure t)
 (use-package yaml-mode :ensure t)
 (use-package cmake-mode :ensure t)
 (use-package jinja2-mode :ensure t
@@ -223,7 +225,7 @@
   :config
   (setq auto-mode-alist
         (append
-         '(("\\.\\(ya?ml\\|ksy\\)\\.j2$" . poly-jinja2-yaml-mode))
+         '(("\\.\\(ya?ml\\|ksy\\)\\.j\\(2\\|inja\\)$" . poly-jinja2-yaml-mode))
          auto-mode-alist)))
 
 (use-package markdown-mode
@@ -602,7 +604,8 @@ If ARG is given, then insert the result to current-buffer"
      (string-match "/usr/bin/curl.+" var)))
 
   ;; Enable LSP
-  (unless (member major-mode '(bazel-build-mode bazel-starlark-mode bazel-module-mode bazel-workspace-mode))
+  (unless (or (member major-mode '(bazel-build-mode bazel-starlark-mode bazel-module-mode bazel-workspace-mode))
+              (and (eq major-mode 'python-mode) (string-match-p "execroot/_main/" default-directory)))
     (eglot-ensure)))
 
 
@@ -913,7 +916,7 @@ If ARG is given, then insert the result to current-buffer"
         (backup-directory-alist ((".*/\\.git/.*")
                                  (".*" . ,(expand-file-name ".backups" user-emacs-directory))))
 	(initial-scratch-message nil)
-        (ring-bell-function nil)
+        (ring-bell-function 'ignore)
         (compilation-ask-about-save nil)
         (gud-tooltip-mode t)
         (gdb-debuginfod-enable-setting t)
