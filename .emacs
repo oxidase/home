@@ -195,6 +195,7 @@
 (use-package sqlite3 :ensure t
   :config
   (require 'sqlite3))
+(use-package go-mode :ensure t)
 (use-package lua-mode :ensure t)
 (use-package web-mode :ensure t)
 (use-package fish-mode :ensure t)
@@ -208,24 +209,39 @@
   :after yaml-mode jinja2-mode
 
   :config ;; Define a polymode for Jinja2 + YAML
-  (define-hostmode poly-jinja2-yaml-hostmode
-    :mode 'yaml-mode)
-
-  (define-innermode poly-jinja2-yaml-innermode
+  (defface poly-jinja2-face '((t (:background "#eaeaff"))) "Face for Jinja2 blocks.")
+  (define-innermode poly-jinja2-innermode
     :mode 'jinja2-mode
+    :adjust-face 'poly-jinja2-face
     :head-matcher "{[%{#]"
     :tail-matcher "[%}#]}"
     :head-mode 'host
     :tail-mode 'host)
 
+  (define-hostmode poly-jinja2-yaml-hostmode
+    :mode 'yaml-mode)
   (define-polymode poly-jinja2-yaml-mode
     :hostmode 'poly-jinja2-yaml-hostmode
-    :innermodes '(poly-jinja2-yaml-innermode))
+    :innermodes '(poly-jinja2-innermode))
+
+  (define-hostmode poly-jinja2-c++-hostmode
+    :mode 'c++-mode)
+  (define-polymode poly-jinja2-c++-mode
+    :hostmode 'poly-jinja2-c++-hostmode
+    :innermodes '(poly-jinja2-innermode))
+
+  (define-hostmode poly-jinja2-python-hostmode
+    :mode 'python-mode)
+  (define-polymode poly-jinja2-python-mode
+    :hostmode 'poly-jinja2-python-hostmode
+    :innermodes '(poly-jinja2-innermode))
 
   :config
   (setq auto-mode-alist
         (append
-         '(("\\.\\(ya?ml\\|ksy\\)\\.j\\(2\\|inja\\)$" . poly-jinja2-yaml-mode))
+         '(("\\.\\(ya?ml\\|ksy\\)\\.j\\(2\\|inja\\)$" . poly-jinja2-yaml-mode)
+           ("\\.\\(cc\\|hh\\|[ch]\\(pp\\)?\\)\\.j\\(2\\|inja\\)$" . poly-jinja2-c++-mode)
+           ("\\.\\(py\\)\\.j\\(2\\|inja\\)$" . poly-jinja2-c++-mode))
          auto-mode-alist)))
 
 (use-package markdown-mode
@@ -831,6 +847,7 @@ If ARG is given, then insert the result to current-buffer"
 (savehist-mode)
 (show-paren-mode)
 (tool-bar-mode -1)
+(toggle-tool-bar-mode-from-frame -1)
 
 (put 'upcase-region 'disabled nil)       ;; allow conversion of a region to upper case.
 (put 'downcase-region 'disabled nil)     ;; allow conversion of a region to lower case.
